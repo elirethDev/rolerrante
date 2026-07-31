@@ -5,7 +5,7 @@
 Ejecutar desde la raíz del workspace:
 
 ```bash
-cd c:/Users/pablo/Documents/RolErrante/app
+cd c:/Users/pablo/Documents/RolErrante
 npm create svelte@latest . -- --template skeleton --types typescript
 npm install
 ```
@@ -28,7 +28,7 @@ npm install -D @types/node
 
 ## 3. Configurar Tailwind + daisyUI
 
-Crear `app/tailwind.config.js`:
+Crear `tailwind.config.js`:
 
 ```js
 /** @type {import('tailwindcss').Config} */
@@ -72,7 +72,7 @@ export default {
 };
 ```
 
-Crear `app/postcss.config.js`:
+Crear `postcss.config.js`:
 
 ```js
 export default {
@@ -83,7 +83,7 @@ export default {
 };
 ```
 
-Crear `app/src/app.css`:
+Crear `src/app.css`:
 
 ```css
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
@@ -100,7 +100,7 @@ h1, h2, h3, h4, h5, h6, .font-cinzel {
 }
 ```
 
-Actualizar `app/src/routes/+layout.svelte`:
+Actualizar `src/routes/+layout.svelte`:
 
 ```svelte
 <script>
@@ -114,7 +114,7 @@ Actualizar `app/src/routes/+layout.svelte`:
 
 ## 4. Variables de entorno
 
-Crear `app/.env.local` (nunca subir a git):
+Crear `.env.local` (nunca subir a git):
 
 ```env
 PUBLIC_SUPABASE_URL=https://TU-PROYECTO.supabase.co
@@ -126,7 +126,7 @@ SUPABASE_SERVICE_ROLE_KEY=TU-SERVICE-ROLE-KEY
 
 ## 5. Crear clientes de Supabase
 
-Crear `app/src/lib/supabase/client.ts`:
+Crear `src/lib/supabase/client.ts`:
 
 ```ts
 import { createBrowserClient } from '@supabase/ssr';
@@ -135,7 +135,7 @@ import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/publi
 export const loadSupabase = () => createBrowserClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 ```
 
-Crear `app/src/lib/supabase/server.ts`:
+Crear `src/lib/supabase/server.ts`:
 
 ```ts
 import { createServerClient } from '@supabase/ssr';
@@ -162,7 +162,7 @@ export const loadServiceRole = () => {
 
 ## 6. Hooks de servidor (auth + roles)
 
-Crear `app/src/hooks.server.ts` con la lógica de sesión y carga de perfil (ver Fase 2).
+Crear `src/hooks.server.ts` con la lógica de sesión y carga de perfil (ver Fase 2).
 
 ## 7. Añadir tipos de Supabase
 

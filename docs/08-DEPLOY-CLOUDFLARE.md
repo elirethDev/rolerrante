@@ -25,7 +25,7 @@ Configurar en el dashboard de Cloudflare Pages:
 
 ```bash
 # Instalar dependencias
-cd app
+# Instalar dependencias
 npm install
 
 # Verificar que el build funciona
@@ -44,7 +44,7 @@ npm run build
 | Production branch | `main` (o `master`) |
 | Build command | `npm run build` |
 | Build output directory | `.svelte-kit/cloudflare` |
-| Root directory | `app` |
+| Root directory | ` ` (root) |
 
 ### 3. Configurar variables de entorno
 
@@ -87,7 +87,6 @@ En la sección "Environment variables" del proyecto:
 ## Desarrollo local
 
 ```bash
-cd app
 npm run dev
 ```
 
