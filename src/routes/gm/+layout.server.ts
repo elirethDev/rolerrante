@@ -1,0 +1,8 @@
+import { error } from '@sveltejs/kit';
+import { isGMOrAdmin } from '$lib/auth';
+import type { LayoutServerLoad } from './$types';
+
+export const load: LayoutServerLoad = async ({ locals: { profile } }) => {
+  if (!isGMOrAdmin(profile?.role ?? null)) throw error(403, 'Acceso denegado');
+  return {};
+};
