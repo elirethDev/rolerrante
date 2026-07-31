@@ -2,11 +2,12 @@
   import { groupSkillsByAttribute, skillCreationCost, attributeCost, validateAttributes, ATTR_POINTS_BUDGET } from '$lib/rules';
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
   import type { ActionData, PageData } from './$types';
+  import type { Skill } from '$lib/types';
 
   export let data: PageData;
   export let form: ActionData;
 
-  let grouped = groupSkillsByAttribute(data.skills ?? []);
+  let grouped = groupSkillsByAttribute(data.skills as unknown as Skill[] ?? []);
   let turnstileToken = '';
 
   const ATTR_KEYS = ['attr_fis', 'attr_des', 'attr_int', 'attr_per', 'attr_esp'] as const;
@@ -55,10 +56,10 @@
   {#if form?.message}
     <div class="alert alert-error mb-4">{form.message}</div>
   {/if}
-  {#if form?.errors}
+  {#if form && 'errors' in form}
     <div class="alert alert-warning mb-4">
       <ul class="list-disc list-inside">
-        {#each Object.values(form.errors) as err}
+        {#each Object.values(form.errors as Record<string, string>) as err}
           <li>{err}</li>
         {/each}
       </ul>

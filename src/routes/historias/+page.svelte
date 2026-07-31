@@ -4,6 +4,12 @@
   import { Scroll } from 'lucide-svelte';
 
   export let data: PageData;
+
+  // Player embed helper — supabase type inference loses nested join types on multi-FK tables
+  const playerName = (p: unknown): string =>
+    (p as { display_name?: string | null; username?: string })?.display_name ??
+    (p as { display_name?: string | null; username?: string })?.username ??
+    'Anónimo';
 </script>
 
 <svelte:head>
@@ -31,7 +37,7 @@
             <span class="badge {statusColor(story.status)}">{statusLabel(story.status)}</span>
           </div>
           <p class="text-sm text-gray-400">
-            Por <span class="text-azeroth-gold">{story.character?.player?.display_name ?? story.character?.player?.username ?? 'Anónimo'}</span>
+            Por <span class="text-azeroth-gold">{playerName(story.character?.player)}</span>
             · {formatDate(story.created_at)}
           </p>
           {#if story.character}

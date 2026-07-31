@@ -26,7 +26,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     }
   }
 
-  event.locals.supabase = loadSupabase(event.cookies);
+  event.locals.supabase = loadSupabase(event.cookies) as unknown as typeof event.locals.supabase;
 
   event.locals.safeGetSession = async () => {
     const {

@@ -44,4 +44,4 @@
   });
 </script>
 
-<div bind:this={container} />
+<div bind:this={container}></div>

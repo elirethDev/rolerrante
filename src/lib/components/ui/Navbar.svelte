@@ -17,13 +17,13 @@
       <a href="/personajes" class="btn btn-ghost btn-sm">Fichas</a>
       <a href="/historias" class="btn btn-ghost btn-sm">Historias</a>
       <a href="/eventos" class="btn btn-ghost btn-sm">Eventos</a>
-      {#if profile.role !== 'pendiente'}
+      {#if profile?.role !== 'pendiente'}
         <a href="/solicitudes" class="btn btn-ghost btn-sm">Habilidades</a>
       {/if}
-      {#if isGMOrAdmin(profile.role)}
+      {#if isGMOrAdmin(profile?.role)}
         <a href="/gm" class="btn btn-primary btn-sm">Panel GM</a>
       {/if}
-      {#if isAdmin(profile.role)}
+      {#if isAdmin(profile?.role)}
         <a href="/admin" class="btn btn-error btn-sm">Admin</a>
       {/if}
     {/if}

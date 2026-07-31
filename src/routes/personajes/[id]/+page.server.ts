@@ -20,7 +20,7 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, profile
 export const actions: Actions = {
   approve: async ({ params, locals: { supabase, profile } }) => {
     if (!isGMOrAdmin(profile?.role ?? null)) throw error(403);
-    const { error: rpcError } = await supabase.rpc('approve_character', { p_character_id: params.id, p_notes: null });
+    const { error: rpcError } = await supabase.rpc('approve_character', { p_character_id: params.id });
     if (rpcError) return fail(400, { message: rpcError.message });
     throw redirect(303, `/personajes/${params.id}`);
   },

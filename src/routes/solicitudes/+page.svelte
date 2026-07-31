@@ -18,6 +18,10 @@
     const target = targetLevels[s.skill_id] ?? s.level;
     return acc + (target > s.level ? skillUpgradeCost(s.level, target) : 0);
   }, 0);
+
+  // Skill embed helper — supabase type inference loses nested embed fields on multi-FK tables
+  const skillHasSpec = (s: unknown): boolean =>
+    (s as { requires_specialization?: boolean })?.requires_specialization ?? false;
 </script>
 
 <svelte:head>
@@ -53,7 +57,7 @@
               <div class="flex items-center gap-2">
                 <label class="text-sm" for="skill_level_{s.skill_id}">A</label>
                 <input id="skill_level_{s.skill_id}" name="skill_level_{s.skill_id}" type="number" class="input input-bordered w-20 input-sm" min={s.level} max="10" bind:value={targetLevels[s.skill_id]} />
-                {#if s.skill?.requires_specialization || s.specialization}
+                {#if skillHasSpec(s.skill) || s.specialization}
                   <input name="skill_spec_{s.skill_id}" type="text" class="input input-bordered input-sm" placeholder="Especialización" bind:value={newSpecs[s.skill_id]} />
                 {/if}
               </div>

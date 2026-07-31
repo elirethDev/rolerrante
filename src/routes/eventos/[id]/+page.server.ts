@@ -58,8 +58,8 @@ export const actions: Actions = {
     const xpPerParticipant = Number(form.get('xp') ?? 0);
     if (xpPerParticipant <= 0) return fail(400, { message: 'La XP debe ser mayor que 0' });
 
-    const { error } = await supabase.rpc('finalize_event', { p_event_id: params.id, p_xp_per_participant: xpPerParticipant });
-    if (error) return fail(400, { message: error.message });
+    const { error: rpcError } = await supabase.rpc('finalize_event', { p_event_id: params.id, p_xp_per_participant: xpPerParticipant });
+    if (rpcError) return fail(400, { message: rpcError.message });
     throw redirect(303, `/eventos/${params.id}`);
   },
 };

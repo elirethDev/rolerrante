@@ -1,6 +1,7 @@
 // See https://kit.svelte.dev/docs/types#app
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '$lib/supabase/database.types';
+import type { UserRole } from '$lib/types';
 
 declare global {
   namespace App {
@@ -16,8 +17,10 @@ declare global {
         id: string;
         username: string;
         display_name: string | null;
-        role: string;
+        role: UserRole;
         avatar_url: string | null;
+        created_at: string;
+        updated_at: string;
       } | null;
     }
     interface PageData {
@@ -26,8 +29,10 @@ declare global {
         id: string;
         username: string;
         display_name: string | null;
-        role: string;
+        role: UserRole;
         avatar_url: string | null;
+        created_at: string;
+        updated_at: string;
       } | null;
     }
     // interface Error {}

@@ -12,7 +12,13 @@
   $: story = data.story;
   $: isOwner = data.profile?.id === story.character?.player_id;
   $: canModerate = isGMOrAdmin(data.profile?.role ?? null);
-  $: safeContent = sanitizeHtml(story.content);
+  $: safeContent = sanitizeHtml(String(story.content));
+
+  // Player embed helper — supabase type inference loses nested join types on multi-FK tables
+  const playerName = (p: unknown): string =>
+    (p as { display_name?: string | null; username?: string })?.display_name ??
+    (p as { display_name?: string | null; username?: string })?.username ??
+    'Anónimo';
 </script>
 
 <svelte:head>
@@ -24,7 +30,7 @@
     <div>
       <h1 class="text-3xl md:text-4xl font-cinzel text-azeroth-gold">{story.title}</h1>
       <p class="text-sm text-gray-400 mt-1">
-        Por <span class="text-azeroth-gold">{story.character?.player?.display_name ?? story.character?.player?.username ?? 'Anónimo'}</span>
+        Por <span class="text-azeroth-gold">{playerName(story.character?.player)}</span>
         · {formatDate(story.created_at)}
         {#if story.character}
           · Personaje: <a href="/personajes/{story.character.id}" class="link">{story.character.name}</a>

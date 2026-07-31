@@ -2,13 +2,16 @@
   import type { PageData } from './$types';
   import { combatValues, ATTRIBUTE_LABELS } from '$lib/rules';
   import { statusLabel, statusColor, formatDate } from '$lib/utils';
+  import type { Character, CharacterSkill } from '$lib/types';
   import { Shield, Heart, Zap, Swords } from 'lucide-svelte';
 
   export let data: PageData;
 
+  // character comes from Supabase join query with embedded skills, stories, race
+  // Use auto-inferred DB type but cast to Character at combatValues call site
   $: character = data.character;
   $: skills = (character.skills ?? []).filter((s: { level: number }) => s.level > 0);
-  $: combat = combatValues(character, character.skills ?? []);
+  $: combat = combatValues(character as unknown as Character, character.skills as unknown as CharacterSkill[] ?? []);
   $: canModerate = data.profile?.role === 'gm' || data.profile?.role === 'admin';
 
   const ATTR_KEY_TO_COLUMN: Record<string, string> = {
@@ -18,6 +21,10 @@
     P: 'attr_per',
     E: 'attr_esp',
   };
+
+  // Index-safe attribute accessor — DB row type lacks index signature
+  const charAttr = (key: string) =>
+    (character as Record<string, unknown>)[ATTR_KEY_TO_COLUMN[key]] ?? '?';
 </script>
 
 <svelte:head>
@@ -42,7 +49,7 @@
             {#each Object.entries(ATTRIBUTE_LABELS) as [key, label]}
               <div class="bg-base-100 rounded p-3 border border-azeroth-border">
                 <p class="text-xs text-gray-400 uppercase">{label}</p>
-                <p class="text-2xl font-cinzel text-azeroth-gold">{character[ATTR_KEY_TO_COLUMN[key]] ?? '?'}</p>
+                <p class="text-2xl font-cinzel text-azeroth-gold">{charAttr(key)}</p>
               </div>
             {/each}
           </div>

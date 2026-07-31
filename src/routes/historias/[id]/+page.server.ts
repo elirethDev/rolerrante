@@ -20,16 +20,16 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, profile
 export const actions: Actions = {
   approve: async ({ params, locals: { supabase, profile } }) => {
     if (!isGMOrAdmin(profile?.role ?? null)) throw error(403);
-    const { error } = await supabase.rpc('approve_story', { p_story_id: params.id, p_notes: null });
-    if (error) return fail(400, { message: error.message });
+    const { error: rpcError } = await supabase.rpc('approve_story', { p_story_id: params.id });
+    if (rpcError) return fail(400, { message: rpcError.message });
     throw redirect(303, `/historias/${params.id}`);
   },
   reject: async ({ request, params, locals: { supabase, profile } }) => {
     if (!isGMOrAdmin(profile?.role ?? null)) throw error(403);
     const form = await request.formData();
     const notes = String(form.get('notes') ?? '');
-    const { error } = await supabase.rpc('reject_story', { p_story_id: params.id, p_notes: notes });
-    if (error) return fail(400, { message: error.message });
+    const { error: dbError } = await supabase.rpc('reject_story', { p_story_id: params.id, p_notes: notes });
+    if (dbError) return fail(400, { message: dbError.message });
     throw redirect(303, `/historias/${params.id}`);
   },
 };

@@ -1,6 +1,8 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { isAdmin } from '$lib/auth';
 import type { Actions, PageServerLoad } from './$types';
+import type { UserRole } from '$lib/types';
+import type { Json } from '$lib/supabase/database.types';
 
 export const load: PageServerLoad = async ({ locals: { supabase, profile } }) => {
   if (!isAdmin(profile?.role ?? null)) throw error(403, 'Acceso denegado');
@@ -22,8 +24,8 @@ export const actions: Actions = {
     const role = String(form.get('role') ?? '');
     if (!userId || !role) return fail(400, { message: 'Usuario y rol son obligatorios' });
 
-    const { error } = await supabase.from('profiles').update({ role }).eq('id', userId);
-    if (error) return fail(400, { message: error.message });
+    const { error: dbError } = await supabase.from('profiles').update({ role: role as UserRole }).eq('id', userId);
+    if (dbError) return fail(400, { message: dbError.message });
     throw redirect(303, '/admin');
   },
 
@@ -41,8 +43,8 @@ export const actions: Actions = {
       // keep as string
     }
 
-    const { error } = await supabase.from('settings').upsert({ key, value, updated_by: profile!.id, updated_at: new Date().toISOString() });
-    if (error) return fail(400, { message: error.message });
+    const { error: dbError } = await supabase.from('settings').upsert({ key, value: value as Json, updated_by: profile!.id, updated_at: new Date().toISOString() });
+    if (dbError) return fail(400, { message: dbError.message });
     throw redirect(303, '/admin');
   },
 };

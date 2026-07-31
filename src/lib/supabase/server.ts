@@ -8,9 +8,11 @@ export const loadSupabase = (cookies: Cookies) => {
   return createServerClient<Database>(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
     auth: { autoRefreshToken: true, persistSession: true },
     cookies: {
-      get: (key) => cookies.get(key),
-      set: (key, value, options) => cookies.set(key, value, { ...options, path: '/' }),
-      remove: (key, options) => cookies.delete(key, { ...options, path: '/' }),
+      get: (key: string) => cookies.get(key),
+      set: (key: string, value: string, options: Record<string, unknown>) =>
+        cookies.set(key, value, { ...options, path: '/' }),
+      remove: (key: string, options: Record<string, unknown>) =>
+        cookies.delete(key, { ...options, path: '/' }),
     },
   });
 };

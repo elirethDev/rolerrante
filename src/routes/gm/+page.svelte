@@ -4,6 +4,12 @@
   import { Shield } from 'lucide-svelte';
 
   export let data: PageData;
+
+  // Player embed helper — supabase type inference loses nested join types on multi-FK tables
+  const playerName = (p: unknown): string =>
+    (p as { display_name?: string | null; username?: string })?.display_name ??
+    (p as { display_name?: string | null; username?: string })?.username ??
+    '';
 </script>
 
 <svelte:head>
@@ -23,7 +29,7 @@
           {#each data.characters as c}
             <a href="/personajes/{c.id}" class="block p-2 bg-base-100 rounded border border-azeroth-border hover:border-azeroth-gold">
               <p class="font-semibold">{c.name}</p>
-              <p class="text-xs text-gray-400">{c.race?.name} · {c.player?.display_name ?? c.player?.username} · {formatDate(c.created_at)}</p>
+              <p class="text-xs text-gray-400">{c.race?.name} · {playerName(c.player)} · {formatDate(c.created_at)}</p>
             </a>
           {/each}
         </div>
@@ -41,7 +47,7 @@
           {#each data.stories as s}
             <a href="/historias/{s.id}" class="block p-2 bg-base-100 rounded border border-azeroth-border hover:border-azeroth-gold">
               <p class="font-semibold">{s.title}</p>
-              <p class="text-xs text-gray-400">{s.character?.name} · {s.character?.player?.display_name ?? s.character?.player?.username} · {formatDate(s.created_at)}</p>
+              <p class="text-xs text-gray-400">{s.character?.name} · {playerName(s.character?.player)} · {formatDate(s.created_at)}</p>
             </a>
           {/each}
         </div>
@@ -59,7 +65,7 @@
           {#each data.skillRequests as req}
             <a href="/gm/solicitudes/{req.id}" class="block p-2 bg-base-100 rounded border border-azeroth-border hover:border-azeroth-gold">
               <p class="font-semibold">{req.character?.name} · {req.total_xp_cost} XP</p>
-              <p class="text-xs text-gray-400">{req.character?.player?.display_name ?? req.character?.player?.username} · {formatDate(req.created_at)}</p>
+              <p class="text-xs text-gray-400">{playerName(req.character?.player)} · {formatDate(req.created_at)}</p>
             </a>
           {/each}
         </div>
