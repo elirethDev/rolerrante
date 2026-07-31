@@ -1,0 +1,12 @@
+node_modules/
+.svelte-kit/
+build/
+.env
+.env.*
+!.env.example
+nodejs/
+installers/
+node-lts.*
+node-install.log
+*.log
+.DS_Store

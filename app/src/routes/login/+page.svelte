@@ -1,0 +1,52 @@
+<script lang="ts">
+  import { enhance } from '$app/forms';
+  import Turnstile from '$lib/components/ui/Turnstile.svelte';
+  import type { ActionData, PageData } from './$types';
+
+  export let data: PageData;
+  export let form: ActionData;
+
+  let turnstileToken = '';
+</script>
+
+<svelte:head>
+  <title>Iniciar sesión — RolErrante</title>
+</svelte:head>
+
+<section class="max-w-md mx-auto mt-10">
+  <div class="card bg-base-200 border border-azeroth-border shadow-xl">
+    <div class="card-body">
+      <h1 class="card-title text-2xl font-cinzel text-azeroth-gold justify-center">Iniciar sesión</h1>
+
+      {#if data.registrado}
+        <div class="alert alert-success text-sm mt-2">Cuenta creada. Ahora puedes iniciar sesión.</div>
+      {/if}
+      {#if form?.message}
+        <div class="alert alert-error text-sm mt-2">{form.message}</div>
+      {/if}
+
+      <form method="POST" use:enhance class="space-y-4 mt-4">
+        <div class="form-control">
+          <label class="label" for="email"><span class="label-text">Correo electrónico</span></label>
+          <input id="email" name="email" type="email" class="input input-bordered" required />
+        </div>
+
+        <div class="form-control">
+          <label class="label" for="password"><span class="label-text">Contraseña</span></label>
+          <input id="password" name="password" type="password" class="input input-bordered" required />
+        </div>
+
+        <div class="flex justify-center">
+          <Turnstile bind:token={turnstileToken} theme="dark" />
+        </div>
+        <input type="hidden" name="cf-turnstile-response" value={turnstileToken} />
+
+        <button type="submit" class="btn btn-primary w-full font-cinzel" disabled={!turnstileToken}>Entrar</button>
+      </form>
+
+      <div class="text-center text-sm mt-4">
+        ¿No tienes cuenta? <a href="/registro" class="link link-primary">Crear cuenta</a>
+      </div>
+    </div>
+  </div>
+</section>

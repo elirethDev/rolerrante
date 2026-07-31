@@ -1,0 +1,35 @@
+import { error, fail, redirect } from '@sveltejs/kit';
+import { isGMOrAdmin } from '$lib/auth';
+import type { Actions, PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async ({ params, locals: { supabase, profile } }) => {
+  const { data: story, error: dbError } = await supabase
+    .from('stories')
+    .select('*, character:character_id!inner(id, name, player_id, status, player:player_id!inner(display_name, username))')
+    .eq('id', params.id)
+    .single();
+
+  if (dbError || !story) throw error(404, 'Historia no encontrada');
+
+  const canView = story.status === 'aprobado' || profile?.role === 'admin' || profile?.role === 'gm' || story.character?.player_id === profile?.id;
+  if (!canView) throw error(403, 'No puedes ver esta historia');
+
+  return { story, profile };
+};
+
+export const actions: Actions = {
+  approve: async ({ params, locals: { supabase, profile } }) => {
+    if (!isGMOrAdmin(profile?.role ?? null)) throw error(403);
+    const { error } = await supabase.rpc('approve_story', { p_story_id: params.id, p_notes: null });
+    if (error) return fail(400, { message: error.message });
+    throw redirect(303, `/historias/${params.id}`);
+  },
+  reject: async ({ request, params, locals: { supabase, profile } }) => {
+    if (!isGMOrAdmin(profile?.role ?? null)) throw error(403);
+    const form = await request.formData();
+    const notes = String(form.get('notes') ?? '');
+    const { error } = await supabase.rpc('reject_story', { p_story_id: params.id, p_notes: notes });
+    if (error) return fail(400, { message: error.message });
+    throw redirect(303, `/historias/${params.id}`);
+  },
+};

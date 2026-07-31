@@ -1,0 +1,44 @@
+<script lang="ts">
+  import type { PageData } from './$types';
+  import { statusLabel, statusColor, formatDate } from '$lib/utils';
+  import { Scroll } from 'lucide-svelte';
+
+  export let data: PageData;
+</script>
+
+<svelte:head>
+  <title>Historias — RolErrante</title>
+</svelte:head>
+
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-3xl font-cinzel text-azeroth-gold flex items-center gap-3"><Scroll /> Historias</h1>
+  {#if data.profile}
+    <a href="/historias/nueva" class="btn btn-primary btn-sm font-cinzel">Nueva historia</a>
+  {/if}
+</div>
+
+{#if data.stories.length === 0}
+  <div class="text-center py-20 text-gray-400">
+    <p>Aún no hay historias públicas.</p>
+  </div>
+{:else}
+  <div class="grid md:grid-cols-2 gap-6">
+    {#each data.stories as story}
+      <a href="/historias/{story.id}" class="card bg-base-200 border border-azeroth-border hover:border-azeroth-gold transition-colors">
+        <div class="card-body">
+          <div class="flex justify-between items-start">
+            <h2 class="card-title font-cinzel text-lg">{story.title}</h2>
+            <span class="badge {statusColor(story.status)}">{statusLabel(story.status)}</span>
+          </div>
+          <p class="text-sm text-gray-400">
+            Por <span class="text-azeroth-gold">{story.character?.player?.display_name ?? story.character?.player?.username ?? 'Anónimo'}</span>
+            · {formatDate(story.created_at)}
+          </p>
+          {#if story.character}
+            <p class="text-sm">Personaje: <span class="font-semibold">{story.character.name}</span></p>
+          {/if}
+        </div>
+      </a>
+    {/each}
+  </div>
+{/if}
