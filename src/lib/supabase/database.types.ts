@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -665,6 +665,10 @@ export type Database = {
         Args: { p_event_id: string; p_notes?: string }
         Returns: undefined
       }
+      finalize_event: {
+        Args: { p_event_id: string; p_xp_per_participant: number }
+        Returns: undefined
+      }
       is_admin: { Args: never; Returns: boolean }
       is_gm_or_admin: { Args: never; Returns: boolean }
       log_audit: {
@@ -678,6 +682,10 @@ export type Database = {
       }
       reject_character: {
         Args: { p_character_id: string; p_notes: string }
+        Returns: undefined
+      }
+      reject_skill_request: {
+        Args: { p_notes: string; p_request_id: string }
         Returns: undefined
       }
       reject_story: {
