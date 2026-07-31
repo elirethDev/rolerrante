@@ -7,7 +7,10 @@
 
   const nav = [
     { href: '/admin', label: 'Dashboard' },
+    { href: '/admin/usuarios', label: 'Usuarios' },
     { href: '/admin/catalogos', label: 'Catálogos' },
+    { href: '/admin/logs', label: 'Auditoría' },
+    { href: '/admin/ajustes', label: 'Ajustes' },
   ];
 </script>
 
