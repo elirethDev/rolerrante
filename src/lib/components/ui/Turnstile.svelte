@@ -8,34 +8,60 @@
   let container: HTMLDivElement;
   let widgetId: string | undefined;
 
+  // Module-level singleton — prevents duplicate script tags across component instances
+  let scriptPromise: Promise<void> | null = null;
+
   function loadScript(): Promise<void> {
-    return new Promise((resolve) => {
-      if (document.querySelector('script[src*="turnstile"]')) {
-        if (window.turnstile) { resolve(); return; }
-      }
+    if (scriptPromise) return scriptPromise;
+
+    scriptPromise = new Promise((resolve, reject) => {
+      // Clean up any stale Turnstile script tags first
+      const stale = document.querySelectorAll('script[src*="turnstile"]');
+      stale.forEach((s) => s.remove());
+
+      // Reset turnstile global so it reinitialises clean
+      delete (window as any).turnstile;
+
       const script = document.createElement('script');
       script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
       script.async = true;
       script.defer = true;
       script.onload = () => resolve();
+      script.onerror = () => {
+        scriptPromise = null;
+        reject(new Error('Turnstile script failed to load'));
+      };
       document.head.appendChild(script);
     });
+
+    return scriptPromise;
   }
 
   onMount(() => {
-    loadScript().then(() => {
-      if (!container || !window.turnstile) return;
-      widgetId = window.turnstile.render(container, {
-        sitekey: PUBLIC_TURNSTILE_SITE_KEY,
-        theme,
-        callback: (t: string) => {
-          token = t;
-        },
-        'expired-callback': () => {
-          token = '';
-        },
+    loadScript()
+      .then(() => {
+        if (!container || !window.turnstile) return;
+        try {
+          widgetId = window.turnstile.render(container, {
+            sitekey: PUBLIC_TURNSTILE_SITE_KEY,
+            theme,
+            callback: (t: string) => {
+              token = t;
+            },
+            'expired-callback': () => {
+              token = '';
+            },
+            'error-callback': () => {
+              token = '';
+            },
+          });
+        } catch (e) {
+          console.error('Turnstile render failed:', e);
+        }
+      })
+      .catch((e) => {
+        console.error('Turnstile load failed:', e);
       });
-    });
 
     return () => {
       if (widgetId && window.turnstile) {
