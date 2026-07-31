@@ -6,6 +6,11 @@ declare global {
   namespace App {
     interface Locals {
       supabase: SupabaseClient<Database>;
+      session: import('@supabase/supabase-js').Session | null;
+      safeGetSession: () => Promise<{
+        session: import('@supabase/supabase-js').Session | null;
+        user: import('@supabase/supabase-js').User | null;
+      }>;
       user: import('@supabase/supabase-js').User | null;
       profile: {
         id: string;
