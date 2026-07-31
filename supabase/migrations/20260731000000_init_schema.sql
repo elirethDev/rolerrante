@@ -1,21 +1,10 @@
-# Esquema de base de datos (Supabase Postgres)
-
-Aplica las migraciones con `npx supabase db push` (requiere `supabase login`). La migración inicial está en `supabase/migrations/20260731000000_init_schema.sql`.
-
-## 1. Extensiones y tipos personalizados
-
-```sql
 -- Tipos enumerados
 CREATE TYPE user_role AS ENUM ('pendiente', 'rolero', 'gm', 'admin');
 CREATE TYPE approval_status AS ENUM ('borrador', 'pendiente', 'aprobado', 'rechazado');
 CREATE TYPE event_type AS ENUM ('casual', 'evento', 'campana');
 CREATE TYPE event_status AS ENUM ('publicado', 'en_curso', 'finalizacion_pendiente', 'finalizado', 'cancelado');
 CREATE TYPE audit_action AS ENUM ('aprobar', 'rechazar', 'editar', 'otorgar_xp', 'finalizar_evento', 'cambiar_rol', 'editar_catalogo', 'editar_settings');
-```
 
-## 2. Perfiles (se crean automáticamente al registrarse)
-
-```sql
 CREATE TABLE public.profiles (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   username text UNIQUE NOT NULL,
@@ -34,7 +23,6 @@ CREATE POLICY "Perfiles publicamente visibles" ON public.profiles
 CREATE POLICY "Usuarios editan su propio perfil" ON public.profiles
   FOR UPDATE USING (auth.uid() = id);
 
--- Trigger para crear perfil al registrarse
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -52,13 +40,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-```
 
-## 3. Catálogos de reglas
-
-### Razas
-
-```sql
 CREATE TABLE public.races (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text UNIQUE NOT NULL,
@@ -76,11 +58,26 @@ ALTER TABLE public.races ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Razas publicamente visibles" ON public.races FOR SELECT USING (true);
 CREATE POLICY "Admin gestiona razas" ON public.races
   FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
-```
 
-Seed de razas (extraído del archivo SISTEMA):
+CREATE OR REPLACE FUNCTION public.is_gm_or_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role IN ('gm', 'admin')
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
-```sql
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 INSERT INTO public.races (name, group_name, description, magic_access, size) VALUES
 ('Humanos', 'Reinos Aliados', 'Raza más extendida y versátil de Azeroth.', ARRAY['Luz','Magia Arcana','Vacío','Magia Vil','Druidismo','Chamanismo'], 'Medio'),
 ('Enanos', 'Reinos Aliados', 'Aliados ancestrales de los humanos, de constitución robusta.', ARRAY['Luz','Magia Arcana','Vacío','Magia Vil','Chamanismo'], 'Medio'),
@@ -107,11 +104,7 @@ INSERT INTO public.races (name, group_name, description, magic_access, size) VAL
 ('Trols de la Arena', 'Pueblos Libres', 'Supervivientes natos de los desiertos de Tanaris.', ARRAY['Magia Arcana','Chamanismo','Vacío'], 'Medio'),
 ('Vulpera', 'Pueblos Libres', 'Pequeños mamíferos errantes en caravanas.', ARRAY['Magia Arcana','Chamanismo','Vacío'], 'Pequeño'),
 ('Sethrak', 'Pueblos Libres', 'Hombres serpiente de imperio esclavista colapsado.', ARRAY['Magia Arcana','Chamanismo','Vacío'], 'Medio');
-```
 
-### Habilidades
-
-```sql
 CREATE TABLE public.skills (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
@@ -128,11 +121,7 @@ ALTER TABLE public.skills ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Habilidades publicamente visibles" ON public.skills FOR SELECT USING (true);
 CREATE POLICY "Admin gestiona habilidades" ON public.skills
   FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
-```
 
-Seed de habilidades (extraído del archivo SISTEMA):
-
-```sql
 INSERT INTO public.skills (name, attribute, description, requires_specialization, specializations) VALUES
 ('Armas cuerpo a cuerpo', 'F', 'Uso de armas pesadas y medianas cuerpo a cuerpo.', true, ARRAY['Espadón','Combate Desarmado Ofensivo','Espada Pesada','Alabarda','Maza','Hacha','Lanza']),
 ('Atletismo', 'F', 'Capacidad física general entrenada: saltar, correr, resistir.', false, '{}'),
@@ -171,11 +160,7 @@ INSERT INTO public.skills (name, attribute, description, requires_specialization
 ('Reflejos', 'P', 'Reacción rápida y velocidad en combate.', false, '{}'),
 ('Rumores', 'P', 'Conocer rumores y noticias del pueblo.', false, '{}'),
 ('Voluntad', 'E', 'Resiliencia mental contra influencias externas.', false, '{}');
-```
 
-### Configuración del sistema (settings)
-
-```sql
 CREATE TABLE public.settings (
   key text PRIMARY KEY,
   value jsonb NOT NULL,
@@ -193,11 +178,7 @@ INSERT INTO public.settings (key, value) VALUES
 ('character_creation', '{"attribute_points": 13, "skill_points": 30, "min_attribute": 4, "max_attribute": 10, "max_initial_skill_level": 2}'::jsonb),
 ('xp_rewards', '{"participacion": 1, "crear_evento": 3, "campana_larga": 6, "dias_campana_larga": 7}'::jsonb),
 ('skill_rank_names', '{"1":"Aprendiz","2":"Aprendiz","3":"Formado","4":"Formado","5":"Diestro","6":"Diestro","7":"Experto","8":"Experto","9":"Maestro","10":"Maestro"}'::jsonb);
-```
 
-## 4. Personajes e historias
-
-```sql
 CREATE TABLE public.characters (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   player_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -232,11 +213,7 @@ CREATE POLICY "Jugadores gestionan sus personajes" ON public.characters
 
 CREATE POLICY "GM/Admin gestionan personajes" ON public.characters
   FOR ALL USING (is_gm_or_admin());
-```
 
-### Historias
-
-```sql
 CREATE TABLE public.stories (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   character_id uuid NOT NULL REFERENCES public.characters(id) ON DELETE CASCADE,
@@ -264,11 +241,7 @@ CREATE POLICY "Jugadores editan historias de sus personajes" ON public.stories
 
 CREATE POLICY "GM/Admin gestionan historias" ON public.stories
   FOR ALL USING (is_gm_or_admin());
-```
 
-### Habilidades de personaje
-
-```sql
 CREATE TABLE public.character_skills (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   character_id uuid NOT NULL REFERENCES public.characters(id) ON DELETE CASCADE,
@@ -277,7 +250,7 @@ CREATE TABLE public.character_skills (
   level int NOT NULL DEFAULT 1 CHECK (level >= 1 AND level <= 10),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (character_id, skill_id, COALESCE(specialization, ''))
+  UNIQUE (character_id, skill_id, specialization)
 );
 
 ALTER TABLE public.character_skills ENABLE ROW LEVEL SECURITY;
@@ -295,11 +268,7 @@ CREATE POLICY "Jugadores gestionan habilidades propias" ON public.character_skil
 
 CREATE POLICY "GM/Admin gestionan habilidades" ON public.character_skills
   FOR ALL USING (is_gm_or_admin());
-```
 
-## 5. Eventos, sesiones y participantes
-
-```sql
 CREATE TABLE public.events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   creator_id uuid NOT NULL REFERENCES public.profiles(id),
@@ -330,11 +299,7 @@ CREATE POLICY "Creador edita sus eventos" ON public.events
 
 CREATE POLICY "GM/Admin gestionan eventos" ON public.events
   FOR ALL USING (is_gm_or_admin());
-```
 
-### Sesiones de evento (masteos)
-
-```sql
 CREATE TABLE public.event_sessions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   event_id uuid NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
@@ -351,11 +316,7 @@ CREATE POLICY "Creador/GM gestionan sesiones" ON public.event_sessions
   FOR ALL USING (EXISTS (
     SELECT 1 FROM public.events e WHERE e.id = event_sessions.event_id AND (e.creator_id = auth.uid() OR is_gm_or_admin())
   ));
-```
 
-### Participantes
-
-```sql
 CREATE TABLE public.event_participants (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   event_id uuid NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
@@ -377,11 +338,7 @@ CREATE POLICY "Jugadores inscriben sus personajes" ON public.event_participants
 
 CREATE POLICY "GM/Admin gestionan participaciones" ON public.event_participants
   FOR ALL USING (is_gm_or_admin());
-```
 
-## 6. Solicitudes de habilidad
-
-```sql
 CREATE TABLE public.skill_requests (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   character_id uuid NOT NULL REFERENCES public.characters(id),
@@ -428,11 +385,7 @@ CREATE POLICY "Items visibles según request" ON public.skill_request_items
   ));
 CREATE POLICY "GM/Admin gestionan items" ON public.skill_request_items
   FOR ALL USING (is_gm_or_admin());
-```
 
-## 7. XP y auditoría
-
-```sql
 CREATE TABLE public.xp_transactions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   character_id uuid NOT NULL REFERENCES public.characters(id),
@@ -463,11 +416,7 @@ CREATE TABLE public.audit_logs (
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Audit logs solo admin" ON public.audit_logs
   FOR SELECT USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
-```
 
-## 8. Funciones helper (Postgres)
-
-```sql
 CREATE OR REPLACE FUNCTION public.is_gm_or_admin()
 RETURNS BOOLEAN AS $$
 BEGIN
@@ -499,13 +448,7 @@ BEGIN
   VALUES (auth.uid(), p_action, p_entity_type, p_entity_id, p_details);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-```
 
-## 9. Funciones de negocio atómicas
-
-### Aprobar historia y ascender a rolero
-
-```sql
 CREATE OR REPLACE FUNCTION public.approve_story(p_story_id uuid, p_notes text DEFAULT NULL)
 RETURNS void AS $$
 DECLARE
@@ -530,11 +473,7 @@ BEGIN
   PERFORM public.log_audit('aprobar', 'story', p_story_id, jsonb_build_object('notes', p_notes));
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-```
 
-### Aprobar ficha
-
-```sql
 CREATE OR REPLACE FUNCTION public.approve_character(p_character_id uuid, p_notes text DEFAULT NULL)
 RETURNS void AS $$
 BEGIN
@@ -545,11 +484,7 @@ BEGIN
   PERFORM public.log_audit('aprobar', 'character', p_character_id, jsonb_build_object('notes', p_notes));
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-```
 
-### Rechazar
-
-```sql
 CREATE OR REPLACE FUNCTION public.reject_story(p_story_id uuid, p_notes text)
 RETURNS void AS $$
 BEGIN
@@ -569,11 +504,7 @@ BEGIN
   PERFORM public.log_audit('rechazar', 'character', p_character_id, jsonb_build_object('notes', p_notes));
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-```
 
-### Aprobar solicitud de habilidad (gasta XP)
-
-```sql
 CREATE OR REPLACE FUNCTION public.approve_skill_request(p_request_id uuid, p_notes text DEFAULT NULL)
 RETURNS void AS $$
 DECLARE
@@ -590,33 +521,25 @@ BEGIN
     RAISE EXCEPTION 'Puntos de rol insuficientes';
   END IF;
 
-  -- Descontar XP
   UPDATE public.characters SET rp_points = rp_points - v_total_cost WHERE id = v_character_id;
 
-  -- Insertar/actualizar habilidades
   INSERT INTO public.character_skills (character_id, skill_id, specialization, level)
   SELECT v_character_id, skill_id, specialization, to_level
   FROM public.skill_request_items WHERE request_id = p_request_id
-  ON CONFLICT (character_id, skill_id, COALESCE(specialization, ''))
+  ON CONFLICT (character_id, skill_id, specialization)
   DO UPDATE SET level = EXCLUDED.level;
 
-  -- Marcar request como aprobada
   UPDATE public.skill_requests
   SET status = 'aprobado', reviewer_id = auth.uid(), review_notes = p_notes, reviewed_at = now()
   WHERE id = p_request_id;
 
-  -- Registrar transacción
   INSERT INTO public.xp_transactions (character_id, amount, reason, source, source_id, awarded_by)
   VALUES (v_character_id, -v_total_cost, 'Compra de habilidades', 'skill_request', p_request_id, auth.uid());
 
   PERFORM public.log_audit('aprobar', 'skill_request', p_request_id, jsonb_build_object('notes', p_notes, 'xp_cost', v_total_cost));
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-```
 
-### Finalizar evento y otorgar XP
-
-```sql
 CREATE OR REPLACE FUNCTION public.confirm_event_completion(p_event_id uuid, p_notes text DEFAULT NULL)
 RETURNS void AS $$
 DECLARE
@@ -638,7 +561,6 @@ BEGIN
   v_xp_campaign := (SELECT (value->>'campana_larga')::int FROM public.settings WHERE key = 'xp_rewards');
   v_days_threshold := (SELECT (value->>'dias_campana_larga')::int FROM public.settings WHERE key = 'xp_rewards');
 
-  -- XP al creador
   INSERT INTO public.xp_transactions (character_id, amount, reason, source, source_id, awarded_by)
   SELECT id, v_xp_creator, 'Crear evento', 'event', p_event_id, auth.uid()
   FROM public.characters
@@ -648,7 +570,6 @@ BEGIN
   UPDATE public.characters SET rp_points = rp_points + v_xp_creator
   WHERE player_id = v_creator AND status = 'aprobado';
 
-  -- XP a participantes confirmados
   UPDATE public.characters SET rp_points = rp_points + v_xp_participation
   WHERE id IN (SELECT character_id FROM public.event_participants WHERE event_id = p_event_id AND status = 'confirmado');
 
@@ -659,7 +580,6 @@ BEGIN
   UPDATE public.event_participants SET xp_awarded = v_xp_participation
   WHERE event_id = p_event_id AND status = 'confirmado';
 
-  -- Bonus campaña larga
   IF v_type = 'campana' AND v_start IS NOT NULL AND v_end IS NOT NULL AND EXTRACT(EPOCH FROM (v_end - v_start))/86400 >= v_days_threshold THEN
     UPDATE public.characters SET rp_points = rp_points + v_xp_campaign
     WHERE id IN (SELECT character_id FROM public.event_participants WHERE event_id = p_event_id AND status = 'confirmado');
@@ -679,11 +599,7 @@ BEGIN
   PERFORM public.log_audit('finalizar_evento', 'event', p_event_id, jsonb_build_object('notes', p_notes));
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-```
 
-## 10. Triggers de validación
-
-```sql
 CREATE OR REPLACE FUNCTION public.validate_character_attributes()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -708,7 +624,6 @@ BEGIN
     RAISE EXCEPTION 'Distribución de atributos incorrecta';
   END IF;
 
-  -- Regla del 10↔4: si hay un 10, debe haber al menos un 4
   IF (
     NEW.attr_fis = v_max OR NEW.attr_des = v_max OR NEW.attr_int = v_max OR NEW.attr_per = v_max OR NEW.attr_esp = v_max
   ) AND NOT (
@@ -724,22 +639,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trg_validate_character_attributes
   BEFORE INSERT OR UPDATE ON public.characters
   FOR EACH ROW EXECUTE FUNCTION public.validate_character_attributes();
-```
 
-## 11. Storage para imágenes
-
-Crear 3 buckets en Supabase Storage:
-- `avatars` (imágenes de perfil)
-- `story-images` (imágenes de historias)
-- `event-images` (imágenes de eventos)
-
-Políticas sugeridas (desde el dashboard de Storage):
-- `avatars`: lectura pública, escritura solo por el propietario del perfil.
-- `story-images` y `event-images`: lectura pública, escritura por usuarios autenticados.
-
-## 12. Índices recomendados
-
-```sql
 CREATE INDEX idx_characters_player ON public.characters(player_id);
 CREATE INDEX idx_characters_status ON public.characters(status);
 CREATE INDEX idx_stories_character ON public.stories(character_id);
@@ -750,12 +650,3 @@ CREATE INDEX idx_event_participants_event ON public.event_participants(event_id)
 CREATE INDEX idx_xp_transactions_character ON public.xp_transactions(character_id);
 CREATE INDEX idx_audit_logs_actor ON public.audit_logs(actor_id);
 CREATE INDEX idx_audit_logs_entity ON public.audit_logs(entity_type, entity_id);
-```
-
-## 13. Primer usuario admin
-
-Tras registrarte en la app, ejecutar en SQL Editor:
-
-```sql
-UPDATE public.profiles SET role = 'admin' WHERE username = 'TU_USERNAME';
-```

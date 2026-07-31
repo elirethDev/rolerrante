@@ -15,8 +15,11 @@ Para completar la Fase 1, debes realizar estos pasos en el dashboard de Supabase
 ### 1. Ejecutar el esquema SQL
 1. Abre el SQL Editor del proyecto:
    https://supabase.com/dashboard/project/dclkjcsvymjqkktvntdy/editor
-2. Crea una nueva consulta y pega TODO el contenido de `docs/supabase-schema.sql`.
-3. Ejecuta la consulta. Esto creará tablas, tipos, RLS, triggers, funciones y seed de razas/habilidades.
+2. Ejecuta el comando de migración (requiere `supabase login` previo):
+   ```bash
+   npx supabase db push
+   ```
+   Esto aplica `supabase/migrations/20260731000000_init_schema.sql` — crea tablas, tipos, RLS, triggers, funciones y seed de razas/habilidades.
 
 ### 2. Crear buckets de Storage
 1. Ve a Storage:
