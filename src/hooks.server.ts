@@ -2,7 +2,7 @@ import type { Handle } from '@sveltejs/kit';
 import { loadSupabase } from '$lib/supabase/server';
 import { checkRateLimit, getClientIP } from '$lib/rateLimit';
 
-const CSP = "default-src 'self'; script-src 'self' https://challenges.cloudflare.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com; img-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co";
+const CSP = "default-src 'self'; script-src 'self' https://challenges.cloudflare.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com; img-src 'self' data: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co";
 
 // Rutas de formularios que necesitan rate limiting
 const FORM_ROUTES = new Set([
