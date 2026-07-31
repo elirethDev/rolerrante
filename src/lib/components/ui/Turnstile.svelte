@@ -8,35 +8,36 @@
   let container: HTMLDivElement;
   let widgetId: string | undefined;
 
-  onMount(() => {
-    // Cargar script si no está
-    if (!document.querySelector('script[src*="turnstile"]')) {
+  function loadScript(): Promise<void> {
+    return new Promise((resolve) => {
+      if (document.querySelector('script[src*="turnstile"]')) {
+        if (window.turnstile) { resolve(); return; }
+      }
       const script = document.createElement('script');
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad';
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
       script.async = true;
       script.defer = true;
+      script.onload = () => resolve();
       document.head.appendChild(script);
-    }
+    });
+  }
 
-    // Esperar a que turnstile esté disponible
-    const interval = setInterval(() => {
-      if (window.turnstile && container) {
-        clearInterval(interval);
-        widgetId = window.turnstile.render(container, {
-          sitekey: PUBLIC_TURNSTILE_SITE_KEY,
-          theme,
-          callback: (t: string) => {
-            token = t;
-          },
-          'expired-callback': () => {
-            token = '';
-          },
-        });
-      }
-    }, 100);
+  onMount(() => {
+    loadScript().then(() => {
+      if (!container || !window.turnstile) return;
+      widgetId = window.turnstile.render(container, {
+        sitekey: PUBLIC_TURNSTILE_SITE_KEY,
+        theme,
+        callback: (t: string) => {
+          token = t;
+        },
+        'expired-callback': () => {
+          token = '';
+        },
+      });
+    });
 
     return () => {
-      clearInterval(interval);
       if (widgetId && window.turnstile) {
         window.turnstile.remove(widgetId);
       }
