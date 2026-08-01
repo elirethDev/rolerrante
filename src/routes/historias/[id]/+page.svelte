@@ -3,7 +3,6 @@
   import TipTapEditor from '$lib/components/editor/TipTapEditor.svelte';
   import { isGMOrAdmin } from '$lib/auth';
   import { statusLabel, statusColor, formatDate } from '$lib/utils';
-  import { sanitizeHtml } from '$lib/sanitize';
   import TipTapViewer from '$lib/components/editor/TipTapViewer.svelte';
   import type { ActionData, PageData } from './$types';
 
@@ -13,7 +12,6 @@
   $: story = data.story;
   $: isOwner = data.profile?.id === story.character?.player_id;
   $: canModerate = isGMOrAdmin(data.profile?.role ?? null);
-  $: safeContent = sanitizeHtml(String(story.content));
 
   // Player embed helper — supabase type inference loses nested join types on multi-FK tables
   const playerName = (p: unknown): string =>
@@ -48,7 +46,7 @@
   {/if}
 
   <div class="prose prose-invert max-w-none bg-base-100 border border-azeroth-border rounded-lg p-6">
-    <TipTapViewer content={safeContent} />
+    <TipTapViewer content={String(story.content)} />
   </div>
 
   {#if canModerate && story.status === 'pendiente'}
