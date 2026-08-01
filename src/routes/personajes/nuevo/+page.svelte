@@ -1,6 +1,8 @@
 <script lang="ts">
   import { groupSkillsByAttribute, skillCreationCost, attributeCost, validateAttributes, ATTR_POINTS_BUDGET } from '$lib/rules';
+  import { enhance } from '$app/forms';
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
+  import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
   import AttributeInput from '$lib/components/forms/AttributeInput.svelte';
   import type { ActionData, PageData } from './$types';
   import type { Skill } from '$lib/types';
@@ -8,6 +10,7 @@
   export let data: PageData;
   export let form: ActionData;
 
+  let pending = false;
   let grouped = groupSkillsByAttribute(data.skills as unknown as Skill[] ?? []);
   let turnstileToken = '';
 
@@ -62,7 +65,16 @@
     </div>
   {/if}
 
-  <form method="POST">
+  <form
+    method="POST"
+    use:enhance={() => {
+      pending = true;
+      return async ({ result, update }) => {
+        pending = false;
+        await update();
+      };
+    }}
+  >
     <!-- DATOS BÁSICOS -->
     <div class="card bg-base-200 border border-azeroth-border mb-6">
       <div class="card-body">
@@ -195,9 +207,9 @@
 
     <!-- BOTONES -->
     <div class="flex gap-3 items-center">
-      <button type="submit" class="btn btn-primary font-cinzel" disabled={!canSubmit || !turnstileToken}>
+      <SubmitButton class="font-cinzel" disabled={!canSubmit || !turnstileToken} pending={pending}>
         Crear personaje
-      </button>
+      </SubmitButton>
       <a href="/personajes" class="btn btn-ghost">Cancelar</a>
       {#if !canSubmit}
         <span class="text-xs text-error">Corrige los errores antes de enviar</span>

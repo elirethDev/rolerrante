@@ -2,11 +2,13 @@
   import { enhance } from '$app/forms';
   import TipTapEditor from '$lib/components/editor/TipTapEditor.svelte';
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
+  import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
   import type { ActionData, PageData } from './$types';
 
   export let data: PageData;
   export let form: ActionData;
 
+  let pending = false;
   let title = '';
   let characterId = data.characters[0]?.id ?? '';
   let content = '<p>Escribe tu historia aquí...</p>';
@@ -28,7 +30,17 @@
     <div class="alert alert-warning">Necesitas al menos un personaje para escribir una historia.</div>
     <a href="/personajes/nuevo" class="btn btn-primary mt-4">Crear personaje</a>
   {:else}
-    <form method="POST" use:enhance class="space-y-4">
+    <form
+      method="POST"
+      use:enhance={() => {
+        pending = true;
+        return async ({ result, update }) => {
+          pending = false;
+          await update();
+        };
+      }}
+      class="space-y-4"
+    >
       <div class="form-control">
         <label class="label" for="character_id"><span class="label-text">Personaje</span></label>
         <select id="character_id" name="character_id" class="select select-bordered" bind:value={characterId} required>
@@ -55,7 +67,7 @@
       <input type="hidden" name="cf-turnstile-response" value={turnstileToken} />
 
       <div class="flex gap-3">
-        <button type="submit" class="btn btn-primary font-cinzel" disabled={!turnstileToken}>Enviar a revisión</button>
+        <SubmitButton class="font-cinzel" disabled={!turnstileToken} pending={pending}>Enviar a revisión</SubmitButton>
         <a href="/historias" class="btn btn-ghost">Cancelar</a>
       </div>
     </form>
