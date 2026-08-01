@@ -4,6 +4,7 @@
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
   import AttributeInput from '$lib/components/forms/AttributeInput.svelte';
+  import CombatValues from '$lib/components/sheets/CombatValues.svelte';
   import type { ActionData, PageData } from './$types';
   import type { Skill } from '$lib/types';
 
@@ -38,6 +39,23 @@
     ...(skillSpent > SKILL_POINTS ? [`Has gastado ${skillSpent} de ${SKILL_POINTS} puntos de habilidad`] : []),
   ];
   $: canSubmit = totalErrors.length === 0;
+
+  // Vista previa de valores de combate en vivo
+  $: previewAttrs = {
+    attr_fis: attrValues.attr_fis,
+    attr_des: attrValues.attr_des,
+    attr_int: attrValues.attr_int,
+    attr_per: attrValues.attr_per,
+    attr_esp: attrValues.attr_esp,
+  };
+  $: previewSkills = Object.entries(skillLevels)
+    .filter(([, lvl]) => lvl > 0)
+    .map(([id, level]) => {
+      const skill = (data.skills as unknown as Skill[])?.find((s) => s.id === id);
+      return skill
+        ? { skill: { name: skill.name, attribute: skill.attribute }, level }
+        : { level };
+    });
 
   function handleSkillInput(key: string, e: Event) {
     const val = parseInt((e.target as HTMLInputElement).value) || 0;
@@ -197,6 +215,11 @@
           </div>
         {/each}
       </div>
+    </div>
+
+    <!-- VISTA PREVIA DE COMBATE -->
+    <div class="mb-6">
+      <CombatValues attrs={previewAttrs} skills={previewSkills} />
     </div>
 
     <!-- TURNSTILE -->
