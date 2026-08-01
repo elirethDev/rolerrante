@@ -2,6 +2,8 @@
   import { enhance } from '$app/forms';
   import { isGMOrAdmin } from '$lib/auth';
   import { statusLabel, statusColor, formatDateTime } from '$lib/utils';
+  import TipTapViewer from '$lib/components/editor/TipTapViewer.svelte';
+  import ParticipantList from '$lib/components/events/ParticipantList.svelte';
   import type { ActionData, PageData } from './$types';
 
   export let data: PageData;
@@ -31,26 +33,12 @@
     <span class="badge badge-lg {statusColor(event.status)}">{statusLabel(event.status)}</span>
   </div>
 
-  <div class="prose prose-invert max-w-none bg-base-100 border border-azeroth-border rounded-lg p-6 mb-6">
-    {@html event.description}
+  <div class="bg-base-100 border border-azeroth-border rounded-lg p-6 mb-6">
+    <TipTapViewer content={String(event.description)} />
   </div>
 
-  <div class="card bg-base-200 border border-azeroth-border mb-6">
-    <div class="card-body">
-      <h2 class="card-title font-cinzel text-azeroth-gold">Participantes ({participants.length}{#if event.max_players}/{event.max_players}{/if})</h2>
-      {#if participants.length === 0}
-        <p class="text-gray-400">Nadie se ha inscrito todavía.</p>
-      {:else}
-        <ul class="divide-y divide-azeroth-border">
-          {#each participants as p}
-            <li class="py-2 flex justify-between">
-              <span>{p.character?.name}</span>
-              <span class="badge {statusColor(p.status)}">{statusLabel(p.status)}</span>
-            </li>
-          {/each}
-        </ul>
-      {/if}
-    </div>
+  <div class="mb-6">
+    <ParticipantList participants={participants} maxPlayers={event.max_players} />
   </div>
 
   {#if data.profile && isOpen}
