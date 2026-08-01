@@ -4,6 +4,7 @@
   import { isGMOrAdmin } from '$lib/auth';
   import { statusLabel, statusColor, formatDate } from '$lib/utils';
   import { sanitizeHtml } from '$lib/sanitize';
+  import TipTapViewer from '$lib/components/editor/TipTapViewer.svelte';
   import type { ActionData, PageData } from './$types';
 
   export let data: PageData;
@@ -47,7 +48,7 @@
   {/if}
 
   <div class="prose prose-invert max-w-none bg-base-100 border border-azeroth-border rounded-lg p-6">
-    {@html safeContent}
+    <TipTapViewer content={safeContent} />
   </div>
 
   {#if canModerate && story.status === 'pendiente'}
