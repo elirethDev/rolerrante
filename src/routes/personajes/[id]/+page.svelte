@@ -1,30 +1,17 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { combatValues, ATTRIBUTE_LABELS } from '$lib/rules';
   import { statusLabel, statusColor, formatDate } from '$lib/utils';
-  import type { Character, CharacterSkill } from '$lib/types';
-  import { Shield, Heart, Zap, Swords } from 'lucide-svelte';
+  import type { Character } from '$lib/types';
+  import CombatValues from '$lib/components/sheets/CombatValues.svelte';
+  import CharacterSheetSummary from '$lib/components/sheets/CharacterSheetSummary.svelte';
 
   export let data: PageData;
 
   // character comes from Supabase join query with embedded skills, stories, race
-  // Use auto-inferred DB type but cast to Character at combatValues call site
+  // Use auto-inferred DB type but cast to Character at component call sites
   $: character = data.character;
   $: skills = (character.skills ?? []).filter((s: { level: number }) => s.level > 0);
-  $: combat = combatValues(character as unknown as Character, character.skills as unknown as CharacterSkill[] ?? []);
   $: canModerate = data.profile?.role === 'gm' || data.profile?.role === 'admin';
-
-  const ATTR_KEY_TO_COLUMN: Record<string, string> = {
-    F: 'attr_fis',
-    D: 'attr_des',
-    I: 'attr_int',
-    P: 'attr_per',
-    E: 'attr_esp',
-  };
-
-  // Index-safe attribute accessor — DB row type lacks index signature
-  const charAttr = (key: string) =>
-    (character as Record<string, unknown>)[ATTR_KEY_TO_COLUMN[key]] ?? '?';
 </script>
 
 <svelte:head>
@@ -32,30 +19,10 @@
 </svelte:head>
 
 <section class="max-w-4xl mx-auto">
-  <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
-    <div>
-      <h1 class="text-4xl font-cinzel text-azeroth-gold">{character.name}</h1>
-      <p class="text-gray-400">{character.race?.name ?? ''} · {character.age ?? '?'} años · {character.sex ?? ''}</p>
-    </div>
-    <span class="badge badge-lg {statusColor(character.status)}">{statusLabel(character.status)}</span>
-  </div>
+  <CharacterSheetSummary character={character as unknown as Character} />
 
-  <div class="grid md:grid-cols-3 gap-6">
+  <div class="grid md:grid-cols-3 gap-6 mt-6">
     <div class="md:col-span-2 space-y-6">
-      <div class="card bg-base-200 border border-azeroth-border">
-        <div class="card-body">
-          <h2 class="card-title font-cinzel text-azeroth-gold">Atributos</h2>
-          <div class="grid grid-cols-5 gap-4 text-center">
-            {#each Object.entries(ATTRIBUTE_LABELS) as [key, label]}
-              <div class="bg-base-100 rounded p-3 border border-azeroth-border">
-                <p class="text-xs text-gray-400 uppercase">{label}</p>
-                <p class="text-2xl font-cinzel text-azeroth-gold">{charAttr(key)}</p>
-              </div>
-            {/each}
-          </div>
-        </div>
-      </div>
-
       <div class="card bg-base-200 border border-azeroth-border">
         <div class="card-body">
           <h2 class="card-title font-cinzel text-azeroth-gold">Habilidades</h2>
@@ -102,20 +69,17 @@
     </div>
 
     <div class="space-y-6">
-      <div class="card bg-base-200 border border-azeroth-border">
-        <div class="card-body">
-          <h2 class="card-title font-cinzel text-azeroth-gold flex items-center gap-2"><Swords size={18} /> Combate</h2>
-          <ul class="space-y-2 mt-2">
-            <li class="flex items-center gap-2"><Heart size={16} /> PV: <span class="font-bold">{combat.pv}</span></li>
-            <li class="flex items-center gap-2"><Zap size={16} /> PM: <span class="font-bold">{combat.pm}</span></li>
-            <li class="flex items-center gap-2"><Shield size={16} /> Iniciativa: <span class="font-bold">{combat.iniciativa}</span></li>
-            <li class="flex items-center gap-2"><Swords size={16} /> Ataque CC: <span class="font-bold">{combat.ataqueCC}</span></li>
-            <li class="flex items-center gap-2"><Swords size={16} /> Ataque CC sutil: <span class="font-bold">{combat.ataqueCCSutil}</span></li>
-            <li class="flex items-center gap-2"><Swords size={16} /> Ataque dist.: <span class="font-bold">{combat.ataqueDistancia}</span></li>
-            <li class="flex items-center gap-2"><Shield size={16} /> Defensa: <span class="font-bold">{combat.defensa}</span></li>
-          </ul>
-        </div>
-      </div>
+      <CombatValues
+        attrs={{
+          attr_fis: character.attr_fis,
+          attr_des: character.attr_des,
+          attr_int: character.attr_int,
+          attr_per: character.attr_per,
+          attr_esp: character.attr_esp,
+          mana_source: character.mana_source as 'I' | 'E',
+        }}
+        skills={skills}
+      />
 
       <div class="card bg-base-200 border border-azeroth-border">
         <div class="card-body">
