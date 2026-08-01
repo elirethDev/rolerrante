@@ -12,7 +12,7 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    setupFiles: ["./src/test/setup.ts"],
+    setupFiles: ["./src/test/setup.ts", "./src/test/pm-polyfill.ts"],
     include: ["tests/**/*.test.ts", "src/**/*.test.ts"],
     css: false,
     mockReset: true,

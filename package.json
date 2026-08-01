@@ -44,13 +44,12 @@
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.0",
-    "@tiptap/core": "^2.11.0",
-    "@tiptap/extension-color": "^2.11.0",
-    "@tiptap/extension-image": "^2.11.0",
-    "@tiptap/extension-text-style": "^2.11.0",
-    "@tiptap/extension-underline": "^2.11.0",
-    "@tiptap/pm": "^2.11.0",
-    "@tiptap/starter-kit": "^2.11.0",
+    "@tiptap/core": "^3.29.2",
+    "@tiptap/extension-color": "^3.29.2",
+    "@tiptap/extension-image": "^3.29.2",
+    "@tiptap/extension-text-style": "^3.29.2",
+    "@tiptap/pm": "^3.29.2",
+    "@tiptap/starter-kit": "^3.29.2",
     "lucide-svelte": "^0.469.0"
   },
   "type": "module"
