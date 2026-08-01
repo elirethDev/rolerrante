@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { resolve } from '$app/paths';
   import TipTapEditor from '$lib/components/editor/TipTapEditor.svelte';
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
@@ -28,7 +29,7 @@
 
   {#if data.characters.length === 0}
     <div class="alert alert-warning">Necesitas al menos un personaje para escribir una historia.</div>
-    <a href="/personajes/nuevo" class="btn btn-primary mt-4">Crear personaje</a>
+    <a href={resolve('/personajes/nuevo')} class="btn btn-primary mt-4">Crear personaje</a>
   {:else}
     <form
       method="POST"
@@ -68,7 +69,7 @@
 
       <div class="flex gap-3">
         <SubmitButton class="font-cinzel" disabled={!turnstileToken} pending={pending}>Enviar a revisión</SubmitButton>
-        <a href="/historias" class="btn btn-ghost">Cancelar</a>
+        <a href={resolve('/historias')} class="btn btn-ghost">Cancelar</a>
       </div>
     </form>
   {/if}

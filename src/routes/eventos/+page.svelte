@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import type { PageData } from './$types';
   import { Calendar } from '@lucide/svelte';
   import EventCard from '$lib/components/events/EventCard.svelte';
@@ -14,7 +15,7 @@
 <div class="flex items-center justify-between mb-6">
   <h1 class="text-3xl font-cinzel text-azeroth-gold flex items-center gap-3"><Calendar /> Eventos</h1>
   {#if data.profile?.role === 'gm' || data.profile?.role === 'admin'}
-    <a href="/eventos/nuevo" class="btn btn-primary btn-sm font-cinzel">Nuevo evento</a>
+    <a href={resolve('/eventos/nuevo')} class="btn btn-primary btn-sm font-cinzel">Nuevo evento</a>
   {/if}
 </div>
 

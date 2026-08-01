@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { formatDateTime, statusColor, statusLabel } from '$lib/utils';
 
   interface EventShape {
@@ -19,7 +20,7 @@
 </script>
 
 <a
-  href="/eventos/{event.id}"
+  href={resolve(`/eventos/${event.id}`)}
   class="card bg-base-200 border border-azeroth-border hover:border-azeroth-gold transition-colors"
 >
   <div class="card-body">

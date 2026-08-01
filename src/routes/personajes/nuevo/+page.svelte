@@ -1,6 +1,7 @@
 <script lang="ts">
   import { groupSkillsByAttribute, skillCreationCost, attributeCost, validateAttributes, ATTR_POINTS_BUDGET } from '$lib/rules';
   import { enhance } from '$app/forms';
+  import { resolve } from '$app/paths';
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
   import AttributeInput from '$lib/components/forms/AttributeInput.svelte';
@@ -233,7 +234,7 @@
       <SubmitButton class="font-cinzel" disabled={!canSubmit || !turnstileToken} pending={pending}>
         Crear personaje
       </SubmitButton>
-      <a href="/personajes" class="btn btn-ghost">Cancelar</a>
+      <a href={resolve('/personajes')} class="btn btn-ghost">Cancelar</a>
       {#if !canSubmit}
         <span class="text-xs text-error">Corrige los errores antes de enviar</span>
       {/if}

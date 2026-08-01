@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { Shield } from '@lucide/svelte';
 </script>
@@ -24,5 +25,5 @@
     {/if}
   </p>
   <p class="text-gray-400 mb-8">{page.error?.message ?? 'Algo salió mal.'}</p>
-  <a href="/" class="btn btn-primary font-cinzel">Volver al inicio</a>
+  <a href={resolve('/')} class="btn btn-primary font-cinzel">Volver al inicio</a>
 </section>

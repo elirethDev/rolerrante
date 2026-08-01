@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import type { PageData } from './$types';
   import { Wrench } from '@lucide/svelte';
   import { formatDate } from '$lib/utils';
@@ -20,7 +21,7 @@
         <div class="card-body">
           <h3 class="font-cinzel text-lg text-azeroth-gold">{char?.name ?? 'Sin personaje'}</h3>
           <p class="text-sm text-gray-400">por {char?.player?.display_name ?? char?.player?.username ?? ''} · {formatDate(sr.created_at)}</p>
-          <a href="/gm/solicitudes/{sr.id}" class="btn btn-sm btn-outline mt-2 w-fit">Revisar solicitud</a>
+          <a href={resolve(`/gm/solicitudes/${sr.id}`)} class="btn btn-sm btn-outline mt-2 w-fit">Revisar solicitud</a>
         </div>
       </div>
     {/each}

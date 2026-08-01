@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { resolve } from '$app/paths';
   import TipTapEditor from '$lib/components/editor/TipTapEditor.svelte';
   import { isGMOrAdmin } from '$lib/auth';
   import { statusLabel, statusColor, formatDate } from '$lib/utils';
@@ -32,7 +33,7 @@
         Por <span class="text-azeroth-gold">{playerName(story.character?.player)}</span>
         · {formatDate(story.created_at)}
         {#if story.character}
-          · Personaje: <a href="/personajes/{story.character.id}" class="link">{story.character.name}</a>
+          · Personaje: <a href={resolve(`/personajes/${story.character.id}`)} class="link">{story.character.name}</a>
         {/if}
       </p>
     </div>
@@ -69,7 +70,7 @@
 
   {#if isOwner && story.status === 'rechazado'}
     <div class="mt-6 text-center">
-      <a href="/historias/{story.id}/editar" class="btn btn-primary">Editar y reenviar</a>
+      <a href={resolve(`/historias/${story.id}/editar`)} class="btn btn-primary">Editar y reenviar</a>
     </div>
   {/if}
 </article>
