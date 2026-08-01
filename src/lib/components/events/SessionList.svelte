@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Calendar } from 'lucide-svelte';
+  import { Calendar } from '@lucide/svelte';
   import { formatDate } from '$lib/utils';
 
   interface SessionShape {

@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { Calendar } from 'lucide-svelte';
+  import { Calendar } from '@lucide/svelte';
   import EventCard from '$lib/components/events/EventCard.svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
 

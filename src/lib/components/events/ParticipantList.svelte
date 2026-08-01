@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Users } from 'lucide-svelte';
+  import { Users } from '@lucide/svelte';
   import { statusColor, statusLabel } from '$lib/utils';
 
   interface ParticipantShape {

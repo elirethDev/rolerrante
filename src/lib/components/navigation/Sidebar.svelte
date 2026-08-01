@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import type { ComponentType, Snippet } from 'svelte';
+  import type { Component, Snippet } from 'svelte';
 
   interface NavItem {
     href: string;
@@ -9,7 +9,7 @@
 
   interface Props {
     title: string;
-    icon: ComponentType;
+    icon: Component;
     nav: NavItem[];
     drawerId: string;
     children?: Snippet;

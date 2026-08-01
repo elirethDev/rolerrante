@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Shield, Scroll, Sword } from 'lucide-svelte';
+  import { Shield, Scroll, Sword } from '@lucide/svelte';
 </script>
 
 <svelte:head>

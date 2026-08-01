@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import { statusLabel, statusColor, formatDate } from '$lib/utils';
-  import { BookOpen, Scroll } from 'lucide-svelte';
+  import { BookOpen, Scroll } from '@lucide/svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
 
   export let data: PageData;

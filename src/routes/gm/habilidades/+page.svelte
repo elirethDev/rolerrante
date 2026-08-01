@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { Wrench } from 'lucide-svelte';
+  import { Wrench } from '@lucide/svelte';
   import { formatDate } from '$lib/utils';
 
   export let data: PageData;

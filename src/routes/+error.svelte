@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { Shield } from 'lucide-svelte';
+  import { Shield } from '@lucide/svelte';
 </script>
 
 <svelte:head>

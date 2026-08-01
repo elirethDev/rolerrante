@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Menu, User } from 'lucide-svelte';
+  import { Menu, User } from '@lucide/svelte';
   import { page } from '$app/state';
   import type { User as SupabaseUser } from '@supabase/supabase-js';
   import type { Profile } from '$lib/types';

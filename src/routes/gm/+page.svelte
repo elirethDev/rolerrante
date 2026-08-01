@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import { formatDate } from '$lib/utils';
-  import { BookOpen, Scroll, Shield, Users } from 'lucide-svelte';
+  import { BookOpen, Scroll, Shield, Users } from '@lucide/svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
 
   export let data: PageData;
