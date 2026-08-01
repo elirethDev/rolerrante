@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { statusLabel, statusColor, formatDateTime } from '$lib/utils';
   import { Calendar } from 'lucide-svelte';
+  import EventCard from '$lib/components/events/EventCard.svelte';
 
   export let data: PageData;
 </script>
@@ -24,16 +24,7 @@
 {:else}
   <div class="grid md:grid-cols-2 gap-6">
     {#each data.events as event}
-      <a href="/eventos/{event.id}" class="card bg-base-200 border border-azeroth-border hover:border-azeroth-gold transition-colors">
-        <div class="card-body">
-          <div class="flex justify-between items-start">
-            <h2 class="card-title font-cinzel text-lg">{event.title}</h2>
-            <span class="badge {statusColor(event.status)}">{statusLabel(event.status)}</span>
-          </div>
-          <p class="text-sm text-gray-400">{formatDateTime(event.starts_at)} · {event.type}</p>
-          <p class="text-sm text-gray-400">Organiza: {event.creator?.display_name ?? event.creator?.username}</p>
-        </div>
-      </a>
+      <EventCard {event} />
     {/each}
   </div>
 {/if}
