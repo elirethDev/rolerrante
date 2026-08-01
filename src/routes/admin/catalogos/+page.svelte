@@ -86,69 +86,69 @@
           {/if}
 
           <div class="grid grid-cols-2 gap-2">
-            <div class="form-control">
-              <label class="label" for="r_name"><span class="label-text text-xs">Nombre</span></label>
-              <input id="r_name" name="name" type="text" class="input input-bordered input-sm" value={editingRace?.name ?? ''} required />
-            </div>
-            <div class="form-control">
-              <label class="label" for="r_group"><span class="label-text text-xs">Grupo</span></label>
-              <input id="r_group" name="group_name" type="text" class="input input-bordered input-sm" value={editingRace?.group_name ?? ''} required placeholder="Alianza / Horda" />
-            </div>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend text-xs">Nombre</legend>
+              <input id="r_name" name="name" type="text" class="input input-sm" value={editingRace?.name ?? ''} required />
+            </fieldset>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend text-xs">Grupo</legend>
+              <input id="r_group" name="group_name" type="text" class="input input-sm" value={editingRace?.group_name ?? ''} required placeholder="Alianza / Horda" />
+            </fieldset>
           </div>
 
-          <div class="form-control">
-            <label class="label" for="r_desc"><span class="label-text text-xs">Descripción</span></label>
-            <textarea id="r_desc" name="description" class="textarea textarea-bordered textarea-sm" rows="2">{editingRace?.description ?? ''}</textarea>
-          </div>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Descripción</legend>
+            <textarea id="r_desc" name="description" class="textarea textarea-sm" rows="2">{editingRace?.description ?? ''}</textarea>
+          </fieldset>
 
           <div class="grid grid-cols-2 gap-2">
-            <div class="form-control">
-              <label class="label" for="r_size"><span class="label-text text-xs">Tamaño</span></label>
-              <input id="r_size" name="size" type="text" class="input input-bordered input-sm" value={editingRace?.size ?? ''} required placeholder="Mediano, Grande..." />
-            </div>
-            <div class="form-control">
-              <label class="label" for="r_magic"><span class="label-text text-xs">Magia (separado por comas)</span></label>
-              <input id="r_magic" name="magic_access" type="text" class="input input-bordered input-sm" value={editingRace?.magic_access?.join(', ') ?? ''} placeholder="Arcana, Luz Sagrada" />
-            </div>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend text-xs">Tamaño</legend>
+              <input id="r_size" name="size" type="text" class="input input-sm" value={editingRace?.size ?? ''} required placeholder="Mediano, Grande..." />
+            </fieldset>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend text-xs">Magia (separado por comas)</legend>
+              <input id="r_magic" name="magic_access" type="text" class="input input-sm" value={editingRace?.magic_access?.join(', ') ?? ''} placeholder="Arcana, Luz Sagrada" />
+            </fieldset>
           </div>
 
-          <fieldset class="border border-azeroth-border rounded p-2">
-            <legend class="text-xs text-gray-400 px-1">Datos físicos</legend>
+          <fieldset class="fieldset border border-azeroth-border rounded p-2">
+            <legend class="fieldset-legend text-xs text-gray-400 px-1">Datos físicos</legend>
             <div class="grid grid-cols-2 gap-2">
-              <div class="form-control">
-                <label class="label" for="r_hmin"><span class="label-text text-xs">Altura mín (cm)</span></label>
-                <input id="r_hmin" name="altura_min" type="number" class="input input-bordered input-sm" value={jval(editingRace?.physical_data, 'altura_min') ?? ''} />
-              </div>
-              <div class="form-control">
-                <label class="label" for="r_hmax"><span class="label-text text-xs">Altura máx (cm)</span></label>
-                <input id="r_hmax" name="altura_max" type="number" class="input input-bordered input-sm" value={jval(editingRace?.physical_data, 'altura_max') ?? ''} />
-              </div>
-              <div class="form-control">
-                <label class="label" for="r_pmin"><span class="label-text text-xs">Peso mín (kg)</span></label>
-                <input id="r_pmin" name="peso_min" type="number" class="input input-bordered input-sm" value={jval(editingRace?.physical_data, 'peso_min') ?? ''} />
-              </div>
-              <div class="form-control">
-                <label class="label" for="r_pmax"><span class="label-text text-xs">Peso máx (kg)</span></label>
-                <input id="r_pmax" name="peso_max" type="number" class="input input-bordered input-sm" value={jval(editingRace?.physical_data, 'peso_max') ?? ''} />
-              </div>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend text-xs">Altura mín (cm)</legend>
+                <input id="r_hmin" name="altura_min" type="number" class="input input-sm" value={jval(editingRace?.physical_data, 'altura_min') ?? ''} />
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend text-xs">Altura máx (cm)</legend>
+                <input id="r_hmax" name="altura_max" type="number" class="input input-sm" value={jval(editingRace?.physical_data, 'altura_max') ?? ''} />
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend text-xs">Peso mín (kg)</legend>
+                <input id="r_pmin" name="peso_min" type="number" class="input input-sm" value={jval(editingRace?.physical_data, 'peso_min') ?? ''} />
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend text-xs">Peso máx (kg)</legend>
+                <input id="r_pmax" name="peso_max" type="number" class="input input-sm" value={jval(editingRace?.physical_data, 'peso_max') ?? ''} />
+              </fieldset>
             </div>
           </fieldset>
 
-          <fieldset class="border border-azeroth-border rounded p-2">
-            <legend class="text-xs text-gray-400 px-1">Edad</legend>
+          <fieldset class="fieldset border border-azeroth-border rounded p-2">
+            <legend class="fieldset-legend text-xs text-gray-400 px-1">Edad</legend>
             <div class="grid grid-cols-3 gap-2">
-              <div class="form-control">
-                <label class="label" for="r_adu"><span class="label-text text-xs">Adultez</span></label>
-                <input id="r_adu" name="adultez" type="number" class="input input-bordered input-sm" value={jval(editingRace?.age_data, 'adultez') ?? ''} />
-              </div>
-              <div class="form-control">
-                <label class="label" for="r_med"><span class="label-text text-xs">Mediana edad</span></label>
-                <input id="r_med" name="mediana_edad" type="number" class="input input-bordered input-sm" value={jval(editingRace?.age_data, 'mediana_edad') ?? ''} />
-              </div>
-              <div class="form-control">
-                <label class="label" for="r_vej"><span class="label-text text-xs">Vejez</span></label>
-                <input id="r_vej" name="vejez" type="number" class="input input-bordered input-sm" value={jval(editingRace?.age_data, 'vejez') ?? ''} />
-              </div>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend text-xs">Adultez</legend>
+                <input id="r_adu" name="adultez" type="number" class="input input-sm" value={jval(editingRace?.age_data, 'adultez') ?? ''} />
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend text-xs">Mediana edad</legend>
+                <input id="r_med" name="mediana_edad" type="number" class="input input-sm" value={jval(editingRace?.age_data, 'mediana_edad') ?? ''} />
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend text-xs">Vejez</legend>
+                <input id="r_vej" name="vejez" type="number" class="input input-sm" value={jval(editingRace?.age_data, 'vejez') ?? ''} />
+              </fieldset>
             </div>
           </fieldset>
 
@@ -220,37 +220,37 @@
             <input type="hidden" name="id" value={editingSkill.id} />
           {/if}
 
-          <div class="form-control">
-            <label class="label" for="s_name"><span class="label-text text-xs">Nombre</span></label>
-            <input id="s_name" name="name" type="text" class="input input-bordered input-sm" value={editingSkill?.name ?? ''} required />
-          </div>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Nombre</legend>
+            <input id="s_name" name="name" type="text" class="input input-sm" value={editingSkill?.name ?? ''} required />
+          </fieldset>
 
           <div class="grid grid-cols-2 gap-2">
-            <div class="form-control">
-              <label class="label" for="s_attr"><span class="label-text text-xs">Atributo</span></label>
-              <select id="s_attr" name="attribute" class="select select-bordered select-sm" required>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend text-xs">Atributo</legend>
+              <select id="s_attr" name="attribute" class="select select-sm" required>
                 {#each ['F', 'D', 'I', 'P', 'E'] as a (a)}
                   <option value={a} selected={(editingSkill?.attribute ?? 'F') === a}>{a} — {attrLabel(a)}</option>
                 {/each}
               </select>
-            </div>
-            <div class="form-control items-start justify-end">
+            </fieldset>
+            <fieldset class="fieldset items-start justify-end">
               <label class="label cursor-pointer gap-2">
-                <span class="label-text text-xs">Requiere especialización</span>
+                <span class="text-xs">Requiere especialización</span>
                 <input type="checkbox" name="requires_specialization" class="checkbox checkbox-sm" checked={editingSkill?.requires_specialization ?? false} />
               </label>
-            </div>
+            </fieldset>
           </div>
 
-          <div class="form-control">
-            <label class="label" for="s_desc"><span class="label-text text-xs">Descripción</span></label>
-            <textarea id="s_desc" name="description" class="textarea textarea-bordered textarea-sm" rows="2">{editingSkill?.description ?? ''}</textarea>
-          </div>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Descripción</legend>
+            <textarea id="s_desc" name="description" class="textarea textarea-sm" rows="2">{editingSkill?.description ?? ''}</textarea>
+          </fieldset>
 
-          <div class="form-control">
-            <label class="label" for="s_specs"><span class="label-text text-xs">Especializaciones (separado por comas)</span></label>
-            <input id="s_specs" name="specializations" type="text" class="input input-bordered input-sm" value={editingSkill?.specializations?.join(', ') ?? ''} placeholder="Armas a una mano, Escudos" />
-          </div>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Especializaciones (separado por comas)</legend>
+            <input id="s_specs" name="specializations" type="text" class="input input-sm" value={editingSkill?.specializations?.join(', ') ?? ''} placeholder="Armas a una mano, Escudos" />
+          </fieldset>
 
           <div class="flex gap-2 justify-end">
             <button type="button" class="btn btn-ghost btn-sm" onclick={cancelSkill}>Cancelar</button>

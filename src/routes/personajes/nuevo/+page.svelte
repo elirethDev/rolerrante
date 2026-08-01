@@ -80,38 +80,38 @@
       <div class="card-body">
         <h2 class="card-title font-cinzel text-azeroth-gold">Datos básicos</h2>
         <div class="grid md:grid-cols-2 gap-4">
-          <div class="form-control">
-            <label class="label" for="name"><span class="label-text">Nombre</span></label>
-            <input id="name" name="name" type="text" class="input input-bordered" required />
-          </div>
-          <div class="form-control">
-            <label class="label" for="race_id"><span class="label-text">Raza</span></label>
-            <select id="race_id" name="race_id" class="select select-bordered" required>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Nombre</legend>
+            <input id="name" name="name" type="text" class="input" required />
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Raza</legend>
+            <select id="race_id" name="race_id" class="select" required>
               <option value="">Selecciona</option>
               {#each data.races as race (race.id)}
                 <option value={race.id}>{race.name}</option>
               {/each}
             </select>
-          </div>
-          <div class="form-control">
-            <label class="label" for="age"><span class="label-text">Edad</span></label>
-            <input id="age" name="age" type="number" class="input input-bordered" min="0" />
-          </div>
-          <div class="form-control">
-            <label class="label" for="sex"><span class="label-text">Sexo</span></label>
-            <input id="sex" name="sex" type="text" class="input input-bordered" />
-          </div>
-          <div class="form-control md:col-span-2">
-            <label class="label" for="physical_description"><span class="label-text">Descripción física</span></label>
-            <textarea id="physical_description" name="physical_description" class="textarea textarea-bordered" rows="3"></textarea>
-          </div>
-          <div class="form-control">
-            <label class="label" for="mana_source"><span class="label-text">Fuente de maná</span></label>
-            <select id="mana_source" name="mana_source" class="select select-bordered">
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Edad</legend>
+            <input id="age" name="age" type="number" class="input" min="0" />
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Sexo</legend>
+            <input id="sex" name="sex" type="text" class="input" />
+          </fieldset>
+          <fieldset class="fieldset md:col-span-2">
+            <legend class="fieldset-legend">Descripción física</legend>
+            <textarea id="physical_description" name="physical_description" class="textarea" rows="3"></textarea>
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Fuente de maná</legend>
+            <select id="mana_source" name="mana_source" class="select">
               <option value="I">Inteligencia</option>
               <option value="E">Espíritu</option>
             </select>
-          </div>
+          </fieldset>
         </div>
       </div>
     </div>
@@ -183,12 +183,12 @@
                       id="skill_level_{skill.id}"
                       name="skill_level_{skill.id}"
                       type="number"
-                      class="input input-bordered w-20 input-sm"
+                      class="input w-20 input-sm"
                       min="0" max="10" value="0"
                       on:input={(e) => handleSkillInput(skill.id, e)}
                     />
                     {#if skill.requires_specialization}
-                      <input name="skill_spec_{skill.id}" type="text" class="input input-bordered input-sm" placeholder="Especialización" />
+                      <input name="skill_spec_{skill.id}" type="text" class="input input-sm" placeholder="Especialización" />
                     {/if}
                   </div>
                 </div>

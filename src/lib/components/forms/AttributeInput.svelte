@@ -13,8 +13,8 @@
   let { label, value, min = ATTR_MIN, max = ATTR_MAX, onchange }: Props = $props();
 </script>
 
-<div class="form-control items-center">
-  <span id="attribute-input-label" class="label"><span class="label-text">{label}</span></span>
+<fieldset class="fieldset items-center">
+  <legend id="attribute-input-label" class="fieldset-legend">{label}</legend>
   <div class="flex items-center gap-2" role="group" aria-labelledby="attribute-input-label">
     <button
       type="button"
@@ -37,4 +37,4 @@
     </button>
   </div>
   <span class="text-xs text-gray-500 mt-1">base {ATTR_BASE_VALUE} · máx {max}</span>
-</div>
+</fieldset>

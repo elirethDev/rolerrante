@@ -92,7 +92,7 @@
                 id="skill_level_{skillId(s)}"
                 name="{namePrefix}skill_level_{skillId(s)}"
                 type="number"
-                class="input input-bordered w-20 input-sm"
+                class="input w-20 input-sm"
                 min="0"
                 max="10"
                 value={levels[skillId(s)] ?? 0}
@@ -102,7 +102,7 @@
                 <input
                   name="{namePrefix}skill_spec_{skillId(s)}"
                   type="text"
-                  class="input input-bordered input-sm"
+                  class="input input-sm"
                   placeholder="Especialización"
                   value={specs[skillId(s)] ?? ''}
                   oninput={(e) => handleSpec(s, e)}
@@ -127,7 +127,7 @@
           id="skill_level_{skillId(s)}"
           name="{namePrefix}skill_level_{skillId(s)}"
           type="number"
-          class="input input-bordered w-20 input-sm"
+          class="input w-20 input-sm"
           min={currentLevel(s)}
           max="10"
           value={levels[skillId(s)] ?? currentLevel(s)}
@@ -137,7 +137,7 @@
           <input
             name="{namePrefix}skill_spec_{skillId(s)}"
             type="text"
-            class="input input-bordered input-sm"
+            class="input input-sm"
             placeholder="Especialización"
             value={specs[skillId(s)] ?? s.specialization ?? ''}
             oninput={(e) => handleSpec(s, e)}

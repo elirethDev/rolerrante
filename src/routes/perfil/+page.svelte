@@ -39,15 +39,15 @@
         </div>
 
         <form method="POST" use:enhance class="space-y-4">
-          <div class="form-control">
-            <label class="label" for="display_name"><span class="label-text">Nombre a mostrar</span></label>
-            <input id="display_name" name="display_name" type="text" class="input input-bordered" value={profile.display_name ?? ''} />
-          </div>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Nombre a mostrar</legend>
+            <input id="display_name" name="display_name" type="text" class="input" value={profile.display_name ?? ''} />
+          </fieldset>
 
-          <div class="form-control">
-            <label class="label" for="avatar_url"><span class="label-text">URL de avatar</span></label>
-            <input id="avatar_url" name="avatar_url" type="url" class="input input-bordered" value={profile.avatar_url ?? ''} placeholder="https://..." />
-          </div>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">URL de avatar</legend>
+            <input id="avatar_url" name="avatar_url" type="url" class="input" value={profile.avatar_url ?? ''} placeholder="https://..." />
+          </fieldset>
 
           <button type="submit" class="btn btn-primary w-full font-cinzel">Guardar cambios</button>
         </form>
