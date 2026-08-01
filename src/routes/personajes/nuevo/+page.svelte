@@ -1,6 +1,7 @@
 <script lang="ts">
   import { groupSkillsByAttribute, skillCreationCost, attributeCost, validateAttributes, ATTR_POINTS_BUDGET } from '$lib/rules';
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
+  import AttributeInput from '$lib/components/forms/AttributeInput.svelte';
   import type { ActionData, PageData } from './$types';
   import type { Skill } from '$lib/types';
 
@@ -34,11 +35,6 @@
     ...(skillSpent > SKILL_POINTS ? [`Has gastado ${skillSpent} de ${SKILL_POINTS} puntos de habilidad`] : []),
   ];
   $: canSubmit = totalErrors.length === 0;
-
-  function handleAttrInput(key: string, e: Event) {
-    const val = parseInt((e.target as HTMLInputElement).value) || 0;
-    attrValues = { ...attrValues, [key]: val };
-  }
 
   function handleSkillInput(key: string, e: Event) {
     const val = parseInt((e.target as HTMLInputElement).value) || 0;
@@ -134,20 +130,12 @@
 
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
           {#each ATTR_KEYS as key}
-            <div class="form-control">
-              <label class="label" for={key}><span class="label-text">{ATTR_LABELS[key]}</span></label>
-              <input
-                id={key}
-                name={key}
-                type="number"
-                class="input input-bordered"
-                min="4" max="10"
-                value={attrValues[key]}
-                on:input={(e) => handleAttrInput(key, e)}
-                required
-              />
-              <span class="text-xs text-gray-500 mt-1">base 4, actual: {attrValues[key]}</span>
-            </div>
+            <AttributeInput
+              label={ATTR_LABELS[key]}
+              value={attrValues[key]}
+              onchange={(val) => (attrValues = { ...attrValues, [key]: val })}
+            />
+            <input type="hidden" name={key} value={attrValues[key]} />
           {/each}
         </div>
       </div>
