@@ -21,11 +21,13 @@ Plataforma de rol por foro ambientada en Azeroth (Warcraft). Fichas de personaje
 Si usás el runtime portable, agregalo al PATH de la sesión antes de cualquier comando:
 
 **PowerShell:**
+
 ```powershell
 $env:PATH = "C:\tools\node-v20.18.2-win-x64;$env:PATH"
 ```
 
 **CMD:**
+
 ```cmd
 set PATH=C:\tools\node-v20.18.2-win-x64;%PATH%
 ```
@@ -103,10 +105,10 @@ Configuración de Cloudflare Pages en `wrangler.toml`. Requiere `wrangler login`
 
 ## Variables de entorno (.env.local)
 
-| Variable | Descripción |
-|----------|-------------|
-| `PUBLIC_SUPABASE_URL` | URL del proyecto Supabase |
-| `PUBLIC_SUPABASE_ANON_KEY` | Clave anónima/publicable |
-| `SUPABASE_SERVICE_ROLE_KEY` | Clave de servicio (solo server-side) |
+| Variable                    | Descripción                           |
+| --------------------------- | ------------------------------------- |
+| `PUBLIC_SUPABASE_URL`       | URL del proyecto Supabase             |
+| `PUBLIC_SUPABASE_ANON_KEY`  | Clave anónima/publicable              |
+| `SUPABASE_SERVICE_ROLE_KEY` | Clave de servicio (solo server-side)  |
 | `PUBLIC_TURNSTILE_SITE_KEY` | Clave pública de Cloudflare Turnstile |
-| `TURNSTILE_SECRET_KEY` | Clave secreta de Turnstile |
+| `TURNSTILE_SECRET_KEY`      | Clave secreta de Turnstile            |

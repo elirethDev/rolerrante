@@ -1,0 +1,22 @@
+# Normalizar line endings: LF en el repo, checkout según plataforma
+* text=auto
+
+# Fuentes y código: SIEMPRE LF (prettier default), incluso en Windows
+*.svelte text eol=lf
+*.ts text eol=lf
+*.js text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.md text eol=lf
+
+# Binarios: nunca tratar como texto
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.svg text eol=lf
+*.woff2 binary
+*.ico binary
