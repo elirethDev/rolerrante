@@ -38,15 +38,15 @@
         }}
         class="space-y-4 mt-4"
       >
-        <div class="form-control">
-          <label class="label" for="email"><span class="label-text">Correo electrónico</span></label>
-          <input id="email" name="email" type="email" class="input input-bordered" required />
-        </div>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Correo electrónico</legend>
+          <input id="email" name="email" type="email" class="input" required />
+        </fieldset>
 
-        <div class="form-control">
-          <label class="label" for="password"><span class="label-text">Contraseña</span></label>
-          <input id="password" name="password" type="password" class="input input-bordered" required />
-        </div>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Contraseña</legend>
+          <input id="password" name="password" type="password" class="input" required />
+        </fieldset>
 
         <div class="flex justify-center">
           <Turnstile bind:token={turnstileToken} theme="dark" />

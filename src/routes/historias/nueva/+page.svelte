@@ -41,25 +41,25 @@
       }}
       class="space-y-4"
     >
-      <div class="form-control">
-        <label class="label" for="character_id"><span class="label-text">Personaje</span></label>
-        <select id="character_id" name="character_id" class="select select-bordered" bind:value={characterId} required>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Personaje</legend>
+        <select id="character_id" name="character_id" class="select" bind:value={characterId} required>
           {#each data.characters as c (c.id)}
             <option value={c.id}>{c.name}</option>
           {/each}
         </select>
-      </div>
+      </fieldset>
 
-      <div class="form-control">
-        <label class="label" for="title"><span class="label-text">Título</span></label>
-        <input id="title" name="title" type="text" class="input input-bordered" bind:value={title} required />
-      </div>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Título</legend>
+        <input id="title" name="title" type="text" class="input" bind:value={title} required />
+      </fieldset>
 
       <input type="hidden" name="content" bind:value={content} />
-      <div class="form-control">
-        <span class="label-text">Contenido</span>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Contenido</legend>
         <TipTapEditor {content} onChange={(html) => (content = html)} />
-      </div>
+      </fieldset>
 
       <div class="flex justify-center">
         <Turnstile bind:token={turnstileToken} theme="dark" />

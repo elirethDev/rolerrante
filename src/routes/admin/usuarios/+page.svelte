@@ -32,7 +32,7 @@
             <p class="font-semibold">@{u.username}</p>
             <p class="text-xs text-gray-400">{u.display_name ?? ''}</p>
           </div>
-          <select name="role" class="select select-bordered select-sm">
+          <select name="role" class="select select-sm">
             <option value="pendiente" selected={u.role === 'pendiente'}>{roleLabel('pendiente')}</option>
             <option value="rolero" selected={u.role === 'rolero'}>{roleLabel('rolero')}</option>
             <option value="gm" selected={u.role === 'gm'}>{roleLabel('gm')}</option>

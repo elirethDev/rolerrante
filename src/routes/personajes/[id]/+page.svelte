@@ -60,7 +60,7 @@
           </form>
           <form method="POST" action="?/reject" class="flex gap-2">
             <button type="submit" class="btn btn-error">✕ Rechazar</button>
-            <input name="notes" type="text" class="input input-bordered flex-1" placeholder="Motivo del rechazo" />
+            <input name="notes" type="text" class="input flex-1" placeholder="Motivo del rechazo" />
           </form>
         </div>
       </div>

@@ -28,7 +28,7 @@
               <input type="hidden" name="eventId" value={e.id} />
               <label class="flex items-center gap-2 text-sm">
                 XP por participante:
-                <input type="number" name="xp" value={10} min={1} max={100} class="input input-bordered input-sm w-20" />
+                <input type="number" name="xp" value={10} min={1} max={100} class="input input-sm w-20" />
               </label>
               <button class="btn btn-sm btn-success"><Check size={16} /> Finalizar</button>
             </form>

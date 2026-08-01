@@ -34,47 +34,47 @@
     }}
     class="space-y-4"
   >
-    <div class="form-control">
-      <label class="label" for="title"><span class="label-text">Título</span></label>
-      <input id="title" name="title" type="text" class="input input-bordered" required />
-    </div>
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend">Título</legend>
+      <input id="title" name="title" type="text" class="input" required />
+    </fieldset>
 
-    <div class="form-control">
-      <label class="label" for="type"><span class="label-text">Tipo</span></label>
-      <select id="type" name="type" class="select select-bordered">
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend">Tipo</legend>
+      <select id="type" name="type" class="select">
         <option value="casual">Casual</option>
         <option value="evento">Evento</option>
         <option value="campana">Campaña</option>
       </select>
+    </fieldset>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Inicio</legend>
+        <input id="starts_at" name="starts_at" type="datetime-local" class="input" required />
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Fin (opcional)</legend>
+        <input id="ends_at" name="ends_at" type="datetime-local" class="input" />
+      </fieldset>
     </div>
 
     <div class="grid md:grid-cols-2 gap-4">
-      <div class="form-control">
-        <label class="label" for="starts_at"><span class="label-text">Inicio</span></label>
-        <input id="starts_at" name="starts_at" type="datetime-local" class="input input-bordered" required />
-      </div>
-      <div class="form-control">
-        <label class="label" for="ends_at"><span class="label-text">Fin (opcional)</span></label>
-        <input id="ends_at" name="ends_at" type="datetime-local" class="input input-bordered" />
-      </div>
-    </div>
-
-    <div class="grid md:grid-cols-2 gap-4">
-      <div class="form-control">
-        <label class="label" for="max_players"><span class="label-text">Máximo de jugadores</span></label>
-        <input id="max_players" name="max_players" type="number" class="input input-bordered" min="0" />
-      </div>
-      <div class="form-control">
-        <label class="label" for="location"><span class="label-text">Ubicación</span></label>
-        <input id="location" name="location" type="text" class="input input-bordered" />
-      </div>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Máximo de jugadores</legend>
+        <input id="max_players" name="max_players" type="number" class="input" min="0" />
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Ubicación</legend>
+        <input id="location" name="location" type="text" class="input" />
+      </fieldset>
     </div>
 
     <input type="hidden" name="description" bind:value={description} />
-    <div class="form-control">
-      <span class="label-text">Descripción</span>
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend">Descripción</legend>
       <TipTapEditor content={description} onChange={(html) => (description = html)} />
-    </div>
+    </fieldset>
 
     <div class="flex justify-center">
       <Turnstile bind:token={turnstileToken} theme="dark" />

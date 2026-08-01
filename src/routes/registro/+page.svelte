@@ -34,28 +34,28 @@
         }}
         class="space-y-4 mt-4"
       >
-        <div class="form-control">
-          <label class="label" for="email"><span class="label-text">Correo electrónico</span></label>
-          <input id="email" name="email" type="email" class="input input-bordered" value={form?.values?.email ?? ''} required />
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Correo electrónico</legend>
+          <input id="email" name="email" type="email" class="input" value={form?.values?.email ?? ''} required />
           {#if form?.errors?.email}<span class="text-error text-xs mt-1">{form.errors.email}</span>{/if}
-        </div>
+        </fieldset>
 
-        <div class="form-control">
-          <label class="label" for="username"><span class="label-text">Nombre de usuario</span></label>
-          <input id="username" name="username" type="text" class="input input-bordered" value={form?.values?.username ?? ''} required minlength="3" />
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Nombre de usuario</legend>
+          <input id="username" name="username" type="text" class="input" value={form?.values?.username ?? ''} required minlength="3" />
           {#if form?.errors?.username}<span class="text-error text-xs mt-1">{form.errors.username}</span>{/if}
-        </div>
+        </fieldset>
 
-        <div class="form-control">
-          <label class="label" for="display_name"><span class="label-text">Nombre a mostrar (opcional)</span></label>
-          <input id="display_name" name="display_name" type="text" class="input input-bordered" value={form?.values?.display_name ?? ''} />
-        </div>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Nombre a mostrar (opcional)</legend>
+          <input id="display_name" name="display_name" type="text" class="input" value={form?.values?.display_name ?? ''} />
+        </fieldset>
 
-        <div class="form-control">
-          <label class="label" for="password"><span class="label-text">Contraseña</span></label>
-          <input id="password" name="password" type="password" class="input input-bordered" required minlength="6" />
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Contraseña</legend>
+          <input id="password" name="password" type="password" class="input" required minlength="6" />
           {#if form?.errors?.password}<span class="text-error text-xs mt-1">{form.errors.password}</span>{/if}
-        </div>
+        </fieldset>
 
         <div class="flex justify-center">
           <Turnstile bind:token={turnstileToken} theme="dark" />

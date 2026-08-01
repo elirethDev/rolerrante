@@ -66,12 +66,12 @@
         <div class="alert alert-error text-sm">{form.message}</div>
       {/if}
       <form method="POST" use:enhance class="space-y-4">
-        <div class="form-control">
-          <label class="label" for="character_id"><span class="label-text">Personaje</span></label>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Personaje</legend>
           <select
             id="character_id"
             name="character_id"
-            class="select select-bordered"
+            class="select"
             bind:value={selectedCharacterId}
             required
           >
@@ -79,7 +79,7 @@
               <option value={c.id}>{c.name} ({c.rp_points ?? 0} pts)</option>
             {/each}
           </select>
-        </div>
+        </fieldset>
 
         <div class="space-y-2 max-h-96 overflow-y-auto pr-2">
           <SkillPicker
@@ -92,10 +92,10 @@
           />
         </div>
 
-        <div class="form-control">
-          <label class="label" for="justification"><span class="label-text">Justificación / Trama</span></label>
-          <textarea id="justification" name="justification" class="textarea textarea-bordered" rows="3" required></textarea>
-        </div>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Justificación / Trama</legend>
+          <textarea id="justification" name="justification" class="textarea" rows="3" required></textarea>
+        </fieldset>
 
         <div class="flex justify-between items-center">
           <span class="badge badge-lg {overBudget ? 'badge-error' : totalCost > 0 ? 'badge-primary' : 'badge-ghost'}">

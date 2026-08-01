@@ -31,18 +31,16 @@
           class="flex gap-2 items-end"
         >
           <input type="hidden" name="key" value={setting.key} />
-          <div class="form-control flex-1">
-            <label class="label" for="val_{setting.key}">
-              <span class="label-text text-xs">{setting.key}</span>
-            </label>
+          <fieldset class="fieldset flex-1">
+            <legend class="fieldset-legend text-xs">{setting.key}</legend>
             <input
               id="val_{setting.key}"
               name="value"
               type="text"
-              class="input input-bordered input-sm"
+              class="input input-sm"
               value={stringify(setting.value)}
             />
-          </div>
+          </fieldset>
           <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
         </form>
       {/each}

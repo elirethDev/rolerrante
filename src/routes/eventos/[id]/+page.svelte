@@ -53,14 +53,14 @@
     {#if !data.participant && data.characters.length > 0}
       <form method="POST" action="?/join" use:enhance class="card bg-base-200 border border-azeroth-border mb-6">
         <div class="card-body flex-row items-end gap-4">
-          <div class="form-control flex-1">
-            <label class="label" for="character_id"><span class="label-text">Inscribir personaje</span></label>
-            <select id="character_id" name="character_id" class="select select-bordered" required>
+          <fieldset class="fieldset flex-1">
+            <legend class="fieldset-legend">Inscribir personaje</legend>
+            <select id="character_id" name="character_id" class="select" required>
               {#each data.characters as c (c.id)}
                 <option value={c.id}>{c.name}</option>
               {/each}
             </select>
-          </div>
+          </fieldset>
           <button type="submit" class="btn btn-primary">Inscribirse</button>
         </div>
         {#if form?.message}<p class="text-error text-sm px-6 pb-4">{form.message}</p>{/if}
@@ -78,10 +78,10 @@
         <h2 class="card-title font-cinzel text-azeroth-gold">Gestión del evento</h2>
         {#if form?.message}<div class="alert alert-error text-sm">{form.message}</div>{/if}
         <form method="POST" action="?/finalize" use:enhance class="flex gap-3 items-end mt-2">
-          <div class="form-control">
-            <label class="label" for="xp"><span class="label-text">XP por participante confirmado</span></label>
-            <input id="xp" name="xp" type="number" class="input input-bordered w-32" min="1" value="5" required />
-          </div>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">XP por participante confirmado</legend>
+            <input id="xp" name="xp" type="number" class="input w-32" min="1" value="5" required />
+          </fieldset>
           <button type="submit" class="btn btn-success">Finalizar y otorgar XP</button>
         </form>
       </div>

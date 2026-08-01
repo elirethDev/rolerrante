@@ -23,18 +23,16 @@
 
 <div class="card bg-base-200 border border-azeroth-border">
   <div class="card-body">
-    <div class="form-control max-w-xs mb-4">
-      <label class="label" for="log-filter">
-        <span class="label-text">Filtrar por acción</span>
-      </label>
+    <fieldset class="fieldset max-w-xs mb-4">
+      <legend class="fieldset-legend">Filtrar por acción</legend>
       <input
         id="log-filter"
         type="text"
-        class="input input-bordered input-sm"
+        class="input input-sm"
         placeholder="Ej: login, create..."
         bind:value={filter}
       />
-    </div>
+    </fieldset>
 
     <div class="overflow-x-auto">
       <table class="table table-sm">
