@@ -42,6 +42,7 @@
     "wrangler": "^4.118.0"
   },
   "dependencies": {
+    "@lucide/svelte": "^1.28.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.0",
     "@tiptap/core": "^3.29.2",
@@ -49,8 +50,7 @@
     "@tiptap/extension-image": "^3.29.2",
     "@tiptap/extension-text-style": "^3.29.2",
     "@tiptap/pm": "^3.29.2",
-    "@tiptap/starter-kit": "^3.29.2",
-    "lucide-svelte": "^0.469.0"
+    "@tiptap/starter-kit": "^3.29.2"
   },
   "type": "module"
 }

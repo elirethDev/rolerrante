@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Minus, Plus } from 'lucide-svelte';
+  import { Minus, Plus } from '@lucide/svelte';
   import { ATTR_BASE_VALUE, ATTR_MIN, ATTR_MAX } from '$lib/rules';
 
   interface Props {

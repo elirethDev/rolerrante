@@ -1,7 +1,7 @@
 <script lang="ts">
   import { combatValues } from '$lib/rules';
   import type { Character, CharacterSkill } from '$lib/types';
-  import { Sword, Zap, Footprints, Crosshair, Shield, Swords } from 'lucide-svelte';
+  import { Sword, Zap, Footprints, Crosshair, Shield, Swords } from '@lucide/svelte';
 
   interface Attrs {
     attr_fis: number;

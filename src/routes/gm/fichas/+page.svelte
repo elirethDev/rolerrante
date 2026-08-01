@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import { enhance } from '$app/forms';
-  import { User, Check, X } from 'lucide-svelte';
+  import { User, Check, X } from '@lucide/svelte';
 
   let { data, form }: { data: PageData; form: { success?: boolean; message?: string } | null } = $props();
 

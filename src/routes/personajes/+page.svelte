@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import { statusLabel, statusColor } from '$lib/utils';
-  import { Users } from 'lucide-svelte';
+  import { Users } from '@lucide/svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
 
   export let data: PageData;

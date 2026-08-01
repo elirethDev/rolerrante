@@ -1,7 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { skillUpgradeCost } from '$lib/rules';
-  import { User } from 'lucide-svelte';
+  import { User } from '@lucide/svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import SkillPicker from './SkillPicker.svelte';
 

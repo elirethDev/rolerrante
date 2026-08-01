@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import { enhance } from '$app/forms';
-  import { CalendarCheck, Check } from 'lucide-svelte';
+  import { CalendarCheck, Check } from '@lucide/svelte';
   import { formatDate } from '$lib/utils';
 
   let { data, form }: { data: PageData; form: { success?: boolean; message?: string } | null } = $props();

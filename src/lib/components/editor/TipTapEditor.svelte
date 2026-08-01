@@ -5,7 +5,7 @@
   import Image from '@tiptap/extension-image';
   import { TextStyle } from '@tiptap/extension-text-style';
   import Color from '@tiptap/extension-color';
-  import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, List, ListOrdered, Quote, Image as ImageIcon, Heading1, Heading2 } from 'lucide-svelte';
+  import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, List, ListOrdered, Quote, Image as ImageIcon, Heading1, Heading2 } from '@lucide/svelte';
 
   export let content = '';
   export let onChange: (html: string) => void = () => {};

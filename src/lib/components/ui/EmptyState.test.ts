@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/svelte';
 import { createRawSnippet } from 'svelte';
-import { Check } from 'lucide-svelte';
+import { Check } from '@lucide/svelte';
 import { describe, expect, it } from 'vitest';
 import EmptyState from './EmptyState.svelte';
 

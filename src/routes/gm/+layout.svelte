@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Shield } from 'lucide-svelte';
+  import { Shield } from '@lucide/svelte';
   import type { Snippet } from 'svelte';
   import Sidebar from '$lib/components/navigation/Sidebar.svelte';
 
