@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { ATTRIBUTE_LABELS } from '$lib/rules';
+  import { combatValues } from '$lib/rules';
+  import type { Character, CharacterSkill } from '$lib/types';
   import { Sword, Zap, Footprints, Crosshair, Shield, Swords } from 'lucide-svelte';
 
   interface Attrs {
@@ -19,22 +20,26 @@
 
   let { attrs, skills }: { attrs: Attrs; skills?: SkillEntry[] } = $props();
 
-  let pv = $derived((attrs.attr_fis ?? 0) * 4);
-  let pm = $derived(((attrs.mana_source === 'I' ? attrs.attr_int : attrs.attr_esp) ?? 0) * 4);
-  let iniciativa = $derived(attrs.attr_per ?? 0);
-  let ataqueCC = $derived(attrs.attr_fis ?? 0);
-  let ataqueCCSutil = $derived(attrs.attr_des ?? 0);
-  let ataqueDistancia = $derived(attrs.attr_per ?? 0);
-  let defensa = $derived(attrs.attr_des ?? 0);
+  let combat = $derived.by(() => {
+    const character = {
+      attr_fis: attrs.attr_fis ?? 0,
+      attr_des: attrs.attr_des ?? 0,
+      attr_int: attrs.attr_int ?? 0,
+      attr_per: attrs.attr_per ?? 0,
+      attr_esp: attrs.attr_esp ?? 0,
+      mana_source: attrs.mana_source ?? 'E',
+    } as Character;
+    return combatValues(character, (skills ?? []) as CharacterSkill[]);
+  });
 
   let stats: Array<{ label: string; icon: typeof Sword; value: number }> = $derived([
-    { label: 'PV', icon: Sword, value: pv },
-    { label: 'PM', icon: Zap, value: pm },
-    { label: 'Iniciativa', icon: Footprints, value: iniciativa },
-    { label: 'Ataque CC', icon: Swords, value: ataqueCC },
-    { label: 'Ataque CC Sutil', icon: Swords, value: ataqueCCSutil },
-    { label: 'Ataque Distancia', icon: Crosshair, value: ataqueDistancia },
-    { label: 'Defensa', icon: Shield, value: defensa },
+    { label: 'PV', icon: Sword, value: combat.pv },
+    { label: 'PM', icon: Zap, value: combat.pm },
+    { label: 'Iniciativa', icon: Footprints, value: combat.iniciativa },
+    { label: 'Ataque CC', icon: Swords, value: combat.ataqueCC },
+    { label: 'Ataque CC Sutil', icon: Swords, value: combat.ataqueCCSutil },
+    { label: 'Ataque Distancia', icon: Crosshair, value: combat.ataqueDistancia },
+    { label: 'Defensa', icon: Shield, value: combat.defensa },
   ]);
 </script>
 
