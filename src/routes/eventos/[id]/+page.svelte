@@ -4,6 +4,7 @@
   import { statusLabel, statusColor, formatDateTime } from '$lib/utils';
   import TipTapViewer from '$lib/components/editor/TipTapViewer.svelte';
   import ParticipantList from '$lib/components/events/ParticipantList.svelte';
+  import SessionList from '$lib/components/events/SessionList.svelte';
   import type { ActionData, PageData } from './$types';
 
   export let data: PageData;
@@ -15,6 +16,7 @@
   $: isOpen = ['publicado', 'en_curso'].includes(event.status);
   $: participants = event.participants ?? [];
   $: confirmedParticipants = participants.filter((p: { status?: string }) => p.status === 'confirmado');
+  $: sessions = data.sessions ?? [];
 </script>
 
 <svelte:head>
@@ -40,6 +42,12 @@
   <div class="mb-6">
     <ParticipantList participants={participants} maxPlayers={event.max_players} />
   </div>
+
+  {#if sessions.length > 0}
+    <div class="mb-6">
+      <SessionList {sessions} />
+    </div>
+  {/if}
 
   {#if data.profile && isOpen}
     {#if !data.participant && data.characters.length > 0}

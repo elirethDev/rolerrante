@@ -23,7 +23,13 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, profile
 
   const participant = event.participants?.find((p: { character?: { player_id?: string } }) => p.character?.player_id === profile?.id);
 
-  return { event, profile, characters, participant };
+  const { data: sessions } = await supabase
+    .from('event_sessions')
+    .select('*')
+    .eq('event_id', params.id)
+    .order('session_date');
+
+  return { event, profile, characters, participant, sessions: sessions ?? [] };
 };
 
 export const actions: Actions = {
