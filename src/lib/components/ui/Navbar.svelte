@@ -1,15 +1,45 @@
 <script lang="ts">
-  import { User } from 'lucide-svelte';
+  import { Menu, User } from 'lucide-svelte';
   import type { User as SupabaseUser } from '@supabase/supabase-js';
   import type { Profile } from '$lib/types';
   import { isGMOrAdmin, isAdmin } from '$lib/auth';
 
-  export let user: SupabaseUser | null;
-  export let profile: Profile | null;
+  let { user, profile }: { user: SupabaseUser | null; profile: Profile | null } = $props();
+
+  let menuOpen = $state(false);
 </script>
 
 <nav class="navbar bg-base-200 border-b border-azeroth-border sticky top-0 z-50">
   <div class="navbar-start">
+    {#if user}
+      <div class="dropdown dropdown-end lg:hidden mr-1">
+        <button
+          type="button"
+          class="btn btn-ghost btn-square"
+          aria-label="Abrir menú"
+          aria-expanded={menuOpen}
+          onclick={() => (menuOpen = !menuOpen)}
+        >
+          <Menu size={20} />
+        </button>
+        {#if menuOpen}
+          <ul class="menu dropdown-content bg-base-200 rounded-box z-[1] mt-3 w-56 p-2 shadow border border-azeroth-border">
+            <li><a href="/personajes" onclick={() => (menuOpen = false)}>Fichas</a></li>
+            <li><a href="/historias" onclick={() => (menuOpen = false)}>Historias</a></li>
+            <li><a href="/eventos" onclick={() => (menuOpen = false)}>Eventos</a></li>
+            {#if profile?.role !== 'pendiente'}
+              <li><a href="/solicitudes" onclick={() => (menuOpen = false)}>Habilidades</a></li>
+            {/if}
+            {#if isGMOrAdmin(profile?.role)}
+              <li><a href="/gm" onclick={() => (menuOpen = false)}>Panel GM</a></li>
+            {/if}
+            {#if isAdmin(profile?.role)}
+              <li><a href="/admin" onclick={() => (menuOpen = false)}>Admin</a></li>
+            {/if}
+          </ul>
+        {/if}
+      </div>
+    {/if}
     <a href="/" class="btn btn-ghost text-xl font-cinzel text-azeroth-gold">RolErrante</a>
   </div>
   <div class="navbar-center hidden lg:flex gap-2">
