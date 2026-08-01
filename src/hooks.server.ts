@@ -1,5 +1,6 @@
 import type { Handle } from '@sveltejs/kit';
 import { loadSupabase } from '$lib/supabase/server';
+import { safeGetSession } from '$lib/supabase/auth';
 import { checkRateLimit, getClientIP } from '$lib/rateLimit';
 
 const CSP = "default-src 'self'; script-src 'self' https://challenges.cloudflare.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com; img-src 'self' data: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co";
@@ -26,28 +27,10 @@ export const handle: Handle = async ({ event, resolve }) => {
     }
   }
 
-  event.locals.supabase = loadSupabase(event.cookies) as unknown as typeof event.locals.supabase;
+  const cacheHeaders: Record<string, string> = {};
+  event.locals.supabase = loadSupabase(event.cookies, cacheHeaders) as unknown as typeof event.locals.supabase;
 
-  event.locals.safeGetSession = async () => {
-    const {
-      data: { session },
-    } = await event.locals.supabase.auth.getSession();
-    if (!session) {
-      return { session: null, user: null };
-    }
-
-    const {
-      data: { user },
-      error,
-    } = await event.locals.supabase.auth.getUser();
-    if (error) {
-      return { session: null, user: null };
-    }
-
-    return { session, user };
-  };
-
-  const { session, user } = await event.locals.safeGetSession();
+  const { session, user } = await safeGetSession(event.locals.supabase);
   event.locals.session = session;
   event.locals.user = user;
 
@@ -69,6 +52,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   });
 
   // Headers de seguridad
+  for (const [key, value] of Object.entries(cacheHeaders)) response.headers.set(key, value);
   response.headers.set('content-security-policy', CSP);
   response.headers.set('x-frame-options', 'DENY');
   response.headers.set('x-content-type-options', 'nosniff');

@@ -3,15 +3,23 @@ import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/publi
 import type { Cookies } from '@sveltejs/kit';
 import type { Database } from './database.types';
 
-export const loadSupabase = (cookies: Cookies) => {
+export const loadSupabase = (cookies: Cookies, cacheHeaders: Record<string, string> = {}) => {
   return createServerClient<Database>(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
     auth: { autoRefreshToken: true, persistSession: true },
     cookies: {
-      get: (key: string) => cookies.get(key),
-      set: (key: string, value: string, options: Record<string, unknown>) =>
-        cookies.set(key, value, { ...options, path: '/' }),
-      remove: (key: string, options: Record<string, unknown>) =>
-        cookies.delete(key, { ...options, path: '/' }),
+      getAll() {
+        return cookies.getAll();
+      },
+      setAll(cookiesToSet, headers) {
+        if (headers) Object.assign(cacheHeaders, headers);
+        try {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookies.set(name, value, { ...options, path: '/' })
+          );
+        } catch {
+          // called from a Server Component / non-response context; cannot set cookies
+        }
+      },
     },
   });
 };

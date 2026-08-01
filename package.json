@@ -43,8 +43,8 @@
   },
   "dependencies": {
     "@lucide/svelte": "^1.28.0",
-    "@supabase/ssr": "^0.5.2",
-    "@supabase/supabase-js": "^2.47.0",
+    "@supabase/ssr": "^0.12.4",
+    "@supabase/supabase-js": "^2.111.0",
     "@tiptap/core": "^3.29.2",
     "@tiptap/extension-color": "^3.29.2",
     "@tiptap/extension-image": "^3.29.2",
