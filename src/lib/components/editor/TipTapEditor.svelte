@@ -3,8 +3,7 @@
   import { Editor } from '@tiptap/core';
   import StarterKit from '@tiptap/starter-kit';
   import Image from '@tiptap/extension-image';
-  import Underline from '@tiptap/extension-underline';
-  import TextStyle from '@tiptap/extension-text-style';
+  import { TextStyle } from '@tiptap/extension-text-style';
   import Color from '@tiptap/extension-color';
   import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, List, ListOrdered, Quote, Image as ImageIcon, Heading1, Heading2 } from 'lucide-svelte';
 
@@ -20,7 +19,7 @@
       element,
       editable,
       content,
-      extensions: [StarterKit, Image, Underline, TextStyle, Color],
+      extensions: [StarterKit, Image, TextStyle, Color],
       onUpdate: ({ editor }) => {
         onChange(editor.getHTML());
       },
@@ -42,7 +41,7 @@
   }
 
   $: if (editor && editor.getHTML() !== content && !editor.isFocused) {
-    editor.commands.setContent(content, false);
+    editor.commands.setContent(content, { emitUpdate: false });
   }
 </script>
 
