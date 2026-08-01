@@ -1,6 +1,8 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { skillUpgradeCost } from '$lib/rules';
+  import { User } from 'lucide-svelte';
+  import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import SkillPicker from './SkillPicker.svelte';
 
   interface CharacterShape {
@@ -55,7 +57,7 @@
 </script>
 
 {#if characters.length === 0}
-  <div class="alert alert-warning">Necesitas un personaje aprobado para solicitar mejoras.</div>
+  <EmptyState icon={User} title="Sin personajes aprobados" description="Necesitás un personaje aprobado para solicitar mejoras." />
 {:else}
   <div class="card bg-base-200 border border-azeroth-border">
     <div class="card-body">

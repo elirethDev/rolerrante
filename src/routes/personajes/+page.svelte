@@ -2,6 +2,7 @@
   import type { PageData } from './$types';
   import { statusLabel, statusColor } from '$lib/utils';
   import { Users } from 'lucide-svelte';
+  import EmptyState from '$lib/components/ui/EmptyState.svelte';
 
   export let data: PageData;
 </script>
@@ -16,10 +17,9 @@
 </div>
 
 {#if data.characters.length === 0}
-  <div class="text-center py-20 text-gray-400">
-    <p>No tienes personajes todavía.</p>
+  <EmptyState icon={Users} title="Sin personajes" description="Creá tu primer personaje para empezar a rolear.">
     <a href="/personajes/nuevo" class="btn btn-primary mt-4">Crear el primero</a>
-  </div>
+  </EmptyState>
 {:else}
   <div class="grid md:grid-cols-2 gap-6">
     {#each data.characters as char (char.id)}

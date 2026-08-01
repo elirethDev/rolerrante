@@ -2,6 +2,7 @@
   import type { PageData } from './$types';
   import { Calendar } from 'lucide-svelte';
   import EventCard from '$lib/components/events/EventCard.svelte';
+  import EmptyState from '$lib/components/ui/EmptyState.svelte';
 
   export let data: PageData;
 </script>
@@ -18,9 +19,7 @@
 </div>
 
 {#if data.events.length === 0}
-  <div class="text-center py-20 text-gray-400">
-    <p>No hay eventos programados.</p>
-  </div>
+  <EmptyState icon={Calendar} title="Sin eventos" description="No hay eventos publicados." />
 {:else}
   <div class="grid md:grid-cols-2 gap-6">
     {#each data.events as event (event.id)}

@@ -1,7 +1,8 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import { statusLabel, statusColor, formatDate } from '$lib/utils';
-  import { Scroll } from 'lucide-svelte';
+  import { BookOpen, Scroll } from 'lucide-svelte';
+  import EmptyState from '$lib/components/ui/EmptyState.svelte';
 
   export let data: PageData;
 
@@ -24,9 +25,7 @@
 </div>
 
 {#if data.stories.length === 0}
-  <div class="text-center py-20 text-gray-400">
-    <p>Aún no hay historias públicas.</p>
-  </div>
+  <EmptyState icon={BookOpen} title="Sin historias" description="No hay historias aprobadas todavía." />
 {:else}
   <div class="grid md:grid-cols-2 gap-6">
     {#each data.stories as story (story.id)}

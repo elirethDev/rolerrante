@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Menu, User } from 'lucide-svelte';
+  import { page } from '$app/state';
   import type { User as SupabaseUser } from '@supabase/supabase-js';
   import type { Profile } from '$lib/types';
   import { isGMOrAdmin, isAdmin } from '$lib/auth';
@@ -44,17 +45,17 @@
   </div>
   <div class="navbar-center hidden lg:flex gap-2">
     {#if user}
-      <a href="/personajes" class="btn btn-ghost btn-sm">Fichas</a>
-      <a href="/historias" class="btn btn-ghost btn-sm">Historias</a>
-      <a href="/eventos" class="btn btn-ghost btn-sm">Eventos</a>
+      <a href="/personajes" class="btn btn-ghost btn-sm" aria-current={page.url.pathname.startsWith('/personajes') ? 'page' : undefined}>Fichas</a>
+      <a href="/historias" class="btn btn-ghost btn-sm" aria-current={page.url.pathname.startsWith('/historias') ? 'page' : undefined}>Historias</a>
+      <a href="/eventos" class="btn btn-ghost btn-sm" aria-current={page.url.pathname.startsWith('/eventos') ? 'page' : undefined}>Eventos</a>
       {#if profile?.role !== 'pendiente'}
-        <a href="/solicitudes" class="btn btn-ghost btn-sm">Habilidades</a>
+        <a href="/solicitudes" class="btn btn-ghost btn-sm" aria-current={page.url.pathname.startsWith('/solicitudes') ? 'page' : undefined}>Habilidades</a>
       {/if}
       {#if isGMOrAdmin(profile?.role)}
-        <a href="/gm" class="btn btn-primary btn-sm">Panel GM</a>
+        <a href="/gm" class="btn btn-primary btn-sm" aria-current={page.url.pathname.startsWith('/gm') ? 'page' : undefined}>Panel GM</a>
       {/if}
       {#if isAdmin(profile?.role)}
-        <a href="/admin" class="btn btn-error btn-sm">Admin</a>
+        <a href="/admin" class="btn btn-error btn-sm" aria-current={page.url.pathname.startsWith('/admin') ? 'page' : undefined}>Admin</a>
       {/if}
     {/if}
   </div>

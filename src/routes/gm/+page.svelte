@@ -1,7 +1,8 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import { formatDate } from '$lib/utils';
-  import { Shield } from 'lucide-svelte';
+  import { BookOpen, Scroll, Shield, Users } from 'lucide-svelte';
+  import EmptyState from '$lib/components/ui/EmptyState.svelte';
 
   export let data: PageData;
 
@@ -23,7 +24,7 @@
     <div class="card-body">
       <h2 class="card-title font-cinzel text-azeroth-gold">Fichas pendientes ({data.characters.length})</h2>
       {#if data.characters.length === 0}
-        <p class="text-gray-400">No hay fichas pendientes.</p>
+        <EmptyState icon={Users} title="Sin fichas pendientes" />
       {:else}
         <div class="space-y-2 max-h-80 overflow-y-auto">
           {#each data.characters as c (c.id)}
@@ -41,7 +42,7 @@
     <div class="card-body">
       <h2 class="card-title font-cinzel text-azeroth-gold">Historias pendientes ({data.stories.length})</h2>
       {#if data.stories.length === 0}
-        <p class="text-gray-400">No hay historias pendientes.</p>
+        <EmptyState icon={BookOpen} title="Sin historias pendientes" />
       {:else}
         <div class="space-y-2 max-h-80 overflow-y-auto">
           {#each data.stories as s (s.id)}
@@ -59,7 +60,7 @@
     <div class="card-body">
       <h2 class="card-title font-cinzel text-azeroth-gold">Solicitudes de habilidad ({data.skillRequests.length})</h2>
       {#if data.skillRequests.length === 0}
-        <p class="text-gray-400">No hay solicitudes pendientes.</p>
+        <EmptyState icon={Scroll} title="Sin solicitudes pendientes" />
       {:else}
         <div class="space-y-2 max-h-80 overflow-y-auto">
           {#each data.skillRequests as req (req.id)}
