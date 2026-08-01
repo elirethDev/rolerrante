@@ -32,7 +32,7 @@
       <div class="form-control">
         <label class="label" for="character_id"><span class="label-text">Personaje</span></label>
         <select id="character_id" name="character_id" class="select select-bordered" bind:value={characterId} required>
-          {#each data.characters as c}
+          {#each data.characters as c (c.id)}
             <option value={c.id}>{c.name}</option>
           {/each}
         </select>

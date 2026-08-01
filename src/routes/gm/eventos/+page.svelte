@@ -18,7 +18,7 @@
   <p class="text-gray-400">No hay eventos pendientes de finalización.</p>
 {:else}
   <div class="space-y-4">
-    {#each data.events as e}
+    {#each data.events as e (e.id)}
       <div class="card bg-base-200 border border-azeroth-border">
         <div class="card-body">
           <h3 class="font-cinzel text-lg text-azeroth-gold">{e.title}</h3>

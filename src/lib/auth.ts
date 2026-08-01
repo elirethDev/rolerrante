@@ -1,13 +1,16 @@
 import { redirect } from '@sveltejs/kit';
-import type { UserRole } from './types';
+import type { User } from '@supabase/supabase-js';
+import type { UserRole, Profile } from './types';
 
-export function requireAuth(locals: App.Locals) {
+type AuthLocals = { user: User | null; profile: Profile | null };
+
+export function requireAuth(locals: AuthLocals) {
   if (!locals.user) {
     throw redirect(303, '/login');
   }
 }
 
-export function requireRole(locals: App.Locals, roles: UserRole[]) {
+export function requireRole(locals: AuthLocals, roles: UserRole[]) {
   requireAuth(locals);
   if (!roles.includes(locals.profile?.role ?? 'pendiente')) {
     throw redirect(303, '/');

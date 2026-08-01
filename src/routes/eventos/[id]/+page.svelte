@@ -56,7 +56,7 @@
           <div class="form-control flex-1">
             <label class="label" for="character_id"><span class="label-text">Inscribir personaje</span></label>
             <select id="character_id" name="character_id" class="select select-bordered" required>
-              {#each data.characters as c}
+              {#each data.characters as c (c.id)}
                 <option value={c.id}>{c.name}</option>
               {/each}
             </select>

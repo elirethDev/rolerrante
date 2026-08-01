@@ -20,7 +20,7 @@
       stale.forEach((s) => s.remove());
 
       // Reset turnstile global so it reinitialises clean
-      delete (window as any).turnstile;
+      delete (window as Window).turnstile;
 
       const script = document.createElement('script');
       script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';

@@ -48,7 +48,7 @@
     <h3 class="card-title font-cinzel text-azeroth-gold text-lg">Valores de combate</h3>
 
     <div class="grid grid-cols-2 gap-2">
-      {#each stats as { label, icon: Icon, value }}
+      {#each stats as { label, icon: Icon, value } (label)}
         <div class="flex items-center gap-2 text-sm">
           <Icon size={16} class="text-azeroth-gold" />
           <span class="text-base-content/70">{label}</span>
@@ -69,7 +69,7 @@
           </tr>
         </thead>
         <tbody>
-          {#each skills as skill}
+          {#each skills as skill (skill.skill?.name ?? '')}
             <tr>
               <td class="text-base-content">{skill.skill?.name ?? '—'}</td>
               <td class="text-base-content">{skill.level}</td>

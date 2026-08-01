@@ -5,7 +5,7 @@ import { verifyTurnstileToken } from '$lib/turnstile';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals: { user, profile, supabase } }) => {
-  requireAuth({ user, profile } as App.Locals);
+  requireAuth({ user, profile });
   const { data: races } = await supabase.from('races').select('*').order('name');
   const { data: skills } = await supabase.from('skills').select('*').order('name');
   const { data: settings } = await supabase.from('settings').select('value').eq('key', 'character_creation_points').single();
@@ -15,7 +15,7 @@ export const load: PageServerLoad = async ({ locals: { user, profile, supabase }
 
 export const actions: Actions = {
   default: async ({ request, locals: { supabase, user, profile } }) => {
-    requireAuth({ user, profile } as App.Locals);
+    requireAuth({ user, profile });
     const form = await request.formData();
     const turnstileToken = String(form.get('cf-turnstile-response') ?? '');
 

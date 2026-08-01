@@ -23,7 +23,7 @@
   </div>
 {:else}
   <div class="grid md:grid-cols-2 gap-6">
-    {#each data.events as event}
+    {#each data.events as event (event.id)}
       <EventCard {event} />
     {/each}
   </div>

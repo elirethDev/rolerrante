@@ -27,7 +27,7 @@
     <div class="card-body">
       <h2 class="card-title font-cinzel text-azeroth-gold">Mejoras solicitadas</h2>
       <ul class="divide-y divide-azeroth-border mt-2">
-        {#each items as item}
+        {#each items as item (item.id)}
           <li class="py-2 flex justify-between">
             <span>{item.skill?.name}{item.specialization ? ` (${item.specialization})` : ''}</span>
             <span class="text-azeroth-gold">{item.from_level} → {item.to_level} ({item.xp_cost} XP)</span>

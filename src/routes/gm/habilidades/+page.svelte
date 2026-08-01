@@ -14,7 +14,7 @@
   <p class="text-gray-400">No hay solicitudes pendientes.</p>
 {:else}
   <div class="space-y-4">
-    {#each data.skillRequests as sr}
+    {#each data.skillRequests as sr (sr.id)}
       {@const char = Array.isArray(sr.character) ? sr.character[0] : sr.character}
       <div class="card bg-base-200 border border-azeroth-border">
         <div class="card-body">

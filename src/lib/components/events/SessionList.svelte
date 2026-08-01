@@ -34,7 +34,7 @@
           </tr>
         </thead>
         <tbody>
-          {#each sessions as s}
+          {#each sessions as s (s.id)}
             <tr class="border-t border-azeroth-border">
               <td class="whitespace-nowrap">{formatDate(s.session_date)}</td>
               <td>{s.title ?? '-'}</td>

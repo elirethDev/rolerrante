@@ -33,7 +33,7 @@
         <span class="font-cinzel text-xl text-azeroth-gold">{title}</span>
       </div>
       <ul class="menu gap-1">
-        {#each nav as item}
+        {#each nav as item (item.href)}
           <li>
             <a
               href={item.href}

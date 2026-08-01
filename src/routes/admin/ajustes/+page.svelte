@@ -23,7 +23,7 @@
   <div class="card-body">
     <h2 class="card-title font-cinzel text-azeroth-gold">Configuración</h2>
     <div class="space-y-3 mt-2">
-      {#each data.settings as setting}
+      {#each data.settings as setting (setting.key)}
         <form
           method="POST"
           action="?/saveSetting"

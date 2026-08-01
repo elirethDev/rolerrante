@@ -4,7 +4,7 @@ import { verifyTurnstileToken } from '$lib/turnstile';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals: { user, profile, supabase } }) => {
-  requireAuth({ user, profile } as App.Locals);
+  requireAuth({ user, profile });
 
   const { data: characters } = await supabase
     .from('characters')
@@ -18,7 +18,7 @@ export const load: PageServerLoad = async ({ locals: { user, profile, supabase }
 
 export const actions: Actions = {
   default: async ({ request, locals: { supabase, user, profile } }) => {
-    requireAuth({ user, profile } as App.Locals);
+    requireAuth({ user, profile });
     const form = await request.formData();
     const characterId = String(form.get('character_id') ?? '');
     const title = String(form.get('title') ?? '').trim();

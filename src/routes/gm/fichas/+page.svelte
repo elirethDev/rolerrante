@@ -22,7 +22,7 @@
   <p class="text-gray-400">No hay fichas pendientes.</p>
 {:else}
   <div class="space-y-4">
-    {#each data.characters as c}
+    {#each data.characters as c (c.id)}
       <div class="card bg-base-200 border border-azeroth-border">
         <div class="card-body">
           <h3 class="font-cinzel text-lg text-azeroth-gold">{c.name}</h3>

@@ -20,7 +20,7 @@
   <div class="card-body">
     <h2 class="card-title font-cinzel text-azeroth-gold">Usuarios registrados</h2>
     <div class="space-y-2 max-h-[70vh] overflow-y-auto mt-2">
-      {#each data.users as u}
+      {#each data.users as u (u.id)}
         <form
           method="POST"
           action="?/setRole"

@@ -22,7 +22,7 @@
   </div>
 {:else}
   <div class="grid md:grid-cols-2 gap-6">
-    {#each data.characters as char}
+    {#each data.characters as char (char.id)}
       <a href="/personajes/{char.id}" class="card bg-base-200 border border-azeroth-border hover:border-azeroth-gold transition-colors">
         <div class="card-body">
           <div class="flex justify-between items-start">

@@ -74,11 +74,11 @@
 </script>
 
 {#if mode === 'create'}
-  {#each grouped as group}
+  {#each grouped as group (group.attr)}
     <div class="mb-4">
       <h3 class="font-cinzel text-azeroth-gold mb-2">{group.label}</h3>
       <div class="space-y-2">
-        {#each group.list as s}
+        {#each group.list as s (s.id ?? s.skill_id ?? s.skill?.id ?? '')}
           <div class="flex flex-col md:flex-row md:items-center gap-2 p-2 bg-base-100 rounded border border-azeroth-border">
             <div class="flex-1">
               <p class="font-semibold">{skillName(s)}</p>
@@ -115,7 +115,7 @@
     </div>
   {/each}
 {:else}
-  {#each skills as s}
+  {#each skills as s (s.id ?? s.skill_id ?? s.skill?.id ?? '')}
     <div class="flex flex-col md:flex-row md:items-center gap-2 p-2 bg-base-100 rounded border border-azeroth-border">
       <div class="flex-1">
         <p class="font-semibold">{skillName(s)}</p>

@@ -73,7 +73,7 @@
             bind:value={selectedCharacterId}
             required
           >
-            {#each characters as c}
+            {#each characters as c (c.id)}
               <option value={c.id}>{c.name} ({c.rp_points ?? 0} pts)</option>
             {/each}
           </select>

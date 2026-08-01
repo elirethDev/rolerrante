@@ -3,13 +3,13 @@ import { requireAuth } from '$lib/auth';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals: { profile, user } }) => {
-  requireAuth({ user, profile } as App.Locals);
+  requireAuth({ user, profile });
   return { profile: profile! };
 };
 
 export const actions: Actions = {
   default: async ({ request, locals: { supabase, user, profile } }) => {
-    requireAuth({ user, profile } as App.Locals);
+    requireAuth({ user, profile });
     const form = await request.formData();
     const displayName = String(form.get('display_name') ?? '').trim();
     const avatarUrl = String(form.get('avatar_url') ?? '').trim() || null;

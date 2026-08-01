@@ -34,7 +34,7 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, profile
 
 export const actions: Actions = {
   join: async ({ request, params, locals: { supabase, user, profile } }) => {
-    requireAuth({ user, profile } as App.Locals);
+    requireAuth({ user, profile });
     const form = await request.formData();
     const characterId = String(form.get('character_id') ?? '');
     if (!characterId) return fail(400, { message: 'Selecciona un personaje' });
@@ -45,7 +45,7 @@ export const actions: Actions = {
   },
 
   leave: async ({ params, locals: { supabase, user, profile } }) => {
-    requireAuth({ user, profile } as App.Locals);
+    requireAuth({ user, profile });
     const { data: participant } = await supabase
       .from('event_participants')
       .select('id, character:character_id!inner(id, player_id)')

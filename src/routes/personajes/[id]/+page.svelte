@@ -30,7 +30,7 @@
             <p class="text-gray-400">Sin habilidades destacadas.</p>
           {:else}
             <div class="grid md:grid-cols-2 gap-3">
-              {#each skills as s}
+              {#each skills as s (s.id ?? s.skill?.name ?? '')}
                 <div class="flex justify-between bg-base-100 p-2 rounded border border-azeroth-border">
                   <span>{s.skill?.name}{s.specialization ? ` (${s.specialization})` : ''}</span>
                   <span class="font-cinzel text-azeroth-gold">{s.level}</span>
@@ -90,7 +90,7 @@
           {#if character.stories && character.stories.length > 0}
             <div class="mt-3 pt-3 border-t border-azeroth-border">
               <p class="text-sm font-semibold mb-1">Historias:</p>
-              {#each character.stories as story}
+              {#each character.stories as story (story.id)}
                 <a href="/historias/{story.id}" class="link text-sm block">
                   {story.title} <span class="badge badge-xs {statusColor(story.status)}">{statusLabel(story.status)}</span>
                 </a>

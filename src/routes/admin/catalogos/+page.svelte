@@ -172,7 +172,7 @@
             </tr>
           </thead>
           <tbody>
-            {#each data.races as race}
+            {#each data.races as race (race.id)}
               <tr>
                 <td class="font-semibold">{race.name}</td>
                 <td>{race.group_name}</td>
@@ -229,7 +229,7 @@
             <div class="form-control">
               <label class="label" for="s_attr"><span class="label-text text-xs">Atributo</span></label>
               <select id="s_attr" name="attribute" class="select select-bordered select-sm" required>
-                {#each ['F', 'D', 'I', 'P', 'E'] as a}
+                {#each ['F', 'D', 'I', 'P', 'E'] as a (a)}
                   <option value={a} selected={(editingSkill?.attribute ?? 'F') === a}>{a} — {attrLabel(a)}</option>
                 {/each}
               </select>
@@ -272,7 +272,7 @@
             </tr>
           </thead>
           <tbody>
-            {#each data.skills as skill}
+            {#each data.skills as skill (skill.id)}
               <tr>
                 <td class="font-semibold">{skill.name}</td>
                 <td>{attrLabel(skill.attribute)}</td>

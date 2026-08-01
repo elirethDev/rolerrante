@@ -25,7 +25,7 @@
       <p class="text-gray-400">Nadie se ha inscrito todavía.</p>
     {:else}
       <ul class="divide-y divide-azeroth-border">
-        {#each participants as p}
+        {#each participants as p (p.character?.id ?? '')}
           <li class="py-2 flex justify-between items-center">
             <span>{p.character?.name ?? 'Personaje eliminado'}</span>
             {#if p.status}

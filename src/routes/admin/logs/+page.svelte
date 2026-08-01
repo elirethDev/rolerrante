@@ -48,7 +48,7 @@
           </tr>
         </thead>
         <tbody>
-          {#each filtered as log}
+          {#each filtered as log (log.id ?? log.created_at)}
             <tr>
               <td>{formatDate(log.created_at)}</td>
               <td>{log.actor?.display_name ?? log.actor?.username ?? 'Sistema'}</td>

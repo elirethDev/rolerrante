@@ -646,6 +646,7 @@ export type Database = {
       }
     }
     Views: {
+      // eslint-disable-next-line no-unused-vars
       [_ in never]: never
     }
     Functions: {
@@ -714,6 +715,7 @@ export type Database = {
       user_role: "pendiente" | "rolero" | "gm" | "admin"
     }
     CompositeTypes: {
+      // eslint-disable-next-line no-unused-vars
       [_ in never]: never
     }
   }

@@ -60,7 +60,7 @@
     </div>
 
     <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
-      {#each attrKeys as attr}
+      {#each attrKeys as attr (attr.key)}
         <div class="bg-base-100 rounded-lg p-3 text-center border border-azeroth-border">
           <p class="text-xs text-gray-400 uppercase tracking-wide">{attr.label}</p>
           <p class="text-2xl font-cinzel text-azeroth-gold">{character[attr.key]}</p>

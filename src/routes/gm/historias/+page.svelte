@@ -17,7 +17,7 @@
   <p class="text-gray-400">No hay historias pendientes.</p>
 {:else}
   <div class="space-y-4">
-    {#each data.stories as s}
+    {#each data.stories as s (s.id)}
       {@const char = Array.isArray(s.character) ? s.character[0] : s.character}
       <div class="card bg-base-200 border border-azeroth-border">
         <div class="card-body">

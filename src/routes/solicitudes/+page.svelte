@@ -24,7 +24,7 @@
       <p class="text-gray-400">No has enviado solicitudes.</p>
     {:else}
       <div class="space-y-3">
-        {#each data.requests as req}
+        {#each data.requests as req (req.id)}
           <div class="p-3 bg-base-100 rounded border border-azeroth-border">
             <div class="flex justify-between items-start">
               <div>

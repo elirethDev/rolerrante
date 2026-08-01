@@ -55,7 +55,7 @@
   {#if form && 'errors' in form}
     <div class="alert alert-warning mb-4">
       <ul class="list-disc list-inside">
-        {#each Object.values(form.errors as Record<string, string>) as err}
+        {#each Object.values(form.errors as Record<string, string>) as err (err)}
           <li>{err}</li>
         {/each}
       </ul>
@@ -76,7 +76,7 @@
             <label class="label" for="race_id"><span class="label-text">Raza</span></label>
             <select id="race_id" name="race_id" class="select select-bordered" required>
               <option value="">Selecciona</option>
-              {#each data.races as race}
+              {#each data.races as race (race.id)}
                 <option value={race.id}>{race.name}</option>
               {/each}
             </select>
@@ -121,7 +121,7 @@
         {#if attrErrors.length > 0}
           <div class="alert alert-warning mb-3 text-sm">
             <ul class="list-disc list-inside">
-              {#each attrErrors as err}
+              {#each attrErrors as err (err)}
                 <li>{err}</li>
               {/each}
             </ul>
@@ -129,7 +129,7 @@
         {/if}
 
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {#each ATTR_KEYS as key}
+          {#each ATTR_KEYS as key (key)}
             <AttributeInput
               label={ATTR_LABELS[key]}
               value={attrValues[key]}
@@ -155,11 +155,11 @@
           <span class="text-xs text-gray-400">(gastados: {skillSpent} / {SKILL_POINTS})</span>
         </div>
 
-        {#each Object.entries(grouped) as [attr, skills]}
+        {#each Object.entries(grouped) as [attr, skills] (attr)}
           <div class="mb-4">
             <h3 class="font-cinzel text-azeroth-gold mb-2">{ATTR_LABELS['attr_' + attr.toLowerCase()] || attr}</h3>
             <div class="space-y-2">
-              {#each skills as skill}
+              {#each skills as skill (skill.id)}
                 <div class="flex flex-col md:flex-row md:items-center gap-2 p-2 bg-base-100 rounded border border-azeroth-border">
                   <div class="flex-1">
                     <p class="font-semibold">{skill.name}</p>

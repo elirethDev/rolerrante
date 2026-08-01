@@ -3,8 +3,22 @@ import { requireAuth } from '$lib/auth';
 import { skillUpgradeCost } from '$lib/rules';
 import type { Actions, PageServerLoad } from './$types';
 
+interface SkillRequestRow {
+  id: string;
+  character_id: string;
+  justification: string;
+  status: string;
+  total_xp_cost: number;
+  created_at: string;
+  review_notes: string | null;
+  reviewed_at: string | null;
+  reviewer_id: string | null;
+  character: { name: string } | null;
+  items: Record<string, unknown>[];
+}
+
 export const load: PageServerLoad = async ({ locals: { supabase, user, profile } }) => {
-  requireAuth({ user, profile } as App.Locals);
+  requireAuth({ user, profile });
 
   const { data: characters } = await supabase
     .from('characters')
@@ -13,7 +27,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, user, profile }
     .eq('status', 'aprobado');
 
   const characterIds = (characters ?? []).map((c) => c.id);
-  let requests: any[] = [];
+  let requests: SkillRequestRow[] = [];
   if (characterIds.length > 0) {
     const { data: reqData } = await supabase
       .from('skill_requests')
@@ -28,7 +42,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, user, profile }
 
 export const actions: Actions = {
   default: async ({ request, locals: { supabase, user, profile } }) => {
-    requireAuth({ user, profile } as App.Locals);
+    requireAuth({ user, profile });
     const form = await request.formData();
     const characterId = String(form.get('character_id') ?? '');
     const justification = String(form.get('justification') ?? '').trim();

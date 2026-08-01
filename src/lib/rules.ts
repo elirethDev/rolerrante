@@ -32,7 +32,6 @@ export function attributeCost(attrs: Record<string, number>): number {
  */
 export function validateAttributes(attrs: Record<string, number>): string[] {
   const errors: string[] = [];
-  const keys = Object.keys(attrs);
   const values = Object.values(attrs);
 
   // Rango
