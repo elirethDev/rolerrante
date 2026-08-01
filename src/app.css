@@ -1,13 +1,35 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@plugin "daisyui";
+@plugin "daisyui/theme" {
+  name: "azeroth";
+  default: true;
+  color-scheme: dark;
+  --color-base-100: #0F1115;
+  --color-base-200: #1A1C23;
+  --color-base-300: #2A2D36;
+  --color-base-content: #E2E8F0;
+  --color-primary: #C8AA6E;
+  --color-secondary: #2C3E50;
+  --color-accent: #8E44AD;
+  --color-neutral: #1A1C23;
+  --color-info: #3498DB;
+  --color-success: #27AE60;
+  --color-warning: #F1C40F;
+  --color-error: #C0392B;
+}
+@theme {
+  --font-cinzel: 'Cinzel', serif;
+  --color-azeroth-gold: #C8AA6E;
+  --color-azeroth-dark: #0F1115;
+  --color-azeroth-panel: #1A1C23;
+  --color-azeroth-border: #3A2F1F;
+}
 html {
   font-family: 'Inter', sans-serif;
-  background-color: oklch(var(--b1));
+  background-color: var(--color-base-100);
 }
-
 h1, h2, h3, h4, h5, h6, .font-cinzel {
   font-family: 'Cinzel', serif;
 }
