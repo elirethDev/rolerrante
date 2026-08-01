@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Menu, User } from '@lucide/svelte';
+  import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import type { User as SupabaseUser } from '@supabase/supabase-js';
   import type { Profile } from '$lib/types';
@@ -25,43 +26,43 @@
         </button>
         {#if menuOpen}
           <ul class="menu dropdown-content bg-base-200 rounded-box z-[1] mt-3 w-56 p-2 shadow border border-azeroth-border">
-            <li><a href="/personajes" onclick={() => (menuOpen = false)}>Fichas</a></li>
-            <li><a href="/historias" onclick={() => (menuOpen = false)}>Historias</a></li>
-            <li><a href="/eventos" onclick={() => (menuOpen = false)}>Eventos</a></li>
+            <li><a href={resolve('/personajes')} onclick={() => (menuOpen = false)}>Fichas</a></li>
+            <li><a href={resolve('/historias')} onclick={() => (menuOpen = false)}>Historias</a></li>
+            <li><a href={resolve('/eventos')} onclick={() => (menuOpen = false)}>Eventos</a></li>
             {#if profile?.role !== 'pendiente'}
-              <li><a href="/solicitudes" onclick={() => (menuOpen = false)}>Habilidades</a></li>
+              <li><a href={resolve('/solicitudes')} onclick={() => (menuOpen = false)}>Habilidades</a></li>
             {/if}
             {#if isGMOrAdmin(profile?.role)}
-              <li><a href="/gm" onclick={() => (menuOpen = false)}>Panel GM</a></li>
+              <li><a href={resolve('/gm')} onclick={() => (menuOpen = false)}>Panel GM</a></li>
             {/if}
             {#if isAdmin(profile?.role)}
-              <li><a href="/admin" onclick={() => (menuOpen = false)}>Admin</a></li>
+              <li><a href={resolve('/admin')} onclick={() => (menuOpen = false)}>Admin</a></li>
             {/if}
           </ul>
         {/if}
       </div>
     {/if}
-    <a href="/" class="btn btn-ghost text-xl font-cinzel text-azeroth-gold">RolErrante</a>
+    <a href={resolve('/')} class="btn btn-ghost text-xl font-cinzel text-azeroth-gold">RolErrante</a>
   </div>
   <div class="navbar-center hidden lg:flex gap-2">
     {#if user}
-      <a href="/personajes" class="btn btn-ghost btn-sm" aria-current={page.url.pathname.startsWith('/personajes') ? 'page' : undefined}>Fichas</a>
-      <a href="/historias" class="btn btn-ghost btn-sm" aria-current={page.url.pathname.startsWith('/historias') ? 'page' : undefined}>Historias</a>
-      <a href="/eventos" class="btn btn-ghost btn-sm" aria-current={page.url.pathname.startsWith('/eventos') ? 'page' : undefined}>Eventos</a>
+      <a href={resolve('/personajes')} class="btn btn-ghost btn-sm" aria-current={page.url.pathname.startsWith('/personajes') ? 'page' : undefined}>Fichas</a>
+      <a href={resolve('/historias')} class="btn btn-ghost btn-sm" aria-current={page.url.pathname.startsWith('/historias') ? 'page' : undefined}>Historias</a>
+      <a href={resolve('/eventos')} class="btn btn-ghost btn-sm" aria-current={page.url.pathname.startsWith('/eventos') ? 'page' : undefined}>Eventos</a>
       {#if profile?.role !== 'pendiente'}
-        <a href="/solicitudes" class="btn btn-ghost btn-sm" aria-current={page.url.pathname.startsWith('/solicitudes') ? 'page' : undefined}>Habilidades</a>
+        <a href={resolve('/solicitudes')} class="btn btn-ghost btn-sm" aria-current={page.url.pathname.startsWith('/solicitudes') ? 'page' : undefined}>Habilidades</a>
       {/if}
       {#if isGMOrAdmin(profile?.role)}
-        <a href="/gm" class="btn btn-primary btn-sm" aria-current={page.url.pathname.startsWith('/gm') ? 'page' : undefined}>Panel GM</a>
+        <a href={resolve('/gm')} class="btn btn-primary btn-sm" aria-current={page.url.pathname.startsWith('/gm') ? 'page' : undefined}>Panel GM</a>
       {/if}
       {#if isAdmin(profile?.role)}
-        <a href="/admin" class="btn btn-error btn-sm" aria-current={page.url.pathname.startsWith('/admin') ? 'page' : undefined}>Admin</a>
+        <a href={resolve('/admin')} class="btn btn-error btn-sm" aria-current={page.url.pathname.startsWith('/admin') ? 'page' : undefined}>Admin</a>
       {/if}
     {/if}
   </div>
   <div class="navbar-end gap-2">
     {#if user}
-      <a href="/perfil" class="btn btn-ghost btn-sm gap-2">
+      <a href={resolve('/perfil')} class="btn btn-ghost btn-sm gap-2">
         <User size={18} />
         <span class="hidden sm:inline">{profile?.display_name ?? profile?.username ?? 'Perfil'}</span>
       </a>
@@ -69,8 +70,8 @@
         <button type="submit" class="btn btn-outline btn-error btn-sm">Salir</button>
       </form>
     {:else}
-      <a href="/login" class="btn btn-ghost btn-sm">Entrar</a>
-      <a href="/registro" class="btn btn-primary btn-sm">Registrarse</a>
+      <a href={resolve('/login')} class="btn btn-ghost btn-sm">Entrar</a>
+      <a href={resolve('/registro')} class="btn btn-primary btn-sm">Registrarse</a>
     {/if}
   </div>
 </nav>

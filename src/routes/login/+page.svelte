@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { resolve } from '$app/paths';
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
   import type { ActionData, PageData } from './$types';
@@ -57,7 +58,7 @@
       </form>
 
       <div class="text-center text-sm mt-4">
-        ¿No tienes cuenta? <a href="/registro" class="link link-primary">Crear cuenta</a>
+        ¿No tienes cuenta? <a href={resolve('/registro')} class="link link-primary">Crear cuenta</a>
       </div>
     </div>
   </div>

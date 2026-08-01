@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import type { PageData } from './$types';
   import { statusLabel, statusColor, formatDate } from '$lib/utils';
   import type { Character } from '$lib/types';
@@ -91,14 +92,14 @@
             <div class="mt-3 pt-3 border-t border-azeroth-border">
               <p class="text-sm font-semibold mb-1">Historias:</p>
               {#each character.stories as story (story.id)}
-                <a href="/historias/{story.id}" class="link text-sm block">
+                <a href={resolve(`/historias/${story.id}`)} class="link text-sm block">
                   {story.title} <span class="badge badge-xs {statusColor(story.status)}">{statusLabel(story.status)}</span>
                 </a>
               {/each}
             </div>
           {:else if character.status === 'aprobado' && data.profile?.id === character.player_id}
             <div class="mt-3 pt-3 border-t border-azeroth-border">
-              <a href="/historias/nueva" class="btn btn-primary btn-sm w-full">
+              <a href={resolve('/historias/nueva')} class="btn btn-primary btn-sm w-full">
                 + Crear historia
               </a>
               <p class="text-xs text-gray-400 mt-1">Escribe la historia de {character.name}</p>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import type { PageData } from './$types';
   import { formatDate } from '$lib/utils';
   import { BookOpen, Scroll, Shield, Users } from '@lucide/svelte';
@@ -28,7 +29,7 @@
       {:else}
         <div class="space-y-2 max-h-80 overflow-y-auto">
           {#each data.characters as c (c.id)}
-            <a href="/personajes/{c.id}" class="block p-2 bg-base-100 rounded border border-azeroth-border hover:border-azeroth-gold">
+            <a href={resolve(`/personajes/${c.id}`)} class="block p-2 bg-base-100 rounded border border-azeroth-border hover:border-azeroth-gold">
               <p class="font-semibold">{c.name}</p>
               <p class="text-xs text-gray-400">{c.race?.name} · {playerName(c.player)} · {formatDate(c.created_at)}</p>
             </a>
@@ -46,7 +47,7 @@
       {:else}
         <div class="space-y-2 max-h-80 overflow-y-auto">
           {#each data.stories as s (s.id)}
-            <a href="/historias/{s.id}" class="block p-2 bg-base-100 rounded border border-azeroth-border hover:border-azeroth-gold">
+            <a href={resolve(`/historias/${s.id}`)} class="block p-2 bg-base-100 rounded border border-azeroth-border hover:border-azeroth-gold">
               <p class="font-semibold">{s.title}</p>
               <p class="text-xs text-gray-400">{s.character?.name} · {playerName(s.character?.player)} · {formatDate(s.created_at)}</p>
             </a>
@@ -64,7 +65,7 @@
       {:else}
         <div class="space-y-2 max-h-80 overflow-y-auto">
           {#each data.skillRequests as req (req.id)}
-            <a href="/gm/solicitudes/{req.id}" class="block p-2 bg-base-100 rounded border border-azeroth-border hover:border-azeroth-gold">
+            <a href={resolve(`/gm/solicitudes/${req.id}`)} class="block p-2 bg-base-100 rounded border border-azeroth-border hover:border-azeroth-gold">
               <p class="font-semibold">{req.character?.name} · {req.total_xp_cost} XP</p>
               <p class="text-xs text-gray-400">{playerName(req.character?.player)} · {formatDate(req.created_at)}</p>
             </a>

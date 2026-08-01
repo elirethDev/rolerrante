@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import type { PageData } from './$types';
   import { statusLabel, statusColor, formatDate } from '$lib/utils';
   import { BookOpen, Scroll } from '@lucide/svelte';
@@ -20,7 +21,7 @@
 <div class="flex items-center justify-between mb-6">
   <h1 class="text-3xl font-cinzel text-azeroth-gold flex items-center gap-3"><Scroll /> Historias</h1>
   {#if data.profile}
-    <a href="/historias/nueva" class="btn btn-primary btn-sm font-cinzel">Nueva historia</a>
+    <a href={resolve('/historias/nueva')} class="btn btn-primary btn-sm font-cinzel">Nueva historia</a>
   {/if}
 </div>
 
@@ -29,7 +30,7 @@
 {:else}
   <div class="grid md:grid-cols-2 gap-6">
     {#each data.stories as story (story.id)}
-      <a href="/historias/{story.id}" class="card bg-base-200 border border-azeroth-border hover:border-azeroth-gold transition-colors">
+      <a href={resolve(`/historias/${story.id}`)} class="card bg-base-200 border border-azeroth-border hover:border-azeroth-gold transition-colors">
         <div class="card-body">
           <div class="flex justify-between items-start">
             <h2 class="card-title font-cinzel text-lg">{story.title}</h2>

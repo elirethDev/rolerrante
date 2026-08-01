@@ -1,4 +1,6 @@
 <script lang="ts">
+  /* eslint-disable @typescript-eslint/no-explicit-any -- resolve() is typed for literal paths; nav hrefs are runtime strings */
+  import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import type { Component, Snippet } from 'svelte';
 
@@ -36,7 +38,7 @@
         {#each nav as item (item.href)}
           <li>
             <a
-              href={item.href}
+              href={resolve(item.href as any)}
               class:active={page.url.pathname === item.href}
               aria-current={page.url.pathname === item.href ? 'page' : undefined}
             >

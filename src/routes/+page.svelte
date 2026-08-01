@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { Shield, Scroll, Sword } from '@lucide/svelte';
 </script>
 
@@ -16,8 +17,8 @@
         Plataforma de rol ambientada en World of Warcraft.
       </p>
       <div class="flex flex-wrap justify-center gap-4">
-        <a href="/registro" class="btn btn-primary btn-lg font-cinzel">Comenzar aventura</a>
-        <a href="/historias" class="btn btn-outline btn-lg">Explorar historias</a>
+        <a href={resolve('/registro')} class="btn btn-primary btn-lg font-cinzel">Comenzar aventura</a>
+        <a href={resolve('/historias')} class="btn btn-outline btn-lg">Explorar historias</a>
       </div>
     </div>
   </div>

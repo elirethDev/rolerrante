@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { resolve } from '$app/paths';
   import TipTapEditor from '$lib/components/editor/TipTapEditor.svelte';
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
@@ -83,7 +84,7 @@
 
     <div class="flex gap-3">
       <SubmitButton class="font-cinzel" disabled={!turnstileToken} pending={pending}>Publicar evento</SubmitButton>
-      <a href="/eventos" class="btn btn-ghost">Cancelar</a>
+      <a href={resolve('/eventos')} class="btn btn-ghost">Cancelar</a>
     </div>
   </form>
 </section>
