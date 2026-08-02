@@ -1,6 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
+  import Field from '$lib/components/forms/Field.svelte';
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
   import type { ActionData, PageData } from './$types';
@@ -39,15 +40,17 @@
         }}
         class="space-y-4 mt-4"
       >
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend">Correo electrónico</legend>
-          <input id="email" name="email" type="email" class="input" required />
-        </fieldset>
+        <Field label="Correo electrónico" required>
+          {#snippet ctrl()}
+            <input id="email" name="email" type="email" class="input" required />
+          {/snippet}
+        </Field>
 
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend">Contraseña</legend>
-          <input id="password" name="password" type="password" class="input" required />
-        </fieldset>
+        <Field label="Contraseña" required>
+          {#snippet ctrl()}
+            <input id="password" name="password" type="password" class="input" required />
+          {/snippet}
+        </Field>
 
         <div class="flex justify-center">
           <Turnstile bind:token={turnstileToken} theme="dark" />
