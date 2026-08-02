@@ -5,6 +5,7 @@
   import TipTapViewer from '$lib/components/editor/TipTapViewer.svelte';
   import ParticipantList from '$lib/components/events/ParticipantList.svelte';
   import SessionList from '$lib/components/events/SessionList.svelte';
+  import Field from '$lib/components/forms/Field.svelte';
   import type { ActionData, PageData } from './$types';
 
   export let data: PageData;
@@ -53,14 +54,15 @@
     {#if !data.participant && data.characters.length > 0}
       <form method="POST" action="?/join" use:enhance class="card bg-base-200 border border-azeroth-border mb-6">
         <div class="card-body flex-row items-end gap-4">
-          <fieldset class="fieldset flex-1">
-            <legend class="fieldset-legend">Inscribir personaje</legend>
-            <select id="character_id" name="character_id" class="select" required>
-              {#each data.characters as c (c.id)}
-                <option value={c.id}>{c.name}</option>
-              {/each}
-            </select>
-          </fieldset>
+          <Field label="Inscribir personaje" required class="flex-1">
+            {#snippet ctrl()}
+              <select id="character_id" name="character_id" class="select" required>
+                {#each data.characters as c (c.id)}
+                  <option value={c.id}>{c.name}</option>
+                {/each}
+              </select>
+            {/snippet}
+          </Field>
           <button type="submit" class="btn btn-primary">Inscribirse</button>
         </div>
         {#if form?.message}<p class="text-error text-sm px-6 pb-4">{form.message}</p>{/if}
@@ -78,10 +80,11 @@
         <h2 class="card-title font-cinzel text-azeroth-gold">Gestión del evento</h2>
         {#if form?.message}<div class="alert alert-error text-sm">{form.message}</div>{/if}
         <form method="POST" action="?/finalize" use:enhance class="flex gap-3 items-end mt-2">
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">XP por participante confirmado</legend>
-            <input id="xp" name="xp" type="number" class="input w-32" min="1" value="5" required />
-          </fieldset>
+          <Field label="XP por participante confirmado" required>
+            {#snippet ctrl()}
+              <input id="xp" name="xp" type="number" class="input w-32" min="1" value="5" required />
+            {/snippet}
+          </Field>
           <button type="submit" class="btn btn-success">Finalizar y otorgar XP</button>
         </form>
       </div>
