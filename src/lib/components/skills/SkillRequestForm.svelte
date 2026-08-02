@@ -3,6 +3,7 @@
   import { skillUpgradeCost } from '$lib/rules';
   import { User } from '@lucide/svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
+  import Field from '$lib/components/forms/Field.svelte';
   import SkillPicker from './SkillPicker.svelte';
 
   interface CharacterShape {
@@ -33,9 +34,10 @@
     characters?: CharacterShape[];
     skills?: AnySkill[];
     form?: { message?: string } | null;
+    size?: 'sm' | 'md';
   }
 
-  let { characters = [], skills = [], form = null }: Props = $props();
+  let { characters = [], skills = [], form = null, size = 'md' }: Props = $props();
 
   let selectedCharacterId = $state('');
   let targetLevels = $state<Record<string, number>>({});
@@ -66,20 +68,21 @@
         <div class="alert alert-error text-sm">{form.message}</div>
       {/if}
       <form method="POST" use:enhance class="space-y-4">
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend">Personaje</legend>
-          <select
-            id="character_id"
-            name="character_id"
-            class="select"
-            bind:value={selectedCharacterId}
-            required
-          >
-            {#each characters as c (c.id)}
-              <option value={c.id}>{c.name} ({c.rp_points ?? 0} pts)</option>
-            {/each}
-          </select>
-        </fieldset>
+        <Field label="Personaje" required {size}>
+          {#snippet ctrl()}
+            <select
+              id="character_id"
+              name="character_id"
+              class="select"
+              bind:value={selectedCharacterId}
+              required
+            >
+              {#each characters as c (c.id)}
+                <option value={c.id}>{c.name} ({c.rp_points ?? 0} pts)</option>
+              {/each}
+            </select>
+          {/snippet}
+        </Field>
 
         <div class="space-y-2 max-h-96 overflow-y-auto pr-2">
           <SkillPicker
@@ -89,6 +92,7 @@
             onLevelChange={(id, value) => (targetLevels[id] = value)}
             specs={specs}
             onSpecChange={(id, value) => (specs[id] = value)}
+            {size}
           />
         </div>
 

@@ -46,4 +46,15 @@ describe('AttributeInput', () => {
     await user.click(minusBtn);
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it('keeps the w-10 stepper width and uses a fieldset+legend wrapper (REQ-FS-05)', () => {
+    render(AttributeInput, { label: 'Fuerza', value: 5 });
+    // fieldset wrapper comes from the Field primitive
+    const fieldset = document.querySelector('fieldset');
+    expect(fieldset).toBeInTheDocument();
+    expect(document.querySelector('legend')?.textContent).toBe('Fuerza');
+    // the value span keeps its w-10 stepper width
+    const valueSpan = screen.getByText('5').closest('span');
+    expect(valueSpan?.classList).toContain('w-10');
+  });
 });
