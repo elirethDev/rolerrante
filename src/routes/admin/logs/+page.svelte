@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Field from '$lib/components/forms/Field.svelte';
   import { formatDate } from '$lib/utils';
   import type { PageData } from './$types';
 
@@ -23,16 +24,17 @@
 
 <div class="card bg-base-200 border border-azeroth-border">
   <div class="card-body">
-    <fieldset class="fieldset max-w-xs mb-4">
-      <legend class="fieldset-legend">Filtrar por acción</legend>
-      <input
-        id="log-filter"
-        type="text"
-        class="input input-sm"
-        placeholder="Ej: login, create..."
-        bind:value={filter}
-      />
-    </fieldset>
+    <Field label="Filtrar por acción" size="sm" class="mb-4">
+      {#snippet ctrl()}
+        <input
+          id="log-filter"
+          type="text"
+          class="input input-sm"
+          placeholder="Ej: login, create..."
+          bind:value={filter}
+        />
+      {/snippet}
+    </Field>
 
     <div class="overflow-x-auto">
       <table class="table table-sm">

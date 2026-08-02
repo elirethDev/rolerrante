@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import Field from '$lib/components/forms/Field.svelte';
   import type { ActionData, PageData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -86,71 +87,85 @@
           {/if}
 
           <div class="grid grid-cols-2 gap-2">
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend text-xs">Nombre</legend>
-              <input id="r_name" name="name" type="text" class="input input-sm" value={editingRace?.name ?? ''} required />
-            </fieldset>
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend text-xs">Grupo</legend>
-              <input id="r_group" name="group_name" type="text" class="input input-sm" value={editingRace?.group_name ?? ''} required placeholder="Alianza / Horda" />
-            </fieldset>
+            <Field label="Nombre" size="sm">
+              {#snippet ctrl()}
+                <input id="r_name" name="name" type="text" class="input input-sm" value={editingRace?.name ?? ''} required />
+              {/snippet}
+            </Field>
+            <Field label="Grupo" size="sm">
+              {#snippet ctrl()}
+                <input id="r_group" name="group_name" type="text" class="input input-sm" value={editingRace?.group_name ?? ''} required placeholder="Alianza / Horda" />
+              {/snippet}
+            </Field>
           </div>
 
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend text-xs">Descripción</legend>
-            <textarea id="r_desc" name="description" class="textarea textarea-sm" rows="2">{editingRace?.description ?? ''}</textarea>
-          </fieldset>
+          <Field label="Descripción" size="sm">
+            {#snippet ctrl()}
+              <textarea id="r_desc" name="description" class="textarea textarea-sm" rows="2">{editingRace?.description ?? ''}</textarea>
+            {/snippet}
+          </Field>
 
           <div class="grid grid-cols-2 gap-2">
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend text-xs">Tamaño</legend>
-              <input id="r_size" name="size" type="text" class="input input-sm" value={editingRace?.size ?? ''} required placeholder="Mediano, Grande..." />
-            </fieldset>
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend text-xs">Magia (separado por comas)</legend>
-              <input id="r_magic" name="magic_access" type="text" class="input input-sm" value={editingRace?.magic_access?.join(', ') ?? ''} placeholder="Arcana, Luz Sagrada" />
-            </fieldset>
+            <Field label="Tamaño" size="sm">
+              {#snippet ctrl()}
+                <input id="r_size" name="size" type="text" class="input input-sm" value={editingRace?.size ?? ''} required placeholder="Mediano, Grande..." />
+              {/snippet}
+            </Field>
+            <Field label="Magia (separado por comas)" size="sm">
+              {#snippet ctrl()}
+                <input id="r_magic" name="magic_access" type="text" class="input input-sm" value={editingRace?.magic_access?.join(', ') ?? ''} placeholder="Arcana, Luz Sagrada" />
+              {/snippet}
+            </Field>
           </div>
 
-          <fieldset class="fieldset border border-azeroth-border rounded p-2">
-            <legend class="fieldset-legend text-xs text-gray-400 px-1">Datos físicos</legend>
-            <div class="grid grid-cols-2 gap-2">
-              <fieldset class="fieldset">
-                <legend class="fieldset-legend text-xs">Altura mín (cm)</legend>
-                <input id="r_hmin" name="altura_min" type="number" class="input input-sm" value={jval(editingRace?.physical_data, 'altura_min') ?? ''} />
-              </fieldset>
-              <fieldset class="fieldset">
-                <legend class="fieldset-legend text-xs">Altura máx (cm)</legend>
-                <input id="r_hmax" name="altura_max" type="number" class="input input-sm" value={jval(editingRace?.physical_data, 'altura_max') ?? ''} />
-              </fieldset>
-              <fieldset class="fieldset">
-                <legend class="fieldset-legend text-xs">Peso mín (kg)</legend>
-                <input id="r_pmin" name="peso_min" type="number" class="input input-sm" value={jval(editingRace?.physical_data, 'peso_min') ?? ''} />
-              </fieldset>
-              <fieldset class="fieldset">
-                <legend class="fieldset-legend text-xs">Peso máx (kg)</legend>
-                <input id="r_pmax" name="peso_max" type="number" class="input input-sm" value={jval(editingRace?.physical_data, 'peso_max') ?? ''} />
-              </fieldset>
-            </div>
-          </fieldset>
+          <Field label="Datos físicos" size="sm" class="border border-azeroth-border rounded p-2">
+            {#snippet ctrl()}
+              <div class="grid grid-cols-2 gap-2">
+                <Field label="Altura mín (cm)" size="sm">
+                  {#snippet ctrl()}
+                    <input id="r_hmin" name="altura_min" type="number" class="input input-sm" value={jval(editingRace?.physical_data, 'altura_min') ?? ''} />
+                  {/snippet}
+                </Field>
+                <Field label="Altura máx (cm)" size="sm">
+                  {#snippet ctrl()}
+                    <input id="r_hmax" name="altura_max" type="number" class="input input-sm" value={jval(editingRace?.physical_data, 'altura_max') ?? ''} />
+                  {/snippet}
+                </Field>
+                <Field label="Peso mín (kg)" size="sm">
+                  {#snippet ctrl()}
+                    <input id="r_pmin" name="peso_min" type="number" class="input input-sm" value={jval(editingRace?.physical_data, 'peso_min') ?? ''} />
+                  {/snippet}
+                </Field>
+                <Field label="Peso máx (kg)" size="sm">
+                  {#snippet ctrl()}
+                    <input id="r_pmax" name="peso_max" type="number" class="input input-sm" value={jval(editingRace?.physical_data, 'peso_max') ?? ''} />
+                  {/snippet}
+                </Field>
+              </div>
+            {/snippet}
+          </Field>
 
-          <fieldset class="fieldset border border-azeroth-border rounded p-2">
-            <legend class="fieldset-legend text-xs text-gray-400 px-1">Edad</legend>
-            <div class="grid grid-cols-3 gap-2">
-              <fieldset class="fieldset">
-                <legend class="fieldset-legend text-xs">Adultez</legend>
-                <input id="r_adu" name="adultez" type="number" class="input input-sm" value={jval(editingRace?.age_data, 'adultez') ?? ''} />
-              </fieldset>
-              <fieldset class="fieldset">
-                <legend class="fieldset-legend text-xs">Mediana edad</legend>
-                <input id="r_med" name="mediana_edad" type="number" class="input input-sm" value={jval(editingRace?.age_data, 'mediana_edad') ?? ''} />
-              </fieldset>
-              <fieldset class="fieldset">
-                <legend class="fieldset-legend text-xs">Vejez</legend>
-                <input id="r_vej" name="vejez" type="number" class="input input-sm" value={jval(editingRace?.age_data, 'vejez') ?? ''} />
-              </fieldset>
-            </div>
-          </fieldset>
+          <Field label="Edad" size="sm" class="border border-azeroth-border rounded p-2">
+            {#snippet ctrl()}
+              <div class="grid grid-cols-3 gap-2">
+                <Field label="Adultez" size="sm">
+                  {#snippet ctrl()}
+                    <input id="r_adu" name="adultez" type="number" class="input input-sm" value={jval(editingRace?.age_data, 'adultez') ?? ''} />
+                  {/snippet}
+                </Field>
+                <Field label="Mediana edad" size="sm">
+                  {#snippet ctrl()}
+                    <input id="r_med" name="mediana_edad" type="number" class="input input-sm" value={jval(editingRace?.age_data, 'mediana_edad') ?? ''} />
+                  {/snippet}
+                </Field>
+                <Field label="Vejez" size="sm">
+                  {#snippet ctrl()}
+                    <input id="r_vej" name="vejez" type="number" class="input input-sm" value={jval(editingRace?.age_data, 'vejez') ?? ''} />
+                  {/snippet}
+                </Field>
+              </div>
+            {/snippet}
+          </Field>
 
           <div class="flex gap-2 justify-end">
             <button type="button" class="btn btn-ghost btn-sm" onclick={cancelRace}>Cancelar</button>
@@ -220,37 +235,40 @@
             <input type="hidden" name="id" value={editingSkill.id} />
           {/if}
 
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend text-xs">Nombre</legend>
-            <input id="s_name" name="name" type="text" class="input input-sm" value={editingSkill?.name ?? ''} required />
-          </fieldset>
+          <Field label="Nombre" size="sm">
+            {#snippet ctrl()}
+              <input id="s_name" name="name" type="text" class="input input-sm" value={editingSkill?.name ?? ''} required />
+            {/snippet}
+          </Field>
 
           <div class="grid grid-cols-2 gap-2">
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend text-xs">Atributo</legend>
-              <select id="s_attr" name="attribute" class="select select-sm" required>
-                {#each ['F', 'D', 'I', 'P', 'E'] as a (a)}
-                  <option value={a} selected={(editingSkill?.attribute ?? 'F') === a}>{a} — {attrLabel(a)}</option>
-                {/each}
-              </select>
-            </fieldset>
-            <fieldset class="fieldset items-start justify-end">
-              <label class="label cursor-pointer gap-2">
-                <span class="text-xs">Requiere especialización</span>
+            <Field label="Atributo" size="sm">
+              {#snippet ctrl()}
+                <select id="s_attr" name="attribute" class="select select-sm" required>
+                  {#each ['F', 'D', 'I', 'P', 'E'] as a (a)}
+                    <option value={a} selected={(editingSkill?.attribute ?? 'F') === a}>{a} — {attrLabel(a)}</option>
+                  {/each}
+                </select>
+              {/snippet}
+            </Field>
+            <Field label="Requiere especialización" size="sm">
+              {#snippet ctrl()}
                 <input type="checkbox" name="requires_specialization" class="checkbox checkbox-sm" checked={editingSkill?.requires_specialization ?? false} />
-              </label>
-            </fieldset>
+              {/snippet}
+            </Field>
           </div>
 
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend text-xs">Descripción</legend>
-            <textarea id="s_desc" name="description" class="textarea textarea-sm" rows="2">{editingSkill?.description ?? ''}</textarea>
-          </fieldset>
+          <Field label="Descripción" size="sm">
+            {#snippet ctrl()}
+              <textarea id="s_desc" name="description" class="textarea textarea-sm" rows="2">{editingSkill?.description ?? ''}</textarea>
+            {/snippet}
+          </Field>
 
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend text-xs">Especializaciones (separado por comas)</legend>
-            <input id="s_specs" name="specializations" type="text" class="input input-sm" value={editingSkill?.specializations?.join(', ') ?? ''} placeholder="Armas a una mano, Escudos" />
-          </fieldset>
+          <Field label="Especializaciones (separado por comas)" size="sm">
+            {#snippet ctrl()}
+              <input id="s_specs" name="specializations" type="text" class="input input-sm" value={editingSkill?.specializations?.join(', ') ?? ''} placeholder="Armas a una mano, Escudos" />
+            {/snippet}
+          </Field>
 
           <div class="flex gap-2 justify-end">
             <button type="button" class="btn btn-ghost btn-sm" onclick={cancelSkill}>Cancelar</button>
