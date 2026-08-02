@@ -68,9 +68,9 @@
     </div>
   {/if}
 
-  {#if isOwner && story.status === 'rechazado'}
+  {#if isOwner || canModerate}
     <div class="mt-6 text-center">
-      <a href={resolve(`/historias/${story.id}/editar`)} class="btn btn-primary">Editar y reenviar</a>
+      <a href={resolve(`/historias/${story.id}/editar`)} class="btn btn-primary">Editar historia</a>
     </div>
   {/if}
 </article>

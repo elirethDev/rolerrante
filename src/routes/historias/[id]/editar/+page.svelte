@@ -40,6 +40,11 @@
     <Field label="Personaje" required>
       {#snippet ctrl()}
         <select id="character_id" name="character_id" class="select" bind:value={characterId} required>
+          {#if !data.characters.some((c) => c.id === characterId)}
+            <option value={data.story.character_id} disabled>
+              {data.story.character?.name ?? 'Personaje actual'}
+            </option>
+          {/if}
           {#each data.characters as c (c.id)}
             <option value={c.id}>{c.name}</option>
           {/each}
