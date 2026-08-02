@@ -5,6 +5,7 @@
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
   import AttributeInput from '$lib/components/forms/AttributeInput.svelte';
+  import Field from '$lib/components/forms/Field.svelte';
   import CombatValues from '$lib/components/sheets/CombatValues.svelte';
   import type { ActionData, PageData } from './$types';
   import type { Skill } from '$lib/types';
@@ -99,38 +100,44 @@
       <div class="card-body">
         <h2 class="card-title font-cinzel text-azeroth-gold">Datos básicos</h2>
         <div class="grid md:grid-cols-2 gap-4">
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">Nombre</legend>
-            <input id="name" name="name" type="text" class="input" required />
-          </fieldset>
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">Raza</legend>
-            <select id="race_id" name="race_id" class="select" required>
-              <option value="">Selecciona</option>
-              {#each data.races as race (race.id)}
-                <option value={race.id}>{race.name}</option>
-              {/each}
-            </select>
-          </fieldset>
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">Edad</legend>
-            <input id="age" name="age" type="number" class="input" min="0" />
-          </fieldset>
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">Sexo</legend>
-            <input id="sex" name="sex" type="text" class="input" />
-          </fieldset>
-          <fieldset class="fieldset md:col-span-2">
-            <legend class="fieldset-legend">Descripción física</legend>
-            <textarea id="physical_description" name="physical_description" class="textarea" rows="3"></textarea>
-          </fieldset>
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">Fuente de maná</legend>
-            <select id="mana_source" name="mana_source" class="select">
-              <option value="I">Inteligencia</option>
-              <option value="E">Espíritu</option>
-            </select>
-          </fieldset>
+          <Field label="Nombre" required>
+            {#snippet ctrl()}
+              <input id="name" name="name" type="text" class="input" required />
+            {/snippet}
+          </Field>
+          <Field label="Raza" required>
+            {#snippet ctrl()}
+              <select id="race_id" name="race_id" class="select" required>
+                <option value="">Selecciona</option>
+                {#each data.races as race (race.id)}
+                  <option value={race.id}>{race.name}</option>
+                {/each}
+              </select>
+            {/snippet}
+          </Field>
+          <Field label="Edad">
+            {#snippet ctrl()}
+              <input id="age" name="age" type="number" class="input" min="0" />
+            {/snippet}
+          </Field>
+          <Field label="Sexo">
+            {#snippet ctrl()}
+              <input id="sex" name="sex" type="text" class="input" />
+            {/snippet}
+          </Field>
+          <Field label="Descripción física" class="md:col-span-2">
+            {#snippet ctrl()}
+              <textarea id="physical_description" name="physical_description" class="textarea" rows="3"></textarea>
+            {/snippet}
+          </Field>
+          <Field label="Fuente de maná">
+            {#snippet ctrl()}
+              <select id="mana_source" name="mana_source" class="select">
+                <option value="I">Inteligencia</option>
+                <option value="E">Espíritu</option>
+              </select>
+            {/snippet}
+          </Field>
         </div>
       </div>
     </div>
@@ -189,7 +196,7 @@
         {#each Object.entries(grouped) as [attr, skills] (attr)}
           <div class="mb-4">
             <h3 class="font-cinzel text-azeroth-gold mb-2">{ATTR_LABELS['attr_' + attr.toLowerCase()] || attr}</h3>
-            <div class="space-y-2">
+            <div class="space-y-3">
               {#each skills as skill (skill.id)}
                 <div class="flex flex-col md:flex-row md:items-center gap-2 p-2 bg-base-100 rounded border border-azeroth-border">
                   <div class="flex-1">
@@ -204,7 +211,7 @@
                       type="number"
                       class="input w-20 input-sm"
                       min="0" max="10" value="0"
-                      on:input={(e) => handleSkillInput(skill.id, e)}
+                      oninput={(e) => handleSkillInput(skill.id, e)}
                     />
                     {#if skill.requires_specialization}
                       <input name="skill_spec_{skill.id}" type="text" class="input input-sm" placeholder="Especialización" />
