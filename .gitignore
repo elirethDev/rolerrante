@@ -15,3 +15,5 @@ node-install.log
 
 # Local AI agent instructions (never expose to public repo)
 AGENTS.md
+# Local codegraph index
+.codegraph/
