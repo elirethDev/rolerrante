@@ -1,6 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
+  import Field from '$lib/components/forms/Field.svelte';
   import TipTapEditor from '$lib/components/editor/TipTapEditor.svelte';
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
@@ -35,47 +36,54 @@
     }}
     class="space-y-4"
   >
-    <fieldset class="fieldset">
-      <legend class="fieldset-legend">Título</legend>
-      <input id="title" name="title" type="text" class="input" required />
-    </fieldset>
+    <Field label="Título" required>
+      {#snippet ctrl()}
+        <input id="title" name="title" type="text" class="input" required />
+      {/snippet}
+    </Field>
 
-    <fieldset class="fieldset">
-      <legend class="fieldset-legend">Tipo</legend>
-      <select id="type" name="type" class="select">
-        <option value="casual">Casual</option>
-        <option value="evento">Evento</option>
-        <option value="campana">Campaña</option>
-      </select>
-    </fieldset>
+    <Field label="Tipo">
+      {#snippet ctrl()}
+        <select id="type" name="type" class="select">
+          <option value="casual">Casual</option>
+          <option value="evento">Evento</option>
+          <option value="campana">Campaña</option>
+        </select>
+      {/snippet}
+    </Field>
 
     <div class="grid md:grid-cols-2 gap-4">
-      <fieldset class="fieldset">
-        <legend class="fieldset-legend">Inicio</legend>
-        <input id="starts_at" name="starts_at" type="datetime-local" class="input" required />
-      </fieldset>
-      <fieldset class="fieldset">
-        <legend class="fieldset-legend">Fin (opcional)</legend>
-        <input id="ends_at" name="ends_at" type="datetime-local" class="input" />
-      </fieldset>
+      <Field label="Inicio" required>
+        {#snippet ctrl()}
+          <input id="starts_at" name="starts_at" type="datetime-local" class="input" required />
+        {/snippet}
+      </Field>
+      <Field label="Fin (opcional)">
+        {#snippet ctrl()}
+          <input id="ends_at" name="ends_at" type="datetime-local" class="input" />
+        {/snippet}
+      </Field>
     </div>
 
     <div class="grid md:grid-cols-2 gap-4">
-      <fieldset class="fieldset">
-        <legend class="fieldset-legend">Máximo de jugadores</legend>
-        <input id="max_players" name="max_players" type="number" class="input" min="0" />
-      </fieldset>
-      <fieldset class="fieldset">
-        <legend class="fieldset-legend">Ubicación</legend>
-        <input id="location" name="location" type="text" class="input" />
-      </fieldset>
+      <Field label="Máximo de jugadores">
+        {#snippet ctrl()}
+          <input id="max_players" name="max_players" type="number" class="input" min="0" />
+        {/snippet}
+      </Field>
+      <Field label="Ubicación">
+        {#snippet ctrl()}
+          <input id="location" name="location" type="text" class="input" />
+        {/snippet}
+      </Field>
     </div>
 
     <input type="hidden" name="description" bind:value={description} />
-    <fieldset class="fieldset">
-      <legend class="fieldset-legend">Descripción</legend>
-      <TipTapEditor content={description} onChange={(html) => (description = html)} />
-    </fieldset>
+    <Field label="Descripción">
+      {#snippet ctrl()}
+        <TipTapEditor content={description} onChange={(html) => (description = html)} />
+      {/snippet}
+    </Field>
 
     <div class="flex justify-center">
       <Turnstile bind:token={turnstileToken} theme="dark" />

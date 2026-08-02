@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import Field from '$lib/components/forms/Field.svelte';
   import type { ActionData, PageData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -31,16 +32,17 @@
           class="flex gap-2 items-end"
         >
           <input type="hidden" name="key" value={setting.key} />
-          <fieldset class="fieldset flex-1">
-            <legend class="fieldset-legend text-xs">{setting.key}</legend>
-            <input
-              id="val_{setting.key}"
-              name="value"
-              type="text"
-              class="input input-sm"
-              value={stringify(setting.value)}
-            />
-          </fieldset>
+          <Field label={setting.key} size="sm" class="flex-1">
+            {#snippet ctrl()}
+              <input
+                id="val_{setting.key}"
+                name="value"
+                type="text"
+                class="input input-sm"
+                value={stringify(setting.value)}
+              />
+            {/snippet}
+          </Field>
           <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
         </form>
       {/each}

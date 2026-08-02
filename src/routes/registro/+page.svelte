@@ -1,6 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
+  import Field from '$lib/components/forms/Field.svelte';
   import type { ActionData } from './$types';
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
@@ -35,28 +36,29 @@
         }}
         class="space-y-4 mt-4"
       >
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend">Correo electrónico</legend>
-          <input id="email" name="email" type="email" class="input" value={form?.values?.email ?? ''} required />
-          {#if form?.errors?.email}<span class="text-error text-xs mt-1">{form.errors.email}</span>{/if}
-        </fieldset>
+        <Field label="Correo electrónico" required error={form?.errors?.email ?? null}>
+          {#snippet ctrl()}
+            <input id="email" name="email" type="email" class="input" value={form?.values?.email ?? ''} required />
+          {/snippet}
+        </Field>
 
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend">Nombre de usuario</legend>
-          <input id="username" name="username" type="text" class="input" value={form?.values?.username ?? ''} required minlength="3" />
-          {#if form?.errors?.username}<span class="text-error text-xs mt-1">{form.errors.username}</span>{/if}
-        </fieldset>
+        <Field label="Nombre de usuario" required error={form?.errors?.username ?? null}>
+          {#snippet ctrl()}
+            <input id="username" name="username" type="text" class="input" value={form?.values?.username ?? ''} required minlength="3" />
+          {/snippet}
+        </Field>
 
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend">Nombre a mostrar (opcional)</legend>
-          <input id="display_name" name="display_name" type="text" class="input" value={form?.values?.display_name ?? ''} />
-        </fieldset>
+        <Field label="Nombre a mostrar (opcional)">
+          {#snippet ctrl()}
+            <input id="display_name" name="display_name" type="text" class="input" value={form?.values?.display_name ?? ''} />
+          {/snippet}
+        </Field>
 
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend">Contraseña</legend>
-          <input id="password" name="password" type="password" class="input" required minlength="6" />
-          {#if form?.errors?.password}<span class="text-error text-xs mt-1">{form.errors.password}</span>{/if}
-        </fieldset>
+        <Field label="Contraseña" required error={form?.errors?.password ?? null}>
+          {#snippet ctrl()}
+            <input id="password" name="password" type="password" class="input" required minlength="6" />
+          {/snippet}
+        </Field>
 
         <div class="flex justify-center">
           <Turnstile bind:token={turnstileToken} theme="dark" />

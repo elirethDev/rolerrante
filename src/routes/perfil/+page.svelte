@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import Field from '$lib/components/forms/Field.svelte';
   import type { ActionData, PageData } from './$types';
   import { roleLabel } from '$lib/utils';
 
@@ -13,7 +14,7 @@
   <title>Perfil — RolErrante</title>
 </svelte:head>
 
-<section class="max-w-xl mx-auto mt-10">
+<section class="max-w-3xl mx-auto mt-10">
   <div class="card bg-base-200 border border-azeroth-border shadow-xl">
     <div class="card-body">
       <h1 class="card-title text-2xl font-cinzel text-azeroth-gold">Tu perfil</h1>
@@ -25,7 +26,7 @@
         <div class="alert alert-error text-sm mt-2">{form.message}</div>
       {/if}
 
-      <div class="mt-4 space-y-3">
+      <div class="mt-4 space-y-4">
         <div class="flex items-center gap-4">
           {#if profile.avatar_url}
             <img src={profile.avatar_url} alt="avatar" class="w-16 h-16 rounded-full object-cover border border-azeroth-border" />
@@ -39,15 +40,17 @@
         </div>
 
         <form method="POST" use:enhance class="space-y-4">
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">Nombre a mostrar</legend>
-            <input id="display_name" name="display_name" type="text" class="input" value={profile.display_name ?? ''} />
-          </fieldset>
+          <Field label="Nombre a mostrar">
+            {#snippet ctrl()}
+              <input id="display_name" name="display_name" type="text" class="input" value={profile.display_name ?? ''} />
+            {/snippet}
+          </Field>
 
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">URL de avatar</legend>
-            <input id="avatar_url" name="avatar_url" type="url" class="input" value={profile.avatar_url ?? ''} placeholder="https://..." />
-          </fieldset>
+          <Field label="URL de avatar">
+            {#snippet ctrl()}
+              <input id="avatar_url" name="avatar_url" type="url" class="input" value={profile.avatar_url ?? ''} placeholder="https://..." />
+            {/snippet}
+          </Field>
 
           <button type="submit" class="btn btn-primary w-full font-cinzel">Guardar cambios</button>
         </form>
