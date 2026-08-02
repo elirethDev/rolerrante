@@ -12,7 +12,7 @@ Plataforma de rol por foro ambientada en Azeroth (Warcraft). Fichas de personaje
 
 ## Requisitos
 
-- Node.js >=20.18 (portable en `C:\tools\node-v20.18.2-win-x64` si la instalación de sistema falló)
+- Node.js >=20.18 (ruta del runtime portable si la instalación de sistema falló)
 - npm >=10
 - Supabase CLI (`npx supabase --version`) — opcional, solo para migraciones y generación de tipos
 
@@ -23,13 +23,13 @@ Si usás el runtime portable, agregalo al PATH de la sesión antes de cualquier 
 **PowerShell:**
 
 ```powershell
-$env:PATH = "C:\tools\node-v20.18.2-win-x64;$env:PATH"
+$env:PATH = "<ruta-node-portable>;$env:PATH"
 ```
 
 **CMD:**
 
 ```cmd
-set PATH=C:\tools\node-v20.18.2-win-x64;%PATH%
+set PATH=<ruta-node-portable>;%PATH%
 ```
 
 ## Setup
@@ -44,7 +44,7 @@ cp .env.example .env.local
 
 # 3. (Opcional) Vincular Supabase CLI para regenerar tipos
 npx supabase login
-npx supabase link --project-ref dclkjcsvymjqkktvntdy
+npx supabase link --project-ref <PROJECT-REF>
 ```
 
 ## Desarrollo

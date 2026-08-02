@@ -226,17 +226,6 @@ Se utiliza para saber si hay algún rumor en el pueblo, como que alguien ha esta
 
 (E) Voluntad
 Representa la resiliencia mental de nuestro personaje. Representa su capacidad de resistirse a influencias externas, situaciones extremas, torturas o hechicerías y magias mentales. Se usa como atributo defensivo contra las magias que especifican que se pueden defender con voluntad, en cuyo caso la tirada defensiva será 1d10+Espíritu+Voluntad.
-Editado February 15, 2023 por Malcador
-Like
-Malcador
-Miembro Avanzado
-Malcador
-Maestre
-
- 2.009
-4.737 mensajes
-Denunciar mensaje 
-Publicado May 20, 2021
  Valores de combate 
 
  
@@ -346,16 +335,6 @@ Especializaciones:
 Magia Arcana:
 Piromancia:
 Encantamiento
-Like
-Malcador
-Miembro Avanzado
-Malcador
-Maestre
-
- 2.009
-4.737 mensajes
-Denunciar mensaje 
-Publicado May 20, 2021 (editado)
  Adquirir o mejorar Habilidades 
 
 Niveles de Habilidad
