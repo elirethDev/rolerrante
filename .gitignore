@@ -12,3 +12,6 @@ node-install.log
 .DS_Store
 # Local AI runtime state
 .atl/
+
+# Local AI agent instructions (never expose to public repo)
+AGENTS.md
