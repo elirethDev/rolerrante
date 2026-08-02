@@ -52,6 +52,47 @@ export type Database = {
           },
         ]
       }
+      categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_visible: boolean
+          name: string
+          parent_id: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_visible?: boolean
+          name: string
+          parent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_visible?: boolean
+          name?: string
+          parent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       character_skills: {
         Row: {
           character_id: string
@@ -321,6 +362,64 @@ export type Database = {
           },
         ]
       }
+      posts: {
+        Row: {
+          author_id: string
+          body: Json
+          created_at: string
+          edited_at: string | null
+          edited_by: string | null
+          id: string
+          post_number: number
+          thread_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          body?: Json
+          created_at?: string
+          edited_at?: string | null
+          edited_by?: string | null
+          id?: string
+          post_number: number
+          thread_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          body?: Json
+          created_at?: string
+          edited_at?: string | null
+          edited_by?: string | null
+          id?: string
+          post_number?: number
+          thread_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_edited_by_fkey"
+            columns: ["edited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -386,6 +485,47 @@ export type Database = {
           size?: string
         }
         Relationships: []
+      }
+      section_permissions: {
+        Row: {
+          can_edit: boolean
+          can_lock: boolean
+          can_post: boolean
+          can_view: boolean
+          category_id: string
+          created_at: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+        }
+        Insert: {
+          can_edit?: boolean
+          can_lock?: boolean
+          can_post?: boolean
+          can_view?: boolean
+          category_id: string
+          created_at?: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Update: {
+          can_edit?: boolean
+          can_lock?: boolean
+          can_post?: boolean
+          can_view?: boolean
+          category_id?: string
+          created_at?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "section_permissions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       settings: {
         Row: {
@@ -596,6 +736,133 @@ export type Database = {
           },
         ]
       }
+      thread_permissions: {
+        Row: {
+          can_edit: boolean
+          can_lock: boolean
+          can_post: boolean
+          can_view: boolean
+          created_at: string
+          role: Database["public"]["Enums"]["user_role"]
+          thread_id: string
+          updated_at: string
+        }
+        Insert: {
+          can_edit?: boolean
+          can_lock?: boolean
+          can_post?: boolean
+          can_view?: boolean
+          created_at?: string
+          role: Database["public"]["Enums"]["user_role"]
+          thread_id: string
+          updated_at?: string
+        }
+        Update: {
+          can_edit?: boolean
+          can_lock?: boolean
+          can_post?: boolean
+          can_view?: boolean
+          created_at?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          thread_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thread_permissions_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      threads: {
+        Row: {
+          author_id: string
+          body: Json
+          category_id: string | null
+          content_type: string
+          created_at: string
+          edited_at: string | null
+          edited_by: string | null
+          id: string
+          is_locked: boolean
+          linked_entity_id: string | null
+          linked_entity_type: string | null
+          locked_at: string | null
+          locked_by: string | null
+          status: Database["public"]["Enums"]["thread_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          body?: Json
+          category_id?: string | null
+          content_type: string
+          created_at?: string
+          edited_at?: string | null
+          edited_by?: string | null
+          id?: string
+          is_locked?: boolean
+          linked_entity_id?: string | null
+          linked_entity_type?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          status?: Database["public"]["Enums"]["thread_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          body?: Json
+          category_id?: string | null
+          content_type?: string
+          created_at?: string
+          edited_at?: string | null
+          edited_by?: string | null
+          id?: string
+          is_locked?: boolean
+          linked_entity_id?: string | null
+          linked_entity_type?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          status?: Database["public"]["Enums"]["thread_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "threads_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "threads_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "threads_edited_by_fkey"
+            columns: ["edited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "threads_locked_by_fkey"
+            columns: ["locked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       xp_transactions: {
         Row: {
           amount: number
@@ -705,6 +972,12 @@ export type Database = {
         | "cambiar_rol"
         | "editar_catalogo"
         | "editar_settings"
+        | "crear_hilo"
+        | "editar_post"
+        | "eliminar_post"
+        | "bloquear_hilo"
+        | "desbloquear_hilo"
+        | "editar_permisos"
       event_status:
         | "publicado"
         | "en_curso"
@@ -712,6 +985,7 @@ export type Database = {
         | "finalizado"
         | "cancelado"
       event_type: "casual" | "evento" | "campana"
+      thread_status: "borrador" | "pendiente" | "abierto" | "aprobado" | "rechazado"
       user_role: "pendiente" | "rolero" | "gm" | "admin"
     }
     CompositeTypes: {
@@ -851,6 +1125,12 @@ export const Constants = {
         "cambiar_rol",
         "editar_catalogo",
         "editar_settings",
+        "crear_hilo",
+        "editar_post",
+        "eliminar_post",
+        "bloquear_hilo",
+        "desbloquear_hilo",
+        "editar_permisos",
       ],
       event_status: [
         "publicado",
@@ -860,6 +1140,7 @@ export const Constants = {
         "cancelado",
       ],
       event_type: ["casual", "evento", "campana"],
+      thread_status: ["borrador", "pendiente", "abierto", "aprobado", "rechazado"],
       user_role: ["pendiente", "rolero", "gm", "admin"],
     },
   },
