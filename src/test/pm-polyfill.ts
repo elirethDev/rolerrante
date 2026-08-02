@@ -5,7 +5,7 @@
 Range.prototype.getClientRects = function getClientRects(): DOMRectList {
   return {
     length: 0,
-    item(_index: number) {
+    item() {
       return null;
     },
     [Symbol.iterator]() {

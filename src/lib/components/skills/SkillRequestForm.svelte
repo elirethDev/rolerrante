@@ -96,10 +96,11 @@
           />
         </div>
 
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend">Justificación / Trama</legend>
-          <textarea id="justification" name="justification" class="textarea" rows="3" required></textarea>
-        </fieldset>
+        <Field label="Justificación / Trama" required {size}>
+          {#snippet ctrl()}
+            <textarea id="justification" name="justification" class="textarea" rows="3" required></textarea>
+          {/snippet}
+        </Field>
 
         <div class="flex justify-between items-center">
           <span class="badge badge-lg {overBudget ? 'badge-error' : totalCost > 0 ? 'badge-primary' : 'badge-ghost'}">
