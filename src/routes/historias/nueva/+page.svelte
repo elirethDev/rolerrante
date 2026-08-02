@@ -1,6 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
+  import Field from '$lib/components/forms/Field.svelte';
   import TipTapEditor from '$lib/components/editor/TipTapEditor.svelte';
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
@@ -42,25 +43,28 @@
       }}
       class="space-y-4"
     >
-      <fieldset class="fieldset">
-        <legend class="fieldset-legend">Personaje</legend>
-        <select id="character_id" name="character_id" class="select" bind:value={characterId} required>
-          {#each data.characters as c (c.id)}
-            <option value={c.id}>{c.name}</option>
-          {/each}
-        </select>
-      </fieldset>
+      <Field label="Personaje" required>
+        {#snippet ctrl()}
+          <select id="character_id" name="character_id" class="select" bind:value={characterId} required>
+            {#each data.characters as c (c.id)}
+              <option value={c.id}>{c.name}</option>
+            {/each}
+          </select>
+        {/snippet}
+      </Field>
 
-      <fieldset class="fieldset">
-        <legend class="fieldset-legend">Título</legend>
-        <input id="title" name="title" type="text" class="input" bind:value={title} required />
-      </fieldset>
+      <Field label="Título" required>
+        {#snippet ctrl()}
+          <input id="title" name="title" type="text" class="input" bind:value={title} required />
+        {/snippet}
+      </Field>
 
       <input type="hidden" name="content" bind:value={content} />
-      <fieldset class="fieldset">
-        <legend class="fieldset-legend">Contenido</legend>
-        <TipTapEditor {content} onChange={(html) => (content = html)} />
-      </fieldset>
+      <Field label="Contenido">
+        {#snippet ctrl()}
+          <TipTapEditor {content} onChange={(html) => (content = html)} />
+        {/snippet}
+      </Field>
 
       <div class="flex justify-center">
         <Turnstile bind:token={turnstileToken} theme="dark" />

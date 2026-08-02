@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import { enhance } from '$app/forms';
+  import Field from '$lib/components/forms/Field.svelte';
   import { CalendarCheck, Check } from '@lucide/svelte';
   import { formatDate } from '$lib/utils';
 
@@ -26,10 +27,11 @@
           <div class="card-actions justify-end mt-4 gap-2">
             <form method="POST" action="?/finalize" use:enhance>
               <input type="hidden" name="eventId" value={e.id} />
-              <label class="flex items-center gap-2 text-sm">
-                XP por participante:
-                <input type="number" name="xp" value={10} min={1} max={100} class="input input-sm w-20" />
-              </label>
+              <Field label="XP por participante">
+                {#snippet ctrl()}
+                  <input type="number" name="xp" value={10} min={1} max={100} class="input w-20" />
+                {/snippet}
+              </Field>
               <button class="btn btn-sm btn-success"><Check size={16} /> Finalizar</button>
             </form>
           </div>

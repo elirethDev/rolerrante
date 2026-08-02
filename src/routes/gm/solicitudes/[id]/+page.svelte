@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import Field from '$lib/components/forms/Field.svelte';
   import type { ActionData, PageData } from './$types';
 
   export let data: PageData;
@@ -44,9 +45,13 @@
     <form method="POST" action="?/approve">
       <button type="submit" class="btn btn-success w-full">✓ Aprobar solicitud</button>
     </form>
-    <form method="POST" action="?/reject" class="flex gap-2">
+    <form method="POST" action="?/reject" class="flex gap-2 items-center">
       <button type="submit" class="btn btn-error">✕ Rechazar</button>
-      <input name="notes" type="text" class="input flex-1" placeholder="Motivo del rechazo" />
+      <Field label="Motivo del rechazo" class="flex-1">
+        {#snippet ctrl()}
+          <input name="notes" type="text" class="input flex-1" placeholder="Motivo del rechazo" />
+        {/snippet}
+      </Field>
     </form>
   </div>
 </section>

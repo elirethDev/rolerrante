@@ -30,7 +30,7 @@
           <div class="card-actions justify-end mt-4 gap-2">
             <form method="POST" action="?/reject" use:enhance>
               <input type="hidden" name="charId" value={c.id} />
-              <input type="text" name="notes" placeholder="Motivo del rechazo" class="input input-sm w-40" />
+              <input type="text" name="notes" placeholder="Motivo del rechazo" class="input flex-1" />
               <button class="btn btn-sm btn-error"><X size={16} /> Rechazar</button>
             </form>
             <form method="POST" action="?/approve" use:enhance>
