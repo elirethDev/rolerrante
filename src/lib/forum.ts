@@ -1,9 +1,24 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database, Json } from './supabase/database.types';
+import type { PermissionFlags } from './auth';
 
 export type ThreadEntityType = 'story' | 'character' | 'event';
 export type ThreadRow = Database['public']['Tables']['threads']['Row'];
-type ThreadStatus = Database['public']['Enums']['thread_status'];
+export type ThreadStatus = Database['public']['Enums']['thread_status'];
+export type ThreadListItem = Pick<
+  ThreadRow,
+  'id' | 'title' | 'content_type' | 'status' | 'is_locked' | 'created_at' | 'edited_at' | 'category_id'
+>;
+
+export interface CategoryNode {
+  id: string;
+  name: string;
+  description: string | null;
+  is_visible: boolean;
+  children: CategoryNode[];
+  flags: PermissionFlags;
+  threads: ThreadListItem[];
+}
 
 const CONTENT_TYPES: Record<ThreadEntityType, ThreadRow['content_type']> = {
   story: 'historia',
