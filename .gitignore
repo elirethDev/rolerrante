@@ -10,3 +10,5 @@ node-lts.*
 node-install.log
 *.log
 .DS_Store
+# Local AI runtime state
+.atl/
