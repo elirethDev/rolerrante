@@ -21,7 +21,7 @@
     footer,
   }: Props = $props();
 
-  let panel: HTMLElement;
+  let panel = $state<HTMLElement | null>(null);
   let previouslyFocused: HTMLElement | null = null;
 
   function trapFocus(event: KeyboardEvent) {

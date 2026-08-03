@@ -11,7 +11,7 @@
   let { open = false, title = 'Cerrar hilo', closeLabel, class: className }: Props = $props();
 </script>
 
-<Modal bind:open {title} {closeLabel} {className}>
+<Modal bind:open {title} {closeLabel} class={className}>
   <p>¿Confirmás el cierre del hilo?</p>
   {#snippet footer()}
     <button type="button">Cancelar</button>

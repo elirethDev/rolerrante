@@ -36,7 +36,7 @@
   >
     <span
       class="{checked ? 'translate-x-[18px] bg-[#1A1508]' : 'translate-x-0 bg-azeroth-muted'} absolute left-0.5 top-0.5 h-4 w-4 rounded-full transition"
-    />
+    ></span>
   </span>
   {#if label}
     <span>{label}</span>

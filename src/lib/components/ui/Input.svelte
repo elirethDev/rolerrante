@@ -9,9 +9,9 @@
     required?: boolean;
     disabled?: boolean;
     invalid?: boolean;
-    autocomplete?: string;
+    autocomplete?: HTMLInputElement['autocomplete'];
     maxlength?: number;
-    inputmode?: string;
+    inputmode?: 'none' | 'text' | 'tel' | 'url' | 'email' | 'numeric' | 'decimal' | 'search';
     'aria-label'?: string;
     'aria-describedby'?: string;
     class?: string;

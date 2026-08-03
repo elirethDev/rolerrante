@@ -56,6 +56,7 @@
     <div>
       <h4 class="mb-3.5 font-cinzel text-[0.95rem] tracking-wide text-azeroth-cream">Contacto y redes</h4>
       <div class="flex gap-2.5">
+        <!-- svelte-ignore a11y_invalid_attribute -- placeholder until the Discord invite exists -->
         <a class="soc-btn" href="#" aria-label="Discord">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path
@@ -63,6 +64,7 @@
             />
           </svg>
         </a>
+        <!-- svelte-ignore a11y_invalid_attribute -- placeholder until the Twitch channel exists -->
         <a class="soc-btn" href="#" aria-label="Twitch">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M4 3h16v12h-4v4h-4l-4-4H4V3zm4 3v6h2V6H8zm4 0v6h2V6h-2z" />
