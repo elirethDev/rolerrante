@@ -58,6 +58,11 @@ export interface PostView {
   edited_at: string | null;
   edited_by: string | null;
   author?: AuthorRef | null;
+  // Reactions (REQ-REACT-01.2): like_count aggregate + viewer's own like state.
+  // viewer_has_liked is null for guests (no identity to match); like_count is
+  // always populated for both guests and authenticated viewers.
+  like_count: number | null;
+  viewer_has_liked: boolean | null;
 }
 
 const CONTENT_TYPES: Record<ThreadEntityType, ThreadRow['content_type']> = {

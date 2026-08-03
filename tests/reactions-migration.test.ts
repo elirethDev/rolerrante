@@ -39,21 +39,22 @@ describe("reactions migration 20260802000001_reactions.sql", () => {
     expect(deletePolicy![1]).toMatch(/auth\.uid\(\)\s*=\s*user_id/);
   });
 
-  it("restricts SELECT to authenticated users within visible threads (REACT-01.1)", () => {
+  it("restricts SELECT to posts within visible threads (view-scoped count, REACT-01.1)", () => {
     const selectPolicy =
       /CREATE POLICY ".*?" ON public\.reactions[\s\S]*?FOR SELECT USING \((.*?)\);/s.exec(
         sql,
       );
     expect(selectPolicy).not.toBeNull();
     const body = selectPolicy![1];
-    // counts are readable only by authenticated users
-    expect(body).toMatch(/auth\.uid\(\)\s+IS NOT NULL/);
-    // ...and only for posts inside threads the viewer can see (no leak of
-    // reaction data from pendiente/borrador threads).
+    // counts are view-scoped: only for posts inside threads the viewer can see.
+    // Guests must still read counts (REQ-02.3 guest sees count chip), so the
+    // policy is visibility-gated, NOT authenticated-only (unlike INSERT/DELETE).
     expect(body).toMatch(/EXISTS/);
     expect(body).toMatch(/threads/);
     expect(body).toMatch(/status\s+IN\s*\(\s*'aprobado'\s*,\s*'abierto'\s*\)/);
+    // no leak of reaction data from pendiente/borrador threads
     expect(body).not.toMatch(/pendiente/);
+    expect(body).not.toMatch(/borrador/);
   });
 
   it("creates an index for count aggregation by post (REACT-01.1)", () => {

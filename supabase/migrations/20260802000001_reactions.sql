@@ -12,13 +12,14 @@ CREATE TABLE public.reactions (
 
 ALTER TABLE public.reactions ENABLE ROW LEVEL SECURITY;
 
--- SELECT: solo usuarios autenticados y solo dentro de hilos visibles para el
--- lector (REACT-01.1). El conteo agregado no debe filtrar reacciones de hilos
--- pendientes/borradores a invitados.
+-- SELECT: conteo visible dentro de hilos visibles para el lector (REACT-01.1).
+-- Los invitados deben ver el contador (REQ-02.3: guest ve count chip), por lo que
+-- la política es de visibilidad, NO de autenticación (a diferencia de INSERT/DELETE
+-- que sí exigen auth.uid() = user_id). El conteo agregado no debe filtrar
+-- reacciones de hilos pendientes/borradores a invitados.
 CREATE POLICY "Reacciones contables en hilos visibles" ON public.reactions
   FOR SELECT USING (
-    auth.uid() IS NOT NULL
-    AND EXISTS (
+    EXISTS (
       SELECT 1 FROM public.posts p
       JOIN public.threads t ON t.id = p.thread_id
       WHERE p.id = reactions.post_id

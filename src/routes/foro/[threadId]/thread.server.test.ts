@@ -172,6 +172,51 @@ describe('thread detail load()', () => {
     const supabase = makeSupabase({ thread: null });
     await expectError(() => loadFn(makeEvent(makeLocals(supabase, 'pendiente', 'other'))), 404);
   });
+
+  it('carries like_count and viewer_has_liked per post via reactions left-join (REACT-01.2)', async () => {
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      posts: [
+        {
+          id: 'p1', post_number: 1, body: '<p>a</p>', author_id: 'u1', created_at: 'x', updated_at: 'x',
+          edited_by: null, edited_at: null, author: { id: 'u1', display_name: 'A', username: 'a' },
+          reactions: [
+            { post_id: 'p1', user_id: 'u1' },
+            { post_id: 'p1', user_id: 'u2' },
+            { post_id: 'p1', user_id: 'u3' },
+          ],
+        },
+        {
+          id: 'p2', post_number: 2, body: '<p>b</p>', author_id: 'u2', created_at: 'x', updated_at: 'x',
+          edited_by: null, edited_at: null, author: { id: 'u2', display_name: 'B', username: 'b' },
+          reactions: [],
+        },
+      ],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'rolero', 'u1')));
+    const [p1, p2] = result.posts;
+    // viewer u1 liked p1 (3 likes total); p2 has no likes
+    expect(p1.like_count).toBe(3);
+    expect(p1.viewer_has_liked).toBe(true);
+    expect(p2.like_count).toBe(0);
+    expect(p2.viewer_has_liked).toBe(false);
+  });
+
+  it('sets viewer_has_liked null for guests but still exposes the count (REQ-02.3)', async () => {
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      posts: [
+        {
+          id: 'p1', post_number: 1, body: '<p>a</p>', author_id: 'u1', created_at: 'x', updated_at: 'x',
+          edited_by: null, edited_at: null, author: { id: 'u1', display_name: 'A', username: 'a' },
+          reactions: [{ post_id: 'p1', user_id: 'u2' }],
+        },
+      ],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'pendiente', null)));
+    expect(result.posts[0].like_count).toBe(1);
+    expect(result.posts[0].viewer_has_liked).toBeNull();
+  });
 });
 
 describe('thread detail reply action', () => {

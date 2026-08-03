@@ -69,14 +69,27 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, user, p
 
   const { data: posts } = await supabase
     .from('posts')
-    .select('*, author:author_id(id, display_name, username)')
+    .select('*, author:author_id(id, display_name, username), reactions:reactions(post_id, user_id)')
     .eq('thread_id', t.id)
     .order('post_number', { ascending: true });
+
+  // Reaction aggregate + viewer's own like via left-join (REQ-REACT-01.2).
+  // Guests still see the count but have no like state (viewer_has_liked null).
+  const viewerId = user?.id ?? null;
+  const postsWithReactions = (posts ?? []).map((p) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const reactions = (p as any).reactions ?? [];
+    return {
+      ...p,
+      like_count: reactions.length,
+      viewer_has_liked: viewerId ? reactions.some((r: { user_id: string }) => r.user_id === viewerId) : null,
+    };
+  });
 
   return {
     thread: t,
     threadBody,
-    posts: (posts ?? []) as unknown as PostView[],
+    posts: postsWithReactions as unknown as PostView[],
     entity,
     flags,
     isLocked: t.is_locked,
