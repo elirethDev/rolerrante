@@ -12,6 +12,13 @@
     status: string;
   };
 
+  type ReportAuthor = {
+    id: string;
+    display_name: string | null;
+    username: string;
+    role: string;
+  };
+
   type ReportRow = {
     id: string;
     reason: string;
@@ -19,8 +26,27 @@
     status: string;
     created_at: string;
     reporter: { id: string; display_name: string | null; username: string } | null;
-    post: { id: string; thread_id: string; post_number: number } | null;
+    post: {
+      id: string;
+      thread_id: string;
+      post_number: number;
+      author: ReportAuthor | null;
+    } | null;
   };
+
+  type SanctionState = { kind: string; active_until: string | null };
+
+  // Which enforcement form is open per report row ('suspend' | 'ban' | null).
+  // The inline reveal acts as a dedicated confirm step before any sanction.
+  let openSanction = $state<Record<string, 'suspend' | 'ban' | null>>({});
+
+  const toggleSanction = (reportId: string, kind: 'suspend' | 'ban') => {
+    openSanction[reportId] = openSanction[reportId] === kind ? null : kind;
+  };
+
+  // Admin/GM targets are protected (REQ-MOD-ENF-04): no sanction controls.
+  const isProtectedTarget = (author: ReportAuthor | null | undefined) =>
+    author ? author.role === 'admin' || author.role === 'gm' : false;
 </script>
 
 <svelte:head>
@@ -118,20 +144,39 @@
           <thead>
             <tr>
               <th>Reportante</th>
+              <th>Usuario reportado</th>
               <th>Motivo</th>
               <th>Mensaje</th>
               <th>Fecha</th>
-              <th class="w-64">Acciones</th>
+              {#if data.isAdmin}
+                <th class="w-72">Acciones</th>
+              {/if}
             </tr>
           </thead>
           <tbody>
             {#each data.reports as report (report.id)}
+              {@const author = (report as ReportRow).post?.author}
+              {@const sanction = (author ? data.sanctions[author.id] : undefined) as SanctionState | undefined}
               <tr>
-                <td>{(report as ReportRow).reporter?.display_name ?? (report as ReportRow).reporter?.username ?? 'Anónimo'}</td>
+                <td>
+                  {(report as ReportRow).reporter?.display_name ??
+                    (report as ReportRow).reporter?.username ??
+                    'Anónimo'}
+                </td>
+                <td>
+                  {author?.display_name ?? author?.username ?? 'Anónimo'}
+                  {#if sanction}
+                    <span class="badge badge-warning badge-xs ml-1">
+                      {sanction.kind === 'ban' ? 'Baneado' : 'Suspendido'}
+                    </span>
+                  {/if}
+                </td>
                 <td>
                   {(report as ReportRow).reason}
                   {#if (report as ReportRow).justification}
-                    <span class="text-xs text-gray-400 block">{(report as ReportRow).justification}</span>
+                    <span class="text-xs text-gray-400 block">
+                      {(report as ReportRow).justification}
+                    </span>
                   {/if}
                 </td>
                 <td>
@@ -144,33 +189,93 @@
                     </a>
                   {/if}
                 </td>
-                <td class="text-xs text-gray-400">{formatDateTime((report as ReportRow).created_at)}</td>
-                <td>
-                  <div class="flex gap-2 items-center">
-                    <form method="POST" action="?/resolveReport" use:enhance class="flex gap-1 items-center">
-                      <input type="hidden" name="reportId" value={(report as ReportRow).id} />
-                      <input
-                        type="text"
-                        name="justification"
-                        placeholder="Justificación"
-                        class="input input-xs input-bordered w-40"
-                        required
-                      />
-                      <button type="submit" class="btn btn-success btn-xs">Resolver</button>
-                    </form>
-                    <form method="POST" action="?/discardReport" use:enhance class="flex gap-1 items-center">
-                      <input type="hidden" name="reportId" value={(report as ReportRow).id} />
-                      <input
-                        type="text"
-                        name="justification"
-                        placeholder="Justificación"
-                        class="input input-xs input-bordered w-40"
-                        required
-                      />
-                      <button type="submit" class="btn btn-error btn-xs">Descartar</button>
-                    </form>
-                  </div>
+                <td class="text-xs text-gray-400">
+                  {formatDateTime((report as ReportRow).created_at)}
                 </td>
+                {#if data.isAdmin}
+                  <td>
+                    <div class="flex flex-col gap-2">
+                      <div class="flex gap-2 items-center">
+                        <form method="POST" action="?/resolveReport" use:enhance class="flex gap-1 items-center">
+                          <input type="hidden" name="reportId" value={(report as ReportRow).id} />
+                          <input
+                            type="text"
+                            name="justification"
+                            placeholder="Justificación"
+                            class="input input-xs input-bordered w-28"
+                            required
+                          />
+                          <button type="submit" class="btn btn-success btn-xs">Resolver</button>
+                        </form>
+                        <form method="POST" action="?/discardReport" use:enhance class="flex gap-1 items-center">
+                          <input type="hidden" name="reportId" value={(report as ReportRow).id} />
+                          <input
+                            type="text"
+                            name="justification"
+                            placeholder="Justificación"
+                            class="input input-xs input-bordered w-28"
+                            required
+                          />
+                          <button type="submit" class="btn btn-error btn-xs">Descartar</button>
+                        </form>
+                      </div>
+
+                      {#if !isProtectedTarget(author)}
+                        <div class="flex gap-2 items-center">
+                          <button
+                            type="button"
+                            class="btn btn-warning btn-xs"
+                            onclick={() => toggleSanction(report.id, 'suspend')}
+                          >
+                            Suspender
+                          </button>
+                          <button
+                            type="button"
+                            class="btn btn-error btn-xs"
+                            onclick={() => toggleSanction(report.id, 'ban')}
+                          >
+                            Banear
+                          </button>
+                        </div>
+                        {#if openSanction[report.id] === 'suspend'}
+                          <form method="POST" action="?/suspendUser" use:enhance class="flex gap-1 items-center">
+                            <input type="hidden" name="userId" value={author?.id ?? ''} />
+                            <select name="duration" class="select select-xs select-bordered">
+                              <option value="3">3 días</option>
+                              <option value="7" selected>7 días</option>
+                              <option value="30">30 días</option>
+                            </select>
+                            <input
+                              type="text"
+                              name="justification"
+                              placeholder="Justificación"
+                              class="input input-xs input-bordered w-32"
+                              required
+                            />
+                            <button type="submit" class="btn btn-warning btn-xs">
+                              Confirmar suspensión
+                            </button>
+                          </form>
+                        {/if}
+                        {#if openSanction[report.id] === 'ban'}
+                          <form method="POST" action="?/banUser" use:enhance class="flex gap-1 items-center">
+                            <input type="hidden" name="userId" value={author?.id ?? ''} />
+                            <input
+                              type="text"
+                              name="justification"
+                              placeholder="Justificación"
+                              class="input input-xs input-bordered w-32"
+                              required
+                            />
+                            <button type="submit" class="btn btn-error btn-xs">
+                              Confirmar baneo
+                            </button>
+                          </form>
+                        {/if}
+                      {/if}
+                    </div>
+                  </td>
+                {/if}
               </tr>
             {/each}
           </tbody>
