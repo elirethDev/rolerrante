@@ -156,3 +156,82 @@ export async function getOrCreateThread(
 
   return { thread: created, created: true };
 }
+
+/**
+ * Follow a thread for the given user (REQ-FOLLOW-01). `user_id` must equal
+ * `auth.uid()` so the insert passes the thread_follows RLS WITH CHECK.
+ */
+export async function followThread(
+  threadId: string,
+  userId: string,
+  supabase: SupabaseClient<Database>,
+): Promise<void> {
+  const { error } = await supabase
+    .from('thread_follows')
+    .insert({ thread_id: threadId, user_id: userId });
+  if (error) {
+    throw error;
+  }
+}
+
+/**
+ * Unfollow a thread for the given user (REQ-FOLLOW-01). Scoped to the user so
+ * the delete passes thread_follows RLS.
+ */
+export async function unfollowThread(
+  threadId: string,
+  userId: string,
+  supabase: SupabaseClient<Database>,
+): Promise<void> {
+  const { error } = await supabase
+    .from('thread_follows')
+    .delete()
+    .eq('thread_id', threadId)
+    .eq('user_id', userId);
+  if (error) {
+    throw error;
+  }
+}
+
+/**
+ * Read the current follow state for a thread (REQ-FOLLOW-01). When no follow
+ * exists the user is reported as not following with the default in-app preference
+ * enabled.
+ */
+export async function getThreadFollow(
+  threadId: string,
+  userId: string,
+  supabase: SupabaseClient<Database>,
+): Promise<{ following: boolean; notify_in_app: boolean }> {
+  const { data, error } = await supabase
+    .from('thread_follows')
+    .select('notify_in_app')
+    .eq('thread_id', threadId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) {
+    throw error;
+  }
+  return data
+    ? { following: true, notify_in_app: data.notify_in_app }
+    : { following: false, notify_in_app: true };
+}
+
+/**
+ * Count unread in-app notifications for a user (REQ-NOTIF-02). Unread is defined
+ * as `read_at IS NULL`; this is the single source of truth for the bell badge.
+ */
+export async function getUnreadCount(
+  userId: string,
+  supabase: SupabaseClient<Database>,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from('notifications')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .is('read_at', null);
+  if (error) {
+    throw error;
+  }
+  return count ?? 0;
+}
