@@ -22,6 +22,8 @@
     isLocked={data.isLocked}
     isOwner={data.isOwner}
     isStaff={data.isStaff}
+    currentPage={data.currentPage}
+    totalPages={data.totalPages}
   />
 
   <div class="mt-6 flex gap-3">
