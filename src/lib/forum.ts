@@ -60,6 +60,65 @@ export interface PostView {
   author?: AuthorRef | null;
 }
 
+export interface SearchThreadOptions {
+  /** Admin sees every matching thread regardless of category visibility. */
+  isAdminUser: boolean;
+  /** Category ids visible to the current role; used to hide guests from hidden sections. */
+  visibleCategoryIds: string[];
+}
+
+const VISIBLE_THREAD_STATUSES: ThreadStatus[] = ['abierto', 'aprobado'];
+
+/**
+ * Search threads by ILIKE on title and on the display name of a linked character
+ * (REQ-SEARCH-01). Runs two parallel ILIKE queries — title match and character
+ * name match via `linked_entity` — then unions and dedups client-side. Guests
+ * never see pending/hidden threads or threads in invisible categories.
+ */
+export async function searchThreads(
+  q: string,
+  supabase: SupabaseClient<Database>,
+  opts: SearchThreadOptions,
+): Promise<ThreadListItem[]> {
+  const pattern = `%${q}%`;
+
+  const [titleRes, charRes] = await Promise.all([
+    supabase
+      .from('threads')
+      .select('*')
+      .ilike('title', pattern)
+      .in('status', VISIBLE_THREAD_STATUSES),
+    supabase.from('characters').select('id').ilike('name', pattern),
+  ]);
+
+  const titleThreads = (titleRes.data ?? []) as unknown as ThreadListItem[];
+
+  const charIds = (charRes.data ?? []).map((c) => c.id);
+  let charThreads: ThreadListItem[] = [];
+  if (charIds.length > 0) {
+    const { data } = await supabase
+      .from('threads')
+      .select('*')
+      .in('linked_entity_id', charIds)
+      .eq('linked_entity_type', 'character')
+      .in('status', VISIBLE_THREAD_STATUSES);
+    charThreads = (data ?? []) as unknown as ThreadListItem[];
+  }
+
+  // Client-side union + dedup by thread id.
+  const byId = new Map<string, ThreadListItem>();
+  for (const t of [...titleThreads, ...charThreads]) {
+    if ((VISIBLE_THREAD_STATUSES as string[]).includes(t.status) && !byId.has(t.id)) {
+      byId.set(t.id, t);
+    }
+  }
+  const merged = [...byId.values()];
+
+  // Guests must not see threads inside invisible categories; admin bypasses.
+  if (opts.isAdminUser) return merged;
+  return merged.filter((t) => !t.category_id || opts.visibleCategoryIds.includes(t.category_id));
+}
+
 const CONTENT_TYPES: Record<ThreadEntityType, ThreadRow['content_type']> = {
   story: 'historia',
   character: 'ficha',

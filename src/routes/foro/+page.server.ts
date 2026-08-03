@@ -1,5 +1,5 @@
 import { resolveEffectivePermissions, type PermissionFlags } from '$lib/auth';
-import type { CategoryNode, ThreadListItem } from '$lib/forum';
+import { searchThreads, type CategoryNode, type ThreadListItem } from '$lib/forum';
 import type { UserRole } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
@@ -12,7 +12,7 @@ type CategoryRow = {
   sort_order: number;
 };
 
-export const load: PageServerLoad = async ({ locals: { supabase, profile } }) => {
+export const load: PageServerLoad = async ({ locals: { supabase, profile }, url }) => {
   const role: UserRole = profile?.role ?? 'pendiente';
   const isAdminUser = role === 'admin';
   const isStaff = role === 'gm' || role === 'admin';
@@ -40,6 +40,26 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile } }) =>
   const cats = (categories ?? []) as unknown as CategoryRow[];
   // Guests (pendiente) see only is_visible categories; admin sees all.
   const visibleCats = cats.filter((c) => isAdminUser || c.is_visible);
+
+  const q = url.searchParams.get('q')?.trim() ?? '';
+
+  // Search branch: render flat thread results instead of the category tree.
+  if (q) {
+    const visibleCategoryIds = visibleCats.map((c) => c.id);
+    const searchResults = await searchThreads(q, supabase, {
+      isAdminUser,
+      visibleCategoryIds,
+    });
+    return {
+      isSearch: true,
+      query: q,
+      searchResults,
+      categories: [],
+      roleLabel: role,
+      isAdmin: isAdminUser,
+      isStaff,
+    };
+  }
 
   // Public thread visibility: debates (abierto) and approved bridged threads (aprobado).
   // Staff additionally see pending threads they own.
@@ -77,6 +97,9 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile } }) =>
   const roots = visibleCats.filter((c) => c.parent_id === null).sort((a, b) => a.sort_order - b.sort_order);
 
   return {
+    isSearch: false,
+    query: '',
+    searchResults: [],
     categories: roots.map(withFlags),
     roleLabel: role,
     isAdmin: isAdminUser,

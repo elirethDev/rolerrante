@@ -14,28 +14,47 @@ interface CategoryFixture {
   sort_order: number;
 }
 
-// Fluent supabase mock: categories list, section_permissions list, threads list.
+// Fluent supabase mock: categories list, section_permissions list, threads list,
+// and (search) characters + linked/character thread variants.
 function makeSupabase(fixture: {
   categories?: CategoryFixture[];
   perms?: unknown[];
   threads?: unknown[];
+  searchTitle?: unknown[]; // threads matching title ILIKE
+  charNames?: Array<{ id: string; name?: string }>; // characters matching name ILIKE
+  charThreads?: unknown[]; // threads matched via linked_entity (character)
   threadsOrder?: Mock;
 }) {
   const from = (table: string) => {
     const orders: string[] = [];
+    const marks: string[] = [];
     const b: Record<string, unknown> = {
       select: () => b,
       order: (col: string) => {
         orders.push(col);
         return b;
       },
-      in: () => b,
+      ilike: (col: string) => {
+        marks.push(`ilike:${col}`);
+        return b;
+      },
+      in: (col: string) => {
+        marks.push(`in:${col}`);
+        return b;
+      },
       eq: () => b,
       then: (res: Handler, rej: Handler) => {
-        let result: { data: unknown; error: unknown };
-        if (table === 'categories') result = { data: fixture.categories ?? [], error: null };
-        else if (table === 'section_permissions') result = { data: fixture.perms ?? [], error: null };
-        else result = { data: fixture.threads ?? [], error: null };
+        let data: unknown;
+        const error: unknown = null;
+        if (table === 'categories') data = fixture.categories ?? [];
+        else if (table === 'section_permissions') data = fixture.perms ?? [];
+        else if (table === 'characters') data = fixture.charNames ?? [];
+        else if (table === 'threads') {
+          if (marks.includes('ilike:title')) data = fixture.searchTitle ?? [];
+          else if (marks.includes('in:linked_entity_id')) data = fixture.charThreads ?? [];
+          else data = fixture.threads ?? [];
+        } else data = [];
+        const result = { data, error };
         if (fixture.threadsOrder && table === 'threads') fixture.threadsOrder(orders);
         return Promise.resolve(result).then(res, rej);
       },
@@ -59,8 +78,8 @@ const cat = (p: Partial<CategoryFixture>): CategoryFixture => ({
 const makeLocals = (supabase: ReturnType<typeof makeSupabase>, role: string = 'pendiente') =>
   ({ supabase, user: role === 'pendiente' ? null : { id: 'u1' }, profile: { id: 'u1', role } }) as never;
 
-const makeEvent = (locals: ReturnType<typeof makeLocals>) =>
-  ({ locals, url: new URL('http://localhost/foro'), params: {} }) as never;
+const makeEvent = (locals: ReturnType<typeof makeLocals>, query: string = '') =>
+  ({ locals, url: new URL(`http://localhost/foro${query}`), params: {} }) as never;
 
 describe('foro landing load()', () => {
   it('guest (pendiente) sees only visible categories with can_view from section perms', async () => {
@@ -114,5 +133,73 @@ describe('foro landing load()', () => {
     const sub = root.children.find((c: { id: string }) => c.id === 'sub1');
     expect(sub.threads).toHaveLength(1);
     expect(sub.threads[0].title).toBe('Hilo uno');
+  });
+});
+
+describe('foro search load() ?q=', () => {
+  const thread = (id: string, title: string, p: Partial<Record<string, unknown>> = {}) => ({
+    id,
+    title,
+    status: 'abierto',
+    is_locked: false,
+    content_type: 'debate',
+    created_at: '2026-08-02T00:00:00Z',
+    category_id: 'c-visible',
+    ...p,
+  });
+
+  it('guest: returns public threads whose title matches q (REQ-SEARCH-01)', async () => {
+    const supabase = makeSupabase({
+      categories: [cat({ id: 'c-visible', name: 'General', is_visible: true })],
+      searchTitle: [thread('t1', 'El dragón guardián')],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'pendiente'), '?q=drag%C3%B3n'));
+    expect(result.isSearch).toBe(true);
+    expect(result.searchResults).toHaveLength(1);
+    expect(result.searchResults[0].title).toBe('El dragón guardián');
+  });
+
+  it('admin: returns threads for a character whose name matches q (REQ-SEARCH-01.2)', async () => {
+    const supabase = makeSupabase({
+      categories: [],
+      charNames: [{ id: 'char-9', name: 'Elara' }],
+      charThreads: [thread('t2', 'Ficha de Elara', { category_id: null, linked_entity_type: 'character', linked_entity_id: 'char-9' })],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'admin'), '?q=Elara'));
+    expect(result.isSearch).toBe(true);
+    expect(result.searchResults).toHaveLength(1);
+  });
+
+  it('guest: hidden/pending threads are NOT returned (REQ-SEARCH-01.3)', async () => {
+    const supabase = makeSupabase({
+      categories: [cat({ id: 'c-oculta', name: 'Oculto', is_visible: false })],
+      searchTitle: [
+        thread('t-pend', 'Pendiente secreto', { status: 'pendiente' }),
+        thread('t-hide', 'Hilo en sección oculta', { category_id: 'c-oculta' }),
+      ],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'pendiente'), '?q=secreto'));
+    expect(result.isSearch).toBe(true);
+    expect(result.searchResults).toHaveLength(0);
+  });
+
+  it('empty or absent q renders the default tree (isSearch false) (REQ-SEARCH-01.4)', async () => {
+    const supabase = makeSupabase({ categories: [cat({ id: 'c-root' })] });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'pendiente'), '?q='));
+    expect(result.isSearch).toBe(false);
+    expect(result.categories).toHaveLength(1);
+  });
+
+  it('dedups a thread that matches on both title and character overlap', async () => {
+    const supabase = makeSupabase({
+      categories: [cat({ id: 'c-visible', name: 'General', is_visible: true })],
+      searchTitle: [thread('t1', 'Elara, la exploradora')],
+      charNames: [{ id: 'char-1', name: 'Elara' }],
+      charThreads: [thread('t1', 'Elara, la exploradora', { category_id: null })],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'admin'), '?q=Elara'));
+    expect(result.isSearch).toBe(true);
+    expect(result.searchResults).toHaveLength(1);
+    expect(result.searchResults[0].id).toBe('t1');
   });
 });
