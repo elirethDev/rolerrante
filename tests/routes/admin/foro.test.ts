@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars -- mock helper types intentionally loose */
-import { describe, expect, it, vi, type Mock } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { RequestEvent } from '@sveltejs/kit';
 import { load, actions } from '../../../src/routes/admin/foro/+page.server';
 
