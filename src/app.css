@@ -5,30 +5,61 @@
   name: "azeroth";
   default: true;
   color-scheme: dark;
-  --color-base-100: #0F1115;
-  --color-base-200: #1A1C23;
-  --color-base-300: #2A2D36;
-  --color-base-content: #E2E8F0;
-  --color-primary: #C8AA6E;
-  --color-secondary: #2C3E50;
-  --color-accent: #8E44AD;
-  --color-neutral: #1A1C23;
-  --color-info: #3498DB;
-  --color-success: #27AE60;
-  --color-warning: #F1C40F;
-  --color-error: #C0392B;
+  --color-base-100: #0A0D14;
+  --color-base-200: #121725;
+  --color-base-300: #232C42;
+  --color-base-content: #E9E6DC;
+  --color-primary: #F8B700;
+  --color-primary-content: #1A1508;
+  --color-secondary: #001845;
+  --color-secondary-content: #EBE2C2;
+  --color-accent: #3860BE;
+  --color-accent-content: #FBF9F2;
+  --color-neutral: #121725;
+  --color-neutral-content: #E9E6DC;
+  --color-info: #0E86CA;
+  --color-info-content: #FBF9F2;
+  --color-success: #3C7356;
+  --color-success-content: #E9E6DC;
+  --color-warning: #E9B44C;
+  --color-warning-content: #1A1508;
+  --color-error: #AA2409;
+  --color-error-content: #FFF4EC;
 }
 @theme {
-  --font-cinzel: 'Cinzel', serif;
-  --color-azeroth-gold: #C8AA6E;
-  --color-azeroth-dark: #0F1115;
-  --color-azeroth-panel: #1A1C23;
-  --color-azeroth-border: #3A2F1F;
+  --font-cinzel: 'Cinzel', 'Trajan Pro', 'Palatino Linotype', Georgia, serif;
+  --font-sans: 'Inter', 'Open Sans', system-ui, sans-serif;
+  --color-azeroth-bg: #0A0D14;
+  --color-azeroth-bg-deep: #070910;
+  --color-azeroth-bg-soft: #0D111C;
+  --color-azeroth-surface: #121725;
+  --color-azeroth-sunken: #0C101C;
+  --color-azeroth-border: #232C42;
+  --color-azeroth-border-strong: #35415F;
+  --color-azeroth-gold: #F8B700;
+  --color-azeroth-gold-bright: #FFC940;
+  --color-azeroth-gold-soft: #FFD76E;
+  --color-azeroth-gold-text: #B98A12;
+  --color-azeroth-gold-dim: #C8941A;
+  --color-azeroth-navy: #001845;
+  --color-azeroth-blue: #034B88;
+  --color-azeroth-blue-mid: #3860BE;
+  --color-azeroth-link: #0E86CA;
+  --color-azeroth-cream: #EBE2C2;
+  --color-azeroth-danger: #AA2409;
+  --color-azeroth-success: #3C7356;
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
 }
 html {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans);
   background-color: var(--color-base-100);
 }
 h1, h2, h3, h4, h5, h6, .font-cinzel {
-  font-family: 'Cinzel', serif;
+  font-family: var(--font-cinzel);
+  color: var(--color-base-content);
 }
