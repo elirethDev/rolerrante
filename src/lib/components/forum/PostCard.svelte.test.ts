@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/svelte';
-import { describe, expect, it } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import PostCard from './PostCard.svelte';
 
 const post = (p: Partial<Record<string, unknown>> = {}) => ({
@@ -34,5 +35,33 @@ describe('PostCard', () => {
   it('does not render an edit marker when edited_at is null', () => {
     render(PostCard, { post: post() });
     expect(screen.queryByText(/Editado por/)).not.toBeInTheDocument();
+  });
+
+  it('emits a Citar payload with plain-text excerpt truncated to 500 (REQ-FC-04/02.5)', async () => {
+    const user = userEvent.setup();
+    const onCitar = vi.fn();
+    const longBody = '<p>' + 'Palabra '.repeat(150) + '</p>'; // > 500 chars
+    render(PostCard, { post: post({ body: longBody }), onCitar });
+    await user.click(screen.getByRole('button', { name: 'Citar' }));
+    expect(onCitar).toHaveBeenCalledTimes(1);
+    const payload = onCitar.mock.calls[0][0] as {
+      author_display_name: string;
+      body_excerpt: string;
+      post_id: string;
+    };
+    expect(payload.author_display_name).toBe('Aragorn');
+    expect(payload.post_id).toBe('p1');
+    expect(payload.body_excerpt.length).toBeLessThanOrEqual(500);
+    expect(payload.body_excerpt).not.toContain('<');
+  });
+
+  it('emits a Citar payload with short plain body unchanged', async () => {
+    const user = userEvent.setup();
+    const onCitar = vi.fn();
+    render(PostCard, { post: post({ body: '<p>Texto corto</p>' }), onCitar });
+    await user.click(screen.getByRole('button', { name: 'Citar' }));
+    expect(onCitar).toHaveBeenCalledTimes(1);
+    const payload = onCitar.mock.calls[0][0] as { body_excerpt: string };
+    expect(payload.body_excerpt).toBe('Texto corto');
   });
 });

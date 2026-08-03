@@ -3,9 +3,12 @@
   import { resolve } from '$app/paths';
   import ReplyComposer from '$lib/components/forum/ReplyComposer.svelte';
   import ThreadDetail from '$lib/components/forum/ThreadDetail.svelte';
+  import type { QuotePayload } from '$lib/forum';
   import type { PageData } from './$types';
 
-  export let data: PageData;
+  let { data }: { data: PageData } = $props();
+
+  let replyTo: QuotePayload | null = $state(null);
 </script>
 
 <svelte:head>
@@ -22,6 +25,7 @@
     isLocked={data.isLocked}
     isOwner={data.isOwner}
     isStaff={data.isStaff}
+    onCitar={(payload) => (replyTo = payload)}
   />
 
   <div class="mt-6 flex gap-3">
@@ -29,7 +33,11 @@
       <div class="w-full card bg-base-200 border border-azeroth-border">
         <div class="card-body">
           <h2 class="card-title font-cinzel text-lg mb-2">Responder</h2>
-          <ReplyComposer />
+          <ReplyComposer
+            draftKey={`forum:draft:${data.thread.id}`}
+            quotePayload={replyTo}
+            onClearQuote={() => (replyTo = null)}
+          />
         </div>
       </div>
     {/if}
