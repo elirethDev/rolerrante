@@ -19,6 +19,13 @@ export default defineConfig({
       ),
     },
   },
+  server: {
+    fs: {
+      // node_modules is junction-linked to the main checkout (`../../RolErrante`)
+      // so worktree test runs can resolve @testing-library and other packages.
+      allow: ["..", "../RolErrante", "../../RolErrante/node_modules"],
+    },
+  },
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts", "./src/test/pm-polyfill.ts"],
