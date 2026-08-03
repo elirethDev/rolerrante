@@ -5,6 +5,7 @@
   import TipTapEditor from '$lib/components/editor/TipTapEditor.svelte';
   import Field from '$lib/components/forms/Field.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
+  import { validateForumImageUrls } from '$lib/auth';
   import type { ActionData, PageData } from './$types';
 
   export let data: PageData;
@@ -14,6 +15,11 @@
   let title = '';
   let categoryId = '';
   let content = '';
+
+  // Client-side mirror of the server validateForumImageUrls() (REQ-FORUM-03.5).
+  function isValidImageUrl(url: string): boolean {
+    return validateForumImageUrls(`<img src="${url}">`).valid;
+  }
 </script>
 
 <svelte:head>
@@ -65,7 +71,7 @@
     <input type="hidden" name="content" bind:value={content} />
     <Field label="Contenido" required>
       {#snippet ctrl()}
-        <TipTapEditor {content} onChange={(html) => (content = html)} />
+        <TipTapEditor {content} onChange={(html) => (content = html)} validateImageUrl={isValidImageUrl} />
       {/snippet}
     </Field>
 
