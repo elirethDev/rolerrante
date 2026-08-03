@@ -146,7 +146,7 @@ export async function forumAccessAllowed(
  * Map the currently-active sanctions for a set of users (keyed by user_id), so
  * the moderation queue can show sanction state for each reported user. Only
  * rows that are still active (ban, or suspension with active_until in the
- * future) are returned — matching the forumAccessAllowed gate. Degrades to an
+ * future) are returned ÔÇö matching the forumAccessAllowed gate. Degrades to an
  * empty map on query error so the queue still renders.
  */
 export async function listActiveSanctions(
@@ -168,4 +168,19 @@ export async function listActiveSanctions(
     byUser[row.user_id] = { kind: row.kind, active_until: row.active_until };
   }
   return byUser;
+}
+
+/**
+ * Single-URL variant of the forum image validator (REQ-CAV-01.2). Allows
+ * null/undefined/empty (avatar cleared) and any http: or https: URL; rejects
+ * every other scheme (javascript:, data:, file:, unknown, relative paths).
+ */
+export function validateImageUrl(url: string | null | undefined): { valid: boolean; rejected?: string } {
+  if (!url || url.trim() === "") {
+    return { valid: true };
+  }
+  if (!/^https?:\/\//i.test(url)) {
+    return { valid: false, rejected: url };
+  }
+  return { valid: true };
 }

@@ -138,6 +138,11 @@
               </select>
             {/snippet}
           </Field>
+          <Field label="URL de avatar" class="md:col-span-2" error={form && 'errors' in form ? (form.errors as Record<string, string>).avatar_url ?? null : null}>
+            {#snippet ctrl()}
+              <input id="avatar_url" name="avatar_url" type="text" class="input" placeholder="https://..." />
+            {/snippet}
+          </Field>
         </div>
       </div>
     </div>

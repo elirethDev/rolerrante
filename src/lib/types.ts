@@ -50,6 +50,7 @@ export interface Character {
   attr_esp: number;
   rp_points: number;
   status: ApprovalStatus;
+  avatar_url: string | null;
   review_notes: string | null;
   reviewed_by: string | null;
   reviewed_at: string | null;
