@@ -1,22 +1,90 @@
 <script lang="ts">
+  import { onMount, onDestroy } from 'svelte';
   import { enhance } from '$app/forms';
   import TipTapEditor from '$lib/components/editor/TipTapEditor.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
   import { validateForumImageUrls } from '$lib/auth';
+  import type { QuotePayload } from '$lib/forum';
+  import {
+    REPLY_MAX_LENGTH,
+    buildQuoteBlock,
+    clearDraft,
+    isOverLimit,
+    loadDraft,
+    plainTextLength,
+    saveDraft,
+    shouldClearDraft,
+  } from '$lib/forum-compose';
 
   let {
     action = '?/reply',
     submitLabel = 'Responder',
     placeholder = 'Escribí tu respuesta…',
-  }: { action?: string; submitLabel?: string; placeholder?: string } = $props();
+    draftKey = null,
+    maxLength = REPLY_MAX_LENGTH,
+    autosaveMs = 300,
+    quotePayload = null,
+    onClearQuote = undefined,
+  }: {
+    action?: string;
+    submitLabel?: string;
+    placeholder?: string;
+    draftKey?: string | null;
+    maxLength?: number;
+    autosaveMs?: number;
+    quotePayload?: QuotePayload | null;
+    onClearQuote?: (() => void) | undefined;
+  } = $props();
 
   let pending = $state(false);
   let content = $state('');
+  let charCount = $state(0);
+  let savedIndicator = $state(false);
+  let saveTimer: ReturnType<typeof setTimeout> | undefined;
 
   // Client-side mirror of the server validateForumImageUrls() (REQ-FORUM-03.5).
   function isValidImageUrl(url: string): boolean {
     return validateForumImageUrls(`<img src="${url}">`).valid;
   }
+
+  function scheduleAutosave() {
+    if (!draftKey) return;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      saveDraft(window.localStorage, draftKey, { content, timestamp: Date.now() });
+      savedIndicator = true;
+      setTimeout(() => {
+        savedIndicator = false;
+      }, 2000);
+    }, autosaveMs);
+  }
+
+  function handleChange(html: string) {
+    content = html;
+    scheduleAutosave();
+  }
+
+  function handleSubmitSuccess(resultType: string) {
+    if (draftKey && shouldClearDraft(resultType)) {
+      clearDraft(window.localStorage, draftKey);
+    }
+  }
+
+  onMount(() => {
+    const draft = draftKey ? loadDraft(window.localStorage, draftKey) : null;
+    if (draft?.content) {
+      content = draft.content;
+      charCount = plainTextLength(content);
+      savedIndicator = true;
+    } else if (quotePayload) {
+      content = buildQuoteBlock(quotePayload, maxLength);
+      charCount = plainTextLength(content);
+    }
+  });
+
+  onDestroy(() => {
+    clearTimeout(saveTimer);
+  });
 </script>
 
 <form
@@ -24,15 +92,66 @@
   action={action}
   use:enhance={() => {
     pending = true;
-    return async ({ update }) => {
+    return async ({ update, result }) => {
       pending = false;
+      handleSubmitSuccess(result.type);
       await update();
     };
   }}
 >
   <input type="hidden" name="content" bind:value={content} />
-  <TipTapEditor {content} onChange={(html) => (content = html)} validateImageUrl={isValidImageUrl} />
+  {#if quotePayload}
+    <input type="hidden" name="quote_author" value={quotePayload.author_display_name} />
+    <input type="hidden" name="quote_excerpt" value={quotePayload.body_excerpt} />
+    <input type="hidden" name="quote_post_id" value={quotePayload.post_id} />
+  {/if}
+
+  {#if quotePayload}
+    <div class="flex items-center gap-2 alert alert-info mb-3" role="status">
+      <span>Respondiendo a <strong>{quotePayload.author_display_name}</strong></span>
+      {#if onClearQuote}
+        <button
+          type="button"
+          class="btn btn-xs btn-ghost ml-auto"
+          aria-label="Cancelar cita"
+          onclick={onClearQuote}
+        >
+          ×
+        </button>
+      {/if}
+    </div>
+  {/if}
+
+  <TipTapEditor
+    {content}
+    onChange={handleChange}
+    onCharCount={(n) => (charCount = n)}
+    validateImageUrl={isValidImageUrl}
+  />
+
+  <div class="mt-1 flex items-center justify-between text-xs">
+    <span class="text-green-400" data-testid="draft-indicator" role="status">
+      {savedIndicator ? 'Borrador guardado' : ''}
+    </span>
+    <span
+      class={isOverLimit(charCount, maxLength) ? 'text-error' : 'text-gray-400'}
+      data-testid="char-counter"
+    >
+      {charCount}/{maxLength}
+      {#if isOverLimit(charCount, maxLength)}
+        <span class="text-error block" role="alert">
+          Has superado el límite de {maxLength} caracteres.
+        </span>
+      {/if}
+    </span>
+  </div>
   <div class="mt-3 flex justify-end">
-    <SubmitButton class="font-cinzel" {pending}>{submitLabel}</SubmitButton>
+    <SubmitButton
+      class="font-cinzel"
+      {pending}
+      disabled={isOverLimit(charCount, maxLength)}
+    >
+      {submitLabel}
+    </SubmitButton>
   </div>
 </form>
