@@ -1,8 +1,18 @@
 <script lang="ts">
   import { FolderOpen, ChevronRight } from '@lucide/svelte';
   import type { CategoryNode } from '$lib/forum';
+  import type { LastPostInfo } from '$lib/forum';
 
   let { categories }: { categories: CategoryNode[] } = $props();
+
+  function lastPostBlock(last: LastPostInfo | null | undefined) {
+    if (!last?.author_display_name) return null;
+    return {
+      author: last.author_display_name,
+      avatar: last.avatar_url ?? '',
+      alt: `Último mensaje de ${last.author_display_name}`,
+    };
+  }
 </script>
 
 <div class="grid gap-4 md:grid-cols-2">
@@ -12,7 +22,7 @@
       data-category-hidden={cat.flags.can_view ? undefined : 'true'}
     >
       <div class="card-body">
-        <div class="flex items-start justify-between gap-3">
+        <div class="flex items-center justify-between gap-3">
           <div>
             <h3 class="card-title font-cinzel text-azeroth-gold text-lg">
               <FolderOpen size={18} class="text-azeroth-gold" />
@@ -22,20 +32,32 @@
               <p class="text-sm text-gray-400 mt-1">{cat.description}</p>
             {/if}
           </div>
-          {#if (cat.threads ?? []).length > 0}
-            <span class="badge badge-neutral badge-sm">{(cat.threads ?? []).length}</span>
-          {/if}
         </div>
 
         {#if cat.children.length > 0}
           <ul class="menu bg-base-100 rounded-box border border-azeroth-border mt-3 w-full">
             {#each cat.children.filter((c) => c.flags.can_view) as child (child.id)}
+              {@const last = lastPostBlock(child.lastPost)}
               <li>
-                <span class="flex items-center gap-2">
-                  <ChevronRight size={14} class="text-gray-500" />
-                  {child.name}
-                  {#if (child.threads ?? []).length > 0}
-                    <span class="badge badge-ghost badge-xs ml-auto">{(child.threads ?? []).length}</span>
+                <span class="flex items-center gap-2 w-full">
+                  <ChevronRight size={14} class="text-gray-500 shrink-0" />
+                  <span class="font-medium">{child.name}</span>
+                  <span class="ml-auto text-xs text-gray-400">
+                    Temas {child.threads_count ?? 0}
+                  </span>
+                  <span class="text-xs text-gray-400">Mensajes {child.posts_count ?? 0}</span>
+                  {#if last}
+                    <span
+                      class="flex items-center gap-1 text-xs text-gray-300"
+                      title={`Último mensaje: ${last.author}`}
+                    >
+                      <img
+                        src={last.avatar}
+                        alt={last.alt}
+                        class="w-5 h-5 rounded-full object-cover bg-azeroth-border"
+                      />
+                      {last.author}
+                    </span>
                   {/if}
                 </span>
               </li>

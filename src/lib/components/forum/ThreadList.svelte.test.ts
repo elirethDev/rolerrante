@@ -11,6 +11,8 @@ const thread = (p: Partial<Record<string, unknown>> = {}) => ({
   created_at: '2026-08-02T00:00:00Z',
   edited_at: null,
   category_id: 'c1',
+  posts_count: 0,
+  lastPost: null,
   ...p,
 });
 

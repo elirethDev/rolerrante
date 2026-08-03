@@ -287,10 +287,12 @@ describe('foro category counts + last-post (REQ-FORUM-02.1/02.2)', () => {
     const root = result.categories.find((r: { id: string }) => r.id === 'r1');
     const sub = root.children.find((c: { id: string }) => c.id === 'sub1');
     expect(sub.threads).toHaveLength(3);
-    const byId = new Map(sub.threads.map((t: { id: string }) => [t.id, t]));
-    expect(byId.get('t1').posts_count).toBe(2);
-    expect(byId.get('t2').posts_count).toBe(4);
-    expect(byId.get('t3').posts_count).toBe(6);
+    const byId = new Map<string, { posts_count: number }>(
+      (sub.threads as Array<{ id: string; posts_count: number }>).map((t) => [t.id, t]),
+    );
+    expect(byId.get('t1')?.posts_count).toBe(2);
+    expect(byId.get('t2')?.posts_count).toBe(4);
+    expect(byId.get('t3')?.posts_count).toBe(6);
   });
 
   it('empty category exposes 0/0 and no lastPost (02.1)', async () => {
@@ -318,7 +320,7 @@ describe('foro category counts + last-post (REQ-FORUM-02.1/02.2)', () => {
       ],
       threads: [
         trow('t-pub', 'sub', '2026-08-01T00:00:00Z'),
-        trow('t-pend', 'sub', '2026-08-02T00:00:00Z'),
+        { ...trow('t-pend', 'sub', '2026-08-02T00:00:00Z'), status: 'pendiente' },
         trow('t-hide', 'hide', '2026-08-03T00:00:00Z'),
       ],
       posts: [
