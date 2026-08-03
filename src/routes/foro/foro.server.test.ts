@@ -31,6 +31,8 @@ function makeSupabase(fixture: {
       },
       in: () => b,
       eq: () => b,
+      or: () => b,
+      maybeSingle: () => Promise.resolve({ data: null, error: null }),
       then: (res: Handler, rej: Handler) => {
         let result: { data: unknown; error: unknown };
         if (table === 'categories') result = { data: fixture.categories ?? [], error: null };

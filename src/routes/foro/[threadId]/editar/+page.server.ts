@@ -1,9 +1,13 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { requireAuth, validateForumImageUrls } from '$lib/auth';
+import { requireAuth, validateForumImageUrls, forumAccessAllowed } from '$lib/auth';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals: { supabase, user, profile } }) => {
   requireAuth({ user, profile });
+  // Suspended/banned users are denied forum access (REQ-MOD-ENF-03.2).
+  if (profile && !(await forumAccessAllowed(supabase, profile))) {
+    throw redirect(303, '/');
+  }
 
   const { data: thread } = await supabase
     .from('threads')
@@ -22,6 +26,9 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, user, p
 export const actions: Actions = {
   default: async ({ request, params, locals: { supabase, user, profile } }) => {
     requireAuth({ user, profile });
+    if (profile && !(await forumAccessAllowed(supabase, profile))) {
+      throw redirect(303, '/');
+    }
 
     const { data: thread } = await supabase
       .from('threads')

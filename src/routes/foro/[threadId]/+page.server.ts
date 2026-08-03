@@ -1,8 +1,8 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { resolveEffectivePermissions, validateForumImageUrls, requireAuth, type PermissionFlags } from '$lib/auth';
+import { resolveEffectivePermissions, validateForumImageUrls, requireAuth, forumAccessAllowed, type PermissionFlags } from '$lib/auth';
 import { getOrCreateThread, type ThreadView, type PostView } from '$lib/forum';
 import type { Json } from '$lib/supabase/database.types';
-import type { UserRole } from '$lib/types';
+import type { UserRole, Profile } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
 
 type SectionPermRow = { category_id: string; role: UserRole; can_view: boolean; can_post: boolean; can_edit: boolean; can_lock: boolean };
@@ -12,7 +12,18 @@ function toFlags(p: { can_view: boolean; can_post: boolean; can_edit: boolean; c
   return { can_view: p.can_view, can_post: p.can_post, can_edit: p.can_edit, can_lock: p.can_lock };
 }
 
+// Suspended/banned users are denied forum access (REQ-MOD-ENF-03.2).
+async function gateForumAccess(
+  supabase: Parameters<typeof forumAccessAllowed>[0],
+  profile: Profile | null,
+) {
+  if (profile && !(await forumAccessAllowed(supabase, profile))) {
+    throw redirect(303, '/');
+  }
+}
+
 export const load: PageServerLoad = async ({ params, locals: { supabase, user, profile } }) => {
+  await gateForumAccess(supabase, profile);
   const role: UserRole = profile?.role ?? 'pendiente';
   const isStaff = role === 'gm' || role === 'admin';
 
@@ -88,6 +99,7 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, user, p
 export const actions: Actions = {
   reply: async ({ request, params, locals: { supabase, user, profile } }) => {
     requireAuth({ user, profile });
+    await gateForumAccess(supabase, profile);
     const role: UserRole = profile?.role ?? 'pendiente';
 
     const { data: thread } = await supabase
@@ -137,6 +149,7 @@ export const actions: Actions = {
 
   delete: async ({ request, params, locals: { supabase, user, profile } }) => {
     requireAuth({ user, profile });
+    await gateForumAccess(supabase, profile);
     const form = await request.formData();
     const postId = String(form.get('post_id') ?? '');
 

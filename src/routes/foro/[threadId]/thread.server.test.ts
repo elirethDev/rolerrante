@@ -42,7 +42,9 @@ function makeSupabase(f: Fixture) {
         return builder;
       },
       order: () => builder,
-      maybeSingle: () => Promise.resolve({ data: f.thread ?? null, error: null }),
+      or: () => builder,
+      maybeSingle: () =>
+        Promise.resolve({ data: table === 'user_sanctions' ? null : (f.thread ?? null), error: null }),
       single: () => {
         if (table === 'threads') return Promise.resolve({ data: f.thread ?? null, error: null });
         if (table === 'posts') return Promise.resolve({ data: f.postSingle ?? null, error: null });

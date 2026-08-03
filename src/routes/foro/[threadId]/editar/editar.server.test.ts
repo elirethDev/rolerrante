@@ -29,6 +29,8 @@ function makeSupabase(fixture: {
       },
       eq: () => b,
       order: () => b,
+      or: () => b,
+      maybeSingle: () => Promise.resolve({ data: null, error: null }),
       then: (res: Handler, rej: Handler) => {
         let data: unknown;
         if (table === 'posts') data = fixture.posts ?? [];

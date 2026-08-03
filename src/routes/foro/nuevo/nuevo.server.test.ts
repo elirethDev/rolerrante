@@ -22,6 +22,8 @@ function makeSupabase(f: Fixture) {
       select: () => builder,
       order: () => builder,
       eq: () => builder,
+      or: () => builder,
+      maybeSingle: () => Promise.resolve({ data: null, error: null }),
       then: (res: Handler, rej: Handler) => {
         const data = table === 'categories' ? (f.categories ?? []) : [];
         return Promise.resolve({ data, error: null }).then(res, rej);
