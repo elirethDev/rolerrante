@@ -20,6 +20,27 @@ function extractFunction(name: string): string {
   return match![0];
 }
 
+const selfSelectPath = resolve(
+  process.cwd(),
+  "supabase/migrations/20260803000001_reports_self_select_policy.sql",
+);
+
+describe("reporter self-SELECT policy (20260803000001_reports_self_select_policy.sql)", () => {
+  const sql = readFileSync(selfSelectPath, "utf8");
+
+  it("adds a reporter self-SELECT policy so reportPost can read back the insert", () => {
+    expect(sql).toMatch(
+      /CREATE POLICY[\s\S]*?ON public\.reports[\s\S]*?FOR SELECT USING \(reporter_id = auth\.uid\(\)/,
+    );
+  });
+
+  it("keeps admin SELECT intact (admin path must not be removed)", () => {
+    // The additive file must not drop the admin-only SELECT policy from the
+    // base migration; the reporter sees own, admin still sees all.
+    expect(sql).not.toMatch(/DROP POLICY/i);
+  });
+});
+
 describe("forum moderation migration 20260803000000_forum_moderation.sql", () => {
   it("binds reports INSERT reporter_id to the caller (REQ-MOD-REP-01.3)", () => {
     // Any authenticated caller may report, but the report must be attributed to

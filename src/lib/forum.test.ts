@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './supabase/database.types';
-import { banUser, reportPost, resolveReport, suspendUser } from './forum';
+import { banUser, listReports, reportPost, resolveReport, suspendUser } from './forum';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyFn = (...args: any[]) => any;
@@ -22,6 +22,8 @@ interface Fixture {
   insertedId?: string | null;
   rpcError?: { message: string } | null;
   currentUserId?: string | null;
+  listRows?: unknown[];
+  listError?: { message: string } | null;
 }
 
 function makeClient(f: Fixture) {
@@ -36,11 +38,17 @@ function makeClient(f: Fixture) {
           return builder;
         },
         select: () => builder,
+        eq: () => builder,
+        order: () => builder,
         single: () =>
           Promise.resolve({
             data: { id: f.insertedId ?? 'rep-1' },
             error: f.insertError ?? null,
           }),
+        then: (res: (v: unknown) => void, rej: (e: unknown) => void) => {
+          if (f.listError) return Promise.resolve({ data: null, error: f.listError }).then(res, rej);
+          return Promise.resolve({ data: f.listRows ?? [], error: null }).then(res, rej);
+        },
       };
       return builder;
     },
@@ -162,5 +170,43 @@ describe('resolveReport', () => {
     const { client } = makeClient({ rpcError: { message: 'La justificacion es obligatoria' } });
     const res = await resolveReport(client, 'rep-9', 'descartada', '');
     expect(res).toEqual({ error: 'La justificacion es obligatoria' });
+  });
+});
+
+describe('listReports', () => {
+  it('returns abierta reports with reporter + post link when the query succeeds', async () => {
+    const { client } = makeClient({
+      listRows: [
+        {
+          id: 'rep-1',
+          reason: 'Spam',
+          justification: 'Repetido',
+          status: 'abierta',
+          created_at: '2026-08-03T00:00:00Z',
+          reporter: { id: 'u1', display_name: 'Aragorn', username: 'aragon' },
+          post: { id: 'p1', thread_id: 't1', post_number: 2 },
+        },
+      ],
+    });
+    const res = await listReports(client);
+
+    expect(res.error).toBeNull();
+    expect(res.data).toHaveLength(1);
+    expect(res.data?.[0]).toMatchObject({ id: 'rep-1', reason: 'Spam', status: 'abierta' });
+    expect(res.data?.[0].reporter?.display_name).toBe('Aragorn');
+    expect(res.data?.[0].post).toMatchObject({ id: 'p1', thread_id: 't1' });
+  });
+
+  it('returns an empty list when there are no open reports', async () => {
+    const { client } = makeClient({ listRows: [] });
+    const res = await listReports(client);
+    expect(res.error).toBeNull();
+    expect(res.data).toEqual([]);
+  });
+
+  it('returns error message when the select fails', async () => {
+    const { client } = makeClient({ listError: { message: 'forbidden' } });
+    const res = await listReports(client);
+    expect(res.error).toBe('forbidden');
   });
 });

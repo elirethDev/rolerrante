@@ -242,3 +242,35 @@ export async function resolveReport(
   });
   return error ? { error: error.message } : { error: null };
 }
+
+export interface ReportListItem {
+  id: string;
+  reason: string;
+  justification: string | null;
+  status: string;
+  created_at: string;
+  reporter: { id: string; display_name: string | null; username: string } | null;
+  post: { id: string; thread_id: string; post_number: number } | null;
+}
+
+/**
+ * List open (abierta) reports for the admin queue (REQ-MOD-REP-02.1), each with
+ * the reporter and the linked post so the queue can show a post link. RLS
+ * restricts SELECT to admins (plus the reporter's own rows via the self-select
+ * policy, so a non-admin calling this sees their own only - callers should
+ * require staff). Returns the list plus an optional error message.
+ */
+export async function listReports(
+  supabase: SupabaseClient<Database>,
+): Promise<{ data: ReportListItem[] | null; error: string | null }> {
+  const { data, error } = await supabase
+    .from('reports')
+    .select(
+      'id, reason, justification, status, created_at, reporter:reporter_id(id, display_name, username), post:post_id(id, thread_id, post_number)',
+    )
+    .eq('status', 'abierta')
+    .order('created_at', { ascending: false });
+
+  if (error) return { data: null, error: error.message };
+  return { data: (data ?? []) as unknown as ReportListItem[], error: null };
+}
