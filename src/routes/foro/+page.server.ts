@@ -106,10 +106,13 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile }, url 
         }
       : null;
 
+  // Posts arrive grouped per thread (created_at desc); pick the newest defensively.
+  const newestOf = (posts: PostWithAuthor[]) =>
+    [...posts].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+
   const enrichThread = (t: ThreadListItem): ThreadListItem => {
     const ps = postsByThread.get(t.id) ?? [];
-    const newest = [...ps].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
-    return { ...t, posts_count: ps.length, lastPost: toLastPost(newest) };
+    return { ...t, posts_count: ps.length, lastPost: toLastPost(newestOf(ps)) };
   };
 
   const withFlags = (c: CategoryRow): CategoryNode => {
@@ -118,7 +121,6 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile }, url 
       resolveEffectivePermissions({ section: null, thread: null, role });
     const own = threadList.filter((t) => t.category_id === c.id).map(enrichThread);
     const ownPosts = own.flatMap((t) => postsByThread.get(t.id) ?? []);
-    const newest = [...ownPosts].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
     const children = cats
       .filter((k) => k.parent_id === c.id)
       .sort((a, b) => a.sort_order - b.sort_order)
@@ -133,7 +135,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile }, url 
       threads: children.length ? [] : own,
       threads_count: own.length,
       posts_count: ownPosts.length,
-      lastPost: toLastPost(newest),
+      lastPost: toLastPost(newestOf(ownPosts)),
     };
   };
 
