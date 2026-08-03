@@ -1,6 +1,8 @@
 import { redirect } from '@sveltejs/kit';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { User } from '@supabase/supabase-js';
 import type { UserRole, Profile } from './types';
+import type { Database } from './supabase/database.types';
 
 type AuthLocals = { user: User | null; profile: Profile | null };
 
@@ -77,4 +79,41 @@ export function validateForumImageUrls(html: string): { valid: boolean; rejected
     if (!/^https?:\/\//i.test(url)) rejected.push(url);
   }
   return { valid: rejected.length === 0, rejected };
+}
+
+export interface SanctionRow {
+  kind: string;
+  active_until: string | null;
+}
+
+/**
+ * A moderator sanction is active when it is a permanent ban (kind=ban, no
+ * expiry) or when it is a timed suspension whose active_until is still in the
+ * future (REQ-MOD-ENF-03.1). Expired suspensions stop blocking forum access.
+ */
+export function hasActiveSanction(sanction: SanctionRow | null): boolean {
+  if (!sanction) return false;
+  if (sanction.kind === 'ban') return true;
+  return (
+    sanction.active_until !== null &&
+    new Date(sanction.active_until).getTime() > Date.now()
+  );
+}
+
+/**
+ * Central forum-access gate (REQ-MOD-ENF-03): a suspended or banned user is
+ * denied access to every /foro route. Returns true (allowed) unless there is an
+ * active sanction for this profile.
+ */
+export async function forumAccessAllowed(
+  supabase: SupabaseClient<Database>,
+  profile: Profile,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from('user_sanctions')
+    .select('kind, active_until')
+    .eq('user_id', profile.id)
+    .or('kind.eq.ban,active_until.gt.' + new Date().toISOString())
+    .maybeSingle();
+  return !hasActiveSanction(data as SanctionRow | null);
 }
