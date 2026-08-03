@@ -23,6 +23,11 @@ interface Fixture {
   audit?: { name: string; args: Record<string, unknown> }[];
   deletedIds?: string[];
   postSingle?: unknown;
+  // reactions (like toggle) fixtures
+  existingReaction?: unknown;
+  insertedReactions?: Array<Record<string, unknown>>;
+  deletedReactionIds?: string[];
+  reactionsInsertError?: unknown;
 }
 
 // Fluent supabase mock for the thread detail route. Supports:
@@ -39,10 +44,14 @@ function makeSupabase(f: Fixture) {
       select: () => builder,
       eq: (col: string, val: unknown) => {
         if (deleting && table === 'posts') (f.deletedIds ??= []).push(String(val));
+        if (deleting && table === 'reactions') (f.deletedReactionIds ??= []).push(String(val));
         return builder;
       },
       order: () => builder,
-      maybeSingle: () => Promise.resolve({ data: f.thread ?? null, error: null }),
+      maybeSingle: () => {
+        if (table === 'reactions') return Promise.resolve({ data: f.existingReaction ?? null, error: null });
+        return Promise.resolve({ data: f.thread ?? null, error: null });
+      },
       single: () => {
         if (table === 'threads') return Promise.resolve({ data: f.thread ?? null, error: null });
         if (table === 'posts') return Promise.resolve({ data: f.postSingle ?? null, error: null });
@@ -55,7 +64,10 @@ function makeSupabase(f: Fixture) {
       },
       then: (res: Handler, rej: Handler) => {
         let data: unknown;
-        if (table === 'posts') {
+        if (table === 'reactions') {
+          if (f.reactionsInsertError) return Promise.resolve({ data: null, error: f.reactionsInsertError }).then(res, rej);
+          data = f.insertedReactions ?? [];
+        } else if (table === 'posts') {
           // emulate .order('post_number', ascending) for posts (route relies on it)
           data = [...(f.posts ?? [])].sort(
             (a, b) => Number((a as { post_number?: number }).post_number) - Number((b as { post_number?: number }).post_number),
@@ -69,6 +81,9 @@ function makeSupabase(f: Fixture) {
         if (table === 'posts') {
           const newRow = { id: `post-${(f.insertedPosts?.length ?? 0) + 1}`, post_number: f.maxPostNumber, ...row };
           (f.insertedPosts ??= []).push(newRow);
+        }
+        if (table === 'reactions') {
+          (f.insertedReactions ??= []).push({ id: `reaction-${(f.insertedReactions?.length ?? 0) + 1}`, ...row });
         }
         return builder;
       },
@@ -106,8 +121,8 @@ const makeThread = (p: Partial<Record<string, unknown>> = {}) => ({
   ...p,
 });
 
-const makeLocals = (supabase: ReturnType<typeof makeSupabase>, role = 'rolero', userId = 'u1') =>
-  ({ supabase, user: { id: userId }, profile: { id: userId, role } }) as never;
+const makeLocals = (supabase: ReturnType<typeof makeSupabase>, role = 'rolero', userId: string | null = 'u1') =>
+  ({ supabase, user: userId ? { id: userId } : null, profile: userId ? { id: userId, role } : null }) as never;
 
 const makeEvent = (locals: ReturnType<typeof makeLocals>, params = { threadId: 't1' }) =>
   ({ locals, params, url: new URL('http://localhost/foro/t1') }) as never;
@@ -310,5 +325,84 @@ describe('thread detail delete action', () => {
     const res = await deleteFn(makeDeleteEvent(makeLocals(supabase, 'rolero', 'u1'), 'p2'));
     expect(res.status).toBe(403);
     expect(supabase.fixtures.deletedIds ?? []).toHaveLength(0);
+  });
+});
+
+describe('thread detail like action', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const likeFn = actions.like as unknown as (...args: unknown[]) => Promise<any>;
+
+  const makeLikeEvent = (locals: ReturnType<typeof makeLocals>, postId = 'p2') =>
+    ({
+      locals,
+      params: { threadId: 't1' },
+      url: new URL('http://localhost/foro/t1'),
+      request: new Request('http://localhost/foro/t1', {
+        method: 'POST',
+        body: new URLSearchParams({ post_id: postId }).toString(),
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      }),
+    }) as never;
+
+  it('inserts a reaction row on first like (REACT-01.3)', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({ thread: makeThread(), existingReaction: null, insertedReactions: inserted });
+    // success = redirect thrown (rejection)
+    const err = await likeFn(makeLikeEvent(makeLocals(supabase, 'rolero', 'u1'), 'p2')).then(
+      () => null,
+      (e: { status?: number }) => e,
+    );
+    expect(err?.status).toBe(303);
+    expect(inserted).toHaveLength(1);
+    expect(inserted[0].post_id).toBe('p2');
+    expect(inserted[0].user_id).toBe('u1');
+  });
+
+  it('deletes the reaction row on unlike (re-click, REACT-01.3)', async () => {
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      existingReaction: { post_id: 'p2', user_id: 'u1', created_at: 'x' },
+      insertedReactions: [],
+    });
+    const err = await likeFn(makeLikeEvent(makeLocals(supabase, 'rolero', 'u1'), 'p2')).then(
+      () => null,
+      (e: { status?: number }) => e,
+    );
+    expect(err?.status).toBe(303);
+    expect(supabase.fixtures.insertedReactions ?? []).toHaveLength(0);
+    // DELETE filtered by post_id + user_id (only own row)
+    expect(supabase.fixtures.deletedReactionIds).toContain('p2');
+    expect(supabase.fixtures.deletedReactionIds).toContain('u1');
+  });
+
+  it('blocks guest like with 401/redirect and no mutation (REACT-01.1)', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({ thread: makeThread(), existingReaction: null, insertedReactions: inserted });
+    // guest locals: no user
+    const guestLocals = { supabase, user: null, profile: null } as never;
+    const err = await likeFn(makeLikeEvent(guestLocals, 'p2')).then(
+      () => null,
+      (e: { status?: number }) => e,
+    );
+    expect(err?.status).toBe(303); // requireAuth redirects to /login
+    expect(inserted).toHaveLength(0);
+    expect(supabase.fixtures.deletedReactionIds ?? []).toHaveLength(0);
+  });
+
+  it('treats UNIQUE race (23505) as silent no-op without error (design)', async () => {
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      existingReaction: null,
+      insertedReactions: [],
+      reactionsInsertError: { code: '23505', message: 'duplicate key value violates unique constraint "reactions_pkey"' },
+    });
+    // No error surfaced: redirect (success) instead of fail() with message
+    const err = await likeFn(makeLikeEvent(makeLocals(supabase, 'rolero', 'u1'), 'p2')).then(
+      () => null,
+      (e: { status?: number }) => e,
+    );
+    expect(err?.status).toBe(303);
+    // No fail payload with a toastable message
+    expect(err?.status).not.toBe(400);
   });
 });

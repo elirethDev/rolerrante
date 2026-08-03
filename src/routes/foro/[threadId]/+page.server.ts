@@ -175,4 +175,40 @@ export const actions: Actions = {
 
     throw redirect(303, `/foro/${params.threadId}`);
   },
+
+  // Like ("Gracias") toggle — idempotent (REQ-REACT-01.3). First click inserts the
+  // row; re-click deletes it. RLS enforces own-row insert/delete. UNIQUE race on
+  // (post_id, user_id) is a silent no-op: 23505 is NOT surfaced as an error toast
+  // (design decision B). No log_audit for likes (decision F).
+  like: async ({ request, params, locals: { supabase, user, profile } }) => {
+    requireAuth({ user, profile });
+    const form = await request.formData();
+    const postId = String(form.get('post_id') ?? '');
+
+    const { data: existing } = await supabase
+      .from('reactions')
+      .select('*')
+      .eq('post_id', postId)
+      .eq('user_id', user!.id)
+      .maybeSingle();
+
+    if (existing) {
+      const { error: deleteError } = await supabase
+        .from('reactions')
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', user!.id);
+      if (deleteError) return fail(400, { message: deleteError.message });
+    } else {
+      const { error: insertError } = await supabase
+        .from('reactions')
+        .insert({ post_id: postId, user_id: user!.id });
+      // 23505 = concurrent like already inserted -> idempotent, silent success
+      if (insertError && insertError.code !== '23505') {
+        return fail(400, { message: insertError.message });
+      }
+    }
+
+    throw redirect(303, `/foro/${params.threadId}`);
+  },
 };
