@@ -8,6 +8,8 @@ const loadFn = load as unknown as (...args: unknown[]) => Promise<any>;
 const replyFn = actions.reply as unknown as (...args: unknown[]) => Promise<any>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const deleteFn = actions.delete as unknown as (...args: unknown[]) => Promise<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const reportFn = actions.report as unknown as (...args: unknown[]) => Promise<any>;
 
 type Handler = (...args: unknown[]) => void;
 
@@ -23,6 +25,9 @@ interface Fixture {
   audit?: { name: string; args: Record<string, unknown> }[];
   deletedIds?: string[];
   postSingle?: unknown;
+  insertRows?: Array<Record<string, unknown>>;
+  authUser?: { id: string } | null;
+  existingReport?: unknown;
 }
 
 // Fluent supabase mock for the thread detail route. Supports:
@@ -43,11 +48,20 @@ function makeSupabase(f: Fixture) {
       },
       order: () => builder,
       or: () => builder,
-      maybeSingle: () =>
-        Promise.resolve({ data: table === 'user_sanctions' ? null : (f.thread ?? null), error: null }),
+      maybeSingle: () => {
+        if (table === 'user_sanctions' || table === 'reports') {
+          return Promise.resolve({ data: table === 'reports' ? (f.existingReport ?? null) : null, error: null });
+        }
+        return Promise.resolve({ data: f.thread ?? null, error: null });
+      },
       single: () => {
         if (table === 'threads') return Promise.resolve({ data: f.thread ?? null, error: null });
         if (table === 'posts') return Promise.resolve({ data: f.postSingle ?? null, error: null });
+        // reports insert read-back: mimic the reporter self-SELECT policy returning the new id.
+        if (table === 'reports') {
+          const last = (f.insertRows ?? [])[Math.max((f.insertRows?.length ?? 1) - 1, 0)];
+          return Promise.resolve({ data: last ? { id: last.id ?? 'rep-new' } : { id: 'rep-new' }, error: null });
+        }
         // entity tables
         return Promise.resolve({ data: f.entity ?? null, error: null });
       },
@@ -72,6 +86,10 @@ function makeSupabase(f: Fixture) {
           const newRow = { id: `post-${(f.insertedPosts?.length ?? 0) + 1}`, post_number: f.maxPostNumber, ...row };
           (f.insertedPosts ??= []).push(newRow);
         }
+        if (table === 'reports') {
+          const newRow = { id: `rep-${(f.insertRows?.length ?? 0) + 1}`, ...row };
+          (f.insertRows ??= []).push(newRow);
+        }
         return builder;
       },
     };
@@ -79,6 +97,13 @@ function makeSupabase(f: Fixture) {
   };
   return {
     from,
+    auth: {
+      getUser: () =>
+        Promise.resolve({
+          data: { user: f.authUser ?? { id: 'u1' } },
+          error: null,
+        }),
+    },
     rpc: (name: string, args: Record<string, unknown>) => {
       (f.audit ??= []).push({ name, args });
       return Promise.resolve({ data: null, error: null });
@@ -224,6 +249,75 @@ describe('thread detail reply action', () => {
     const inserted: Array<Record<string, unknown>> = [];
     const supabase = makeSupabase({ thread: makeThread({ is_locked: false }), insertedPosts: inserted });
     const res = await replyFn(makeReplyEvent(makeLocals(supabase), '<img src="data:image/png;base64,xxx">'));
+    expect(res.status).toBe(400);
+    expect(inserted).toHaveLength(0);
+  });
+});
+
+describe('thread detail report action (REQ-MOD-REP-01)', () => {
+  const makeReportEvent = (locals: ReturnType<typeof makeLocals>, reason = 'Spam') =>
+    ({
+      locals,
+      params: { threadId: 't1' },
+      url: new URL('http://localhost/foro/t1'),
+      request: new Request('http://localhost/foro/t1', {
+        method: 'POST',
+        body: new URLSearchParams({ post_id: 'p1', reason }).toString(),
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      }),
+    }) as never;
+
+  it('requires auth before reporting (unauthenticated -> redirect to /login)', async () => {
+    const supabase = makeSupabase({ thread: makeThread() });
+    // No user -> requireAuth throws a 303 redirect to /login.
+    const err = await reportFn({
+      locals: { supabase, user: null, profile: null },
+      params: { threadId: 't1' },
+      url: new URL('http://localhost/foro/t1'),
+      request: new Request('http://localhost/foro/t1', {
+        method: 'POST',
+        body: new URLSearchParams({ post_id: 'p1', reason: 'Spam' }).toString(),
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      }),
+    }).then(
+      () => null,
+      (e: { status?: number; location?: string }) => e,
+    );
+    expect(err?.status).toBe(303);
+    expect((err as { location?: string })?.location).toContain('/login');
+  });
+
+  it('redirects on success and inserts a report attributed to the reporter', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      insertRows: inserted,
+    });
+    const err = await reportFn(makeReportEvent(makeLocals(supabase, 'rolero', 'u1'))).then(
+      () => null,
+      (e: { status?: number }) => e,
+    );
+    expect(err?.status).toBe(303);
+    expect(inserted).toHaveLength(1);
+    expect(inserted[0]).toMatchObject({ post_id: 'p1', reporter_id: 'u1' });
+  });
+
+  it('rejects an empty reason with 400 (REP-01)', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({ thread: makeThread(), insertRows: inserted });
+    const res = await reportFn(makeReportEvent(makeLocals(supabase, 'rolero', 'u1'), '   '));
+    expect(res.status).toBe(400);
+    expect(inserted).toHaveLength(0);
+  });
+
+  it('dedupes an existing open report from the same reporter on the same post', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      insertRows: inserted,
+      existingReport: { id: 'rep-existing' },
+    });
+    const res = await reportFn(makeReportEvent(makeLocals(supabase, 'rolero', 'u1')));
     expect(res.status).toBe(400);
     expect(inserted).toHaveLength(0);
   });

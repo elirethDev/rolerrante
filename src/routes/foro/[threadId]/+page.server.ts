@@ -1,6 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { resolveEffectivePermissions, validateForumImageUrls, requireAuth, forumAccessAllowed, type PermissionFlags } from '$lib/auth';
-import { getOrCreateThread, type ThreadView, type PostView } from '$lib/forum';
+import { getOrCreateThread, reportPost, type ThreadView, type PostView } from '$lib/forum';
 import type { Json } from '$lib/supabase/database.types';
 import type { UserRole, Profile } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
@@ -97,8 +97,7 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, user, p
 };
 
 export const actions: Actions = {
-  reply: async ({ request, params, locals: { supabase, user, profile } }) => {
-    requireAuth({ user, profile });
+  reply: async ({ request, params, locals: { supabase, user, profile } }) => {    requireAuth({ user, profile });
     await gateForumAccess(supabase, profile);
     const role: UserRole = profile?.role ?? 'pendiente';
 
@@ -172,6 +171,38 @@ export const actions: Actions = {
       p_details: { thread_id: params.threadId },
     });
     if (auditError) console.error('log_audit falló para eliminar_post', postId, auditError);
+
+    throw redirect(303, `/foro/${params.threadId}`);
+  },
+
+  report: async ({ request, params, locals: { supabase, user, profile } }) => {
+    requireAuth({ user, profile });
+    await gateForumAccess(supabase, profile);
+
+    const form = await request.formData();
+    const postId = String(form.get('post_id') ?? '');
+    const reason = String(form.get('reason') ?? '').trim();
+
+    if (!postId) return fail(400, { message: 'Mensaje obligatorio' });
+    if (!reason) return fail(400, { message: 'El motivo del reporte es obligatorio' });
+    if (reason.length > 500) return fail(400, { message: 'El motivo no puede superar 500 caracteres' });
+
+    // Dedupe/rate-limit: a reporter cannot open the same post report twice
+    // (REP-01 same-user same-post scenario). RLS lets the reporter read their
+    // own rows (reporter self-SELECT policy), so this check works in-app.
+    const { data: existing } = await supabase
+      .from('reports')
+      .select('id')
+      .eq('post_id', postId)
+      .eq('reporter_id', user!.id)
+      .eq('status', 'abierta')
+      .maybeSingle();
+    if (existing) {
+      return fail(400, { message: 'Ya reportaste este mensaje' });
+    }
+
+    const result = await reportPost(supabase, postId, reason);
+    if (result.error) return fail(400, { message: result.error });
 
     throw redirect(303, `/foro/${params.threadId}`);
   },

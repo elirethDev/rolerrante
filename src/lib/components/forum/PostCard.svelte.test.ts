@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/svelte';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import PostCard from './PostCard.svelte';
 
@@ -34,5 +35,23 @@ describe('PostCard', () => {
   it('does not render an edit marker when edited_at is null', () => {
     render(PostCard, { post: post() });
     expect(screen.queryByText(/Editado por/)).not.toBeInTheDocument();
+  });
+});
+
+describe('PostCard Reportar', () => {
+  it('renders a Reportar button on every post', () => {
+    render(PostCard, { post: post() });
+    expect(screen.getByRole('button', { name: /Reportar/i })).toBeInTheDocument();
+  });
+
+  it('opens the ReportModal when Reportar is clicked (REP-01.1)', async () => {
+    const user = userEvent.setup();
+    render(PostCard, { post: post() });
+    await user.click(screen.getByRole('button', { name: /Reportar/i }));
+
+    // The modal posts to ?/report with this post's id (REP-01.1).
+    const form = screen.getByTestId('report-form');
+    expect(form).toHaveAttribute('action', '?/report');
+    expect(form.querySelector('input[name="post_id"]')).toHaveValue('p1');
   });
 });

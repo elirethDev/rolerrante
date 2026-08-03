@@ -2,6 +2,7 @@
   import TipTapViewer from '$lib/components/editor/TipTapViewer.svelte';
   import type { PostView } from '$lib/forum';
   import { formatDateTime, formatRelativeTime } from '$lib/utils';
+  import ReportModal from './ReportModal.svelte';
 
   let { post, editorName = null }: { post: PostView; editorName?: string | null } = $props();
 
@@ -33,5 +34,9 @@
     {#if editMarker}
       <p class="text-xs text-gray-500 mt-3" data-testid="edit-marker">{editMarker}</p>
     {/if}
+
+    <div class="mt-3 flex justify-end">
+      <ReportModal postId={post.id} />
+    </div>
   </div>
 </article>
