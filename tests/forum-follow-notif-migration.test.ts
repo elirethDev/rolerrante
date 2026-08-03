@@ -18,6 +18,12 @@ const updatePolicyPath = resolve(
 );
 const updatePolicySql = readFileSync(updatePolicyPath, "utf8");
 
+const notificationsUpdatePolicyPath = resolve(
+  process.cwd(),
+  "supabase/migrations/20260803000002_notifications_update_policy.sql",
+);
+const notificationsUpdatePolicySql = readFileSync(notificationsUpdatePolicyPath, "utf8");
+
 describe("thread_follows_notifications migration", () => {
   it("defines thread_follows with RLS enabled (REQ-FOLLOW-01)", () => {
     expect(sql).toContain("CREATE TABLE public.thread_follows");
@@ -157,6 +163,32 @@ describe("thread_follows update policy migration (REQ-FOLLOW-02)", () => {
   it("does not open UPDATE access via any FOR ALL policy", () => {
     expect(updatePolicySql).not.toMatch(
       /ON public\.thread_follows\s*FOR ALL/i,
+    );
+  });
+});
+
+describe("notifications update policy migration (REQ-NOTIF-02 mark-read)", () => {
+  it("adds an owner-only UPDATE policy on notifications so mark-read can write read_at", () => {
+    const updatePolicy =
+      /CREATE POLICY ".*?"\s*ON public\.notifications\s*FOR UPDATE\s*USING \((.*?)\)(?: WITH CHECK \((.*?)\))?;/s.exec(
+        notificationsUpdatePolicySql,
+      );
+    expect(updatePolicy).not.toBeNull();
+    expect(updatePolicy![1]).toMatch(/user_id = auth\.uid\(\)/);
+  });
+
+  it("restricts the notifications UPDATE WITH CHECK to the recipient (no cross-user writes)", () => {
+    const updatePolicy =
+      /CREATE POLICY ".*?"\s*ON public\.notifications\s*FOR UPDATE\s*USING \((.*?)\)\s*WITH CHECK \((.*?)\);/s.exec(
+        notificationsUpdatePolicySql,
+      );
+    expect(updatePolicy).not.toBeNull();
+    expect(updatePolicy![2]).toMatch(/user_id = auth\.uid\(\)/);
+  });
+
+  it("does not open notifications UPDATE via any FOR ALL policy", () => {
+    expect(notificationsUpdatePolicySql).not.toMatch(
+      /ON public\.notifications\s*FOR ALL/i,
     );
   });
 });
