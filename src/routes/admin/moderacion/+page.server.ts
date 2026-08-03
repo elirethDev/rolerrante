@@ -1,11 +1,18 @@
 import { error, fail } from '@sveltejs/kit';
-import { listReports, resolveReport } from '$lib/forum';
-import { isGMOrAdmin } from '$lib/auth';
+import { listReports, resolveReport, suspendUser as suspendUserRpc, banUser as banUserRpc } from '$lib/forum';
+import { isGMOrAdmin, isAdmin, listActiveSanctions } from '$lib/auth';
 import type { UserRole } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
 
 function requireStaff(role?: UserRole | null) {
   if (!isGMOrAdmin(role ?? null)) throw error(403, 'Acceso denegado');
+}
+
+// Enforcement (reports + sanctions) is admin-only per spec REQ-MOD-REP-02 /
+// REQ-MOD-ENF-01/02. GM keeps pending-thread review (REQ-FORUM-05) but sees a
+// read-only report queue.
+function requireAdmin(role?: UserRole | null) {
+  if (!isAdmin(role ?? null)) throw error(403, 'Acceso denegado');
 }
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -32,10 +39,18 @@ export const load: PageServerLoad = async ({ locals }) => {
     listReports(locals.supabase),
   ]);
 
+  const reports = reportsResult.data ?? [];
+  // Active sanctions for the reported users, keyed by user_id, so the UI can
+  // show sanction state (REQ-MOD-ENF-03) and block admin/GM targets (ENF-04).
+  const reportedIds = reports.flatMap((r) => (r.post?.author?.id ? [r.post.author.id] : []));
+  const sanctions = await listActiveSanctions(locals.supabase, reportedIds);
+
   return {
     pendingThreads: pendingThreads ?? [],
     eventThreads: eventThreads ?? [],
-    reports: reportsResult.data ?? [],
+    reports,
+    sanctions,
+    isAdmin: isAdmin(locals.profile?.role ?? null),
   };
 };
 
@@ -142,14 +157,27 @@ export const actions: Actions = {
 
   // Resolve or discard an open report (REQ-MOD-REP-02.2). Both call the
   // resolve_report RPC; the status differentiates resuelta vs descartada.
+  // Admin-only: GM sees a read-only queue (REQ-MOD-REP-02.1).
   resolveReport: async ({ request, locals }) => {
-    requireStaff(locals.profile?.role);
+    requireAdmin(locals.profile?.role);
     return runReportResolution(request, locals, 'resuelta');
   },
 
   discardReport: async ({ request, locals }) => {
-    requireStaff(locals.profile?.role);
+    requireAdmin(locals.profile?.role);
     return runReportResolution(request, locals, 'descartada');
+  },
+
+  // Temporarily suspend the reported author (REQ-MOD-ENF-01). Admin-only.
+  suspendUser: async ({ request, locals }) => {
+    requireAdmin(locals.profile?.role);
+    return runSanction(locals, request, 'suspend');
+  },
+
+  // Permanently ban the reported author (REQ-MOD-ENF-02). Admin-only.
+  banUser: async ({ request, locals }) => {
+    requireAdmin(locals.profile?.role);
+    return runSanction(locals, request, 'ban');
   },
 };
 
@@ -166,6 +194,55 @@ async function runReportResolution(
   if (!justification) return fail(400, { message: 'La justificación es obligatoria' });
 
   const result = await resolveReport(locals.supabase, reportId, status, justification);
+  if (result.error) return fail(400, { message: result.error });
+  return { success: true };
+}
+
+interface SanctionLocals {
+  supabase: Parameters<typeof suspendUserRpc>[0];
+}
+
+/**
+ * Shared suspend/ban enforcement (REQ-MOD-ENF-01/02). Validates the target is
+ * not an admin/GM (ENF-04) at the app layer as a defence-in-depth guard, then
+ * delegates to the admin-only SECURITY DEFINER RPC, which is authoritative.
+ * Surfaces RPC/server rejection messages back to the form.
+ */
+async function runSanction(
+  locals: SanctionLocals,
+  request: Request,
+  kind: 'suspend' | 'ban',
+) {
+  const form = await request.formData();
+  const userId = String(form.get('userId') ?? '').trim();
+  const justification = String(form.get('justification') ?? '').trim();
+  const durationDays = Number(form.get('duration') ?? '');
+
+  if (!userId) return fail(400, { message: 'Usuario obligatorio' });
+  if (!justification) return fail(400, { message: 'La justificación es obligatoria' });
+  if (kind === 'suspend' && (!Number.isInteger(durationDays) || durationDays <= 0)) {
+    return fail(400, { message: 'La duración de la suspensión es obligatoria' });
+  }
+
+  // ENF-04 app-layer guard (SQL RPC remains the authoritative backstop).
+  const { data: target } = await locals.supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .maybeSingle();
+  if (target && isGMOrAdmin((target as { role: UserRole }).role)) {
+    return fail(400, { message: 'No se puede sancionar a un GM o admin' });
+  }
+
+  const result =
+    kind === 'suspend'
+      ? await suspendUserRpc(
+          locals.supabase,
+          userId,
+          new Date(Date.now() + durationDays * 86_400_000).toISOString(),
+          justification,
+        )
+      : await banUserRpc(locals.supabase, userId, justification);
   if (result.error) return fail(400, { message: result.error });
   return { success: true };
 }

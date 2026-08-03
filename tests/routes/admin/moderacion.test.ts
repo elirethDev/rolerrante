@@ -24,6 +24,9 @@ interface Fixture {
   threads?: ThreadRow[];
   eventStatus?: string;
   reports?: unknown[];
+  profile?: { role: string } | null;
+  sanctions?: unknown[];
+  rpcError?: { message: string } | null;
 }
 
 function makeSupabase(fixture: Fixture = {}) {
@@ -42,7 +45,12 @@ function makeSupabase(fixture: Fixture = {}) {
         return b;
       }),
       maybeSingle: vi.fn(async () => ({
-        data: table === "threads" ? (fixture.thread ?? null) : null,
+        data:
+          table === "threads"
+            ? (fixture.thread ?? null)
+            : table === "profiles"
+              ? (fixture.profile ?? null)
+              : null,
         error: null,
       })),
       single: vi.fn(async () => ({
@@ -52,7 +60,9 @@ function makeSupabase(fixture: Fixture = {}) {
                 id: fixture.thread?.linked_entity_id,
                 status: fixture.eventStatus,
               }
-            : null,
+            : table === "profiles"
+              ? (fixture.profile ?? null)
+              : null,
         error: null,
       })),
       then: (
@@ -64,7 +74,9 @@ function makeSupabase(fixture: Fixture = {}) {
             ? (fixture.threads ?? [])
             : table === "reports"
               ? (fixture.reports ?? [])
-              : null;
+              : table === "user_sanctions"
+                ? (fixture.sanctions ?? [])
+                : null;
         return Promise.resolve({ data: list, error: null }).then(res, rej);
       },
     };
@@ -72,7 +84,7 @@ function makeSupabase(fixture: Fixture = {}) {
   });
   const rpc = vi.fn(async (name: string, args: unknown) => {
     calls.rpc.push({ name, args });
-    return { data: null, error: null };
+    return { data: null, error: fixture.rpcError ?? null };
   });
   return { from, rpc, calls };
 }
@@ -310,5 +322,210 @@ describe("admin/moderacion report queue (REQ-MOD-REP-02)", () => {
         ),
       403,
     );
+  });
+});
+
+const makeEnforcementEvent = (
+  locals: ReturnType<typeof makeLocals>,
+  body: string,
+  action: "suspendUser" | "banUser" = "suspendUser",
+) =>
+  ({
+    locals,
+    request: new Request("http://localhost/admin/moderacion", {
+      method: "POST",
+      body,
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+    }),
+  }) as unknown as RequestEvent;
+
+const openReport = (over: Record<string, unknown> = {}) => ({
+  id: "rep-1",
+  reason: "Spam",
+  justification: null,
+  status: "abierta",
+  created_at: "2026-08-03T00:00:00Z",
+  reporter: { id: "reporter-1", display_name: "Reportero", username: "rep" },
+  post: {
+    id: "p1",
+    thread_id: "t1",
+    post_number: 2,
+    author: { id: "author-1", display_name: "Frodo", username: "frodo", role: "rolero" },
+  },
+  ...over,
+});
+
+describe("admin/moderacion enforcement actions (REQ-MOD-ENF-01/02/04)", () => {
+  const DAY_MS = 86_400_000;
+
+  it("suspends a reported author via suspend_user RPC (admin only)", async () => {
+    const supabase = makeSupabase({ profile: { role: "rolero" } });
+    const res = (await act("suspendUser")(
+      makeEnforcementEvent(
+        makeLocals(supabase, "admin", "a1"),
+        "userId=author-1&duration=7&justification=Spam reiterado",
+      ),
+    )) as { success: boolean };
+    expect(res.success).toBe(true);
+    const rpcCall = supabase.calls.rpc.find(
+      (r) => (r as { name: string }).name === "suspend_user",
+    ) as { args: { p_user_id: string; p_active_until: string; p_justification: string } };
+    expect(rpcCall).toBeTruthy();
+    expect(rpcCall.args.p_user_id).toBe("author-1");
+    // active_until is computed as now + 7 days.
+    const untilMs = new Date(rpcCall.args.p_active_until).getTime();
+    expect(untilMs).toBeGreaterThan(Date.now());
+    expect(untilMs).toBeLessThanOrEqual(Date.now() + 7 * DAY_MS + 5_000);
+    expect(rpcCall.args.p_justification).toBe("Spam reiterado");
+  });
+
+  it("bans a reported author via ban_user RPC (admin only)", async () => {
+    const supabase = makeSupabase({ profile: { role: "rolero" } });
+    const res = (await act("banUser")(
+      makeEnforcementEvent(
+        makeLocals(supabase, "admin", "a1"),
+        "userId=author-1&justification=Cuenta comprometida",
+        "banUser",
+      ),
+    )) as { success: boolean };
+    expect(res.success).toBe(true);
+    const rpcCall = supabase.calls.rpc.find(
+      (r) => (r as { name: string }).name === "ban_user",
+    ) as { args: { p_user_id: string; p_justification: string } };
+    expect(rpcCall).toBeTruthy();
+    expect(rpcCall.args.p_user_id).toBe("author-1");
+    expect(rpcCall.args.p_justification).toBe("Cuenta comprometida");
+  });
+
+  it("requires a justification to suspend (ENF-01.2)", async () => {
+    const supabase = makeSupabase({ profile: { role: "rolero" } });
+    const res = (await act("suspendUser")(
+      makeEnforcementEvent(
+        makeLocals(supabase, "admin", "a1"),
+        "userId=author-1&duration=7&justification=",
+      ),
+    )) as { status: number };
+    expect(res.status).toBe(400);
+    expect(
+      supabase.calls.rpc.some((r) => (r as { name: string }).name === "suspend_user"),
+    ).toBe(false);
+  });
+
+  it("requires a positive duration to suspend", async () => {
+    const supabase = makeSupabase({ profile: { role: "rolero" } });
+    const res = (await act("suspendUser")(
+      makeEnforcementEvent(
+        makeLocals(supabase, "admin", "a1"),
+        "userId=author-1&duration=0&justification=x",
+      ),
+    )) as { status: number };
+    expect(res.status).toBe(400);
+    expect(
+      supabase.calls.rpc.some((r) => (r as { name: string }).name === "suspend_user"),
+    ).toBe(false);
+  });
+
+  it("requires a justification to ban (ENF-02.1)", async () => {
+    const supabase = makeSupabase();
+    const res = (await act("banUser")(
+      makeEnforcementEvent(
+        makeLocals(supabase, "admin", "a1"),
+        "userId=author-1&justification=",
+        "banUser",
+      ),
+    )) as { status: number };
+    expect(res.status).toBe(400);
+    expect(
+      supabase.calls.rpc.some((r) => (r as { name: string }).name === "ban_user"),
+    ).toBe(false);
+  });
+
+  it("blocks a non-admin from suspending (403) and never calls the RPC", async () => {
+    const supabase = makeSupabase({ profile: { role: "rolero" } });
+    await expectError(
+      () =>
+        act("suspendUser")(
+          makeEnforcementEvent(
+            makeLocals(supabase, "gm", "g1"),
+            "userId=author-1&duration=7&justification=x",
+          ),
+        ),
+      403,
+    );
+    expect(
+      supabase.calls.rpc.some((r) => (r as { name: string }).name === "suspend_user"),
+    ).toBe(false);
+  });
+
+  it("blocks an admin/GM target server-side before calling the RPC (ENF-04)", async () => {
+    // target is a GM -> app-level guard rejects, RPC never invoked
+    const supabase = makeSupabase({ profile: { role: "gm" } });
+    const res = (await act("banUser")(
+      makeEnforcementEvent(
+        makeLocals(supabase, "admin", "a1"),
+        "userId=gm-target&justification=x",
+        "banUser",
+      ),
+    )) as { status: number };
+    expect(res.status).toBe(400);
+    expect(
+      supabase.calls.rpc.some((r) => (r as { name: string }).name === "ban_user"),
+    ).toBe(false);
+  });
+
+  it("surfaces the RPC rejection (e.g. admin/GM target) as a 400 message", async () => {
+    // App guard passes (target is a normal rolero) but the RPC still rejects
+    // (defence-in-depth) -> the action must surface that server error.
+    const supabase = makeSupabase({
+      profile: { role: "rolero" },
+      rpcError: { message: "No se puede sancionar a un GM o admin" },
+    });
+    const res = (await act("banUser")(
+      makeEnforcementEvent(
+        makeLocals(supabase, "admin", "a1"),
+        "userId=author-1&justification=x",
+        "banUser",
+      ),
+    )) as { status: number; data: { message: string } };
+    expect(res.status).toBe(400);
+    expect(res.data.message).toContain("No se puede sancionar");
+  });
+
+  it("blocks a GM from resolving reports (admin-only enforcement)", async () => {
+    const supabase = makeSupabase();
+    await expectError(
+      () =>
+        act("resolveReport")(
+          makeEvent(
+            makeLocals(supabase, "gm", "g1"),
+            "reportId=rep-1&justification=x",
+          ),
+        ),
+      403,
+    );
+  });
+
+  it("load returns the reported-user active sanctions and isAdmin flag", async () => {
+    const supabase = makeSupabase({
+      threads: [storyThread()],
+      reports: [openReport()],
+      sanctions: [{ user_id: "author-1", kind: "suspension", active_until: "2099-01-01T00:00:00.000Z" }],
+    });
+    const result = (await loadFn(makeEvent(makeLocals(supabase, "admin", "a1")))) as {
+      sanctions: Record<string, { kind: string }>;
+      isAdmin: boolean;
+    };
+    expect(result.isAdmin).toBe(true);
+    expect(result.sanctions["author-1"].kind).toBe("suspension");
+  });
+
+  it("load reports a GM as non-admin so the queue renders read-only", async () => {
+    const supabase = makeSupabase({ reports: [openReport()] });
+    const result = (await loadFn(makeEvent(makeLocals(supabase, "gm", "g1")))) as {
+      isAdmin: boolean;
+      reports: unknown[];
+    };
+    expect(result.isAdmin).toBe(false);
+    expect(result.reports).toHaveLength(1);
   });
 });
