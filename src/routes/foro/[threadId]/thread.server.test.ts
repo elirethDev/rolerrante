@@ -1,9 +1,11 @@
 /* eslint-disable no-unused-vars -- mock helper types intentionally loose */
 import { describe, expect, it } from 'vitest';
-import { load } from './+page.server';
+import { load, actions } from './+page.server';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const loadFn = load as unknown as (...args: unknown[]) => Promise<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const replyFn = actions.reply as unknown as (...args: unknown[]) => Promise<any>;
 
 type Handler = (...args: unknown[]) => void;
 
@@ -165,5 +167,58 @@ describe('thread detail load()', () => {
   it('throws 404 when thread not found or not visible to guest (pendiente status)', async () => {
     const supabase = makeSupabase({ thread: null });
     await expectError(() => loadFn(makeEvent(makeLocals(supabase, 'pendiente', 'other'))), 404);
+  });
+});
+
+describe('thread detail reply action', () => {
+  const makeReplyEvent = (locals: ReturnType<typeof makeLocals>, content = '<p>respuesta</p>') =>
+    ({
+      locals,
+      params: { threadId: 't1' },
+      url: new URL('http://localhost/foro/t1'),
+      request: new Request('http://localhost/foro/t1', {
+        method: 'POST',
+        body: new URLSearchParams({ content }).toString(),
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      }),
+    }) as never;
+
+  it('appends a post with post_number = max+1 on an open thread', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread({ is_locked: false }),
+      posts: [
+        { id: 'p1', post_number: 1, body: '<p>a</p>', author_id: 'u1', created_at: 'x', updated_at: 'x', edited_by: null, edited_at: null },
+        { id: 'p2', post_number: 2, body: '<p>b</p>', author_id: 'u2', created_at: 'x', updated_at: 'x', edited_by: null, edited_at: null },
+      ],
+      insertedPosts: inserted,
+    });
+    // success = redirect thrown (rejection)
+    const err = await replyFn(makeReplyEvent(makeLocals(supabase))).then(
+      () => null,
+      (e: { status?: number }) => e,
+    );
+    expect(err?.status).toBe(303);
+    expect(inserted).toHaveLength(1);
+    expect(inserted[0].post_number).toBe(3);
+    expect(inserted[0].thread_id).toBe('t1');
+    expect(inserted[0].author_id).toBe('u1');
+  });
+
+  it('blocks a reply on a locked thread with 403 even for the owner', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({ thread: makeThread({ is_locked: true }), insertedPosts: inserted });
+    // fail() resolves with { status, data }
+    const res = await replyFn(makeReplyEvent(makeLocals(supabase, 'rolero', 'u1')));
+    expect(res.status).toBe(403);
+    expect(inserted).toHaveLength(0);
+  });
+
+  it('rejects a reply with a bad image url with 400', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({ thread: makeThread({ is_locked: false }), insertedPosts: inserted });
+    const res = await replyFn(makeReplyEvent(makeLocals(supabase), '<img src="data:image/png;base64,xxx">'));
+    expect(res.status).toBe(400);
+    expect(inserted).toHaveLength(0);
   });
 });

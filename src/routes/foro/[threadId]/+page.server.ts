@@ -1,9 +1,9 @@
-import { error } from '@sveltejs/kit';
-import { resolveEffectivePermissions, type PermissionFlags } from '$lib/auth';
+import { error, fail, redirect } from '@sveltejs/kit';
+import { resolveEffectivePermissions, validateForumImageUrls, requireAuth, type PermissionFlags } from '$lib/auth';
 import { getOrCreateThread, type ThreadView, type PostView } from '$lib/forum';
 import type { Json } from '$lib/supabase/database.types';
 import type { UserRole } from '$lib/types';
-import type { PageServerLoad } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 
 type SectionPermRow = { category_id: string; role: UserRole; can_view: boolean; can_post: boolean; can_edit: boolean; can_lock: boolean };
 type ThreadPermRow = { thread_id: string; role: UserRole; can_view: boolean; can_post: boolean; can_edit: boolean; can_lock: boolean };
@@ -83,4 +83,55 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, user, p
     isOwner,
     isStaff,
   };
+};
+
+export const actions: Actions = {
+  reply: async ({ request, params, locals: { supabase, user, profile } }) => {
+    requireAuth({ user, profile });
+    const role: UserRole = profile?.role ?? 'pendiente';
+
+    const { data: thread } = await supabase
+      .from('threads')
+      .select('*, author:author_id(id, display_name, username)')
+      .eq('id', params.threadId)
+      .single();
+    if (!thread) throw error(404, 'Hilo no encontrado');
+    const t = thread as unknown as ThreadView;
+
+    const { data: sectionRows } = await supabase.from('section_permissions').select('*').eq('category_id', t.category_id ?? '');
+    const { data: threadRows } = await supabase.from('thread_permissions').select('*').eq('thread_id', t.id);
+    const sectionRow = (sectionRows ?? []).find((p) => (p as { role: string }).role === role);
+    const threadRow = (threadRows ?? []).find((p) => (p as { role: string }).role === role);
+    const flags = resolveEffectivePermissions({
+      section: sectionRow ? toFlags(sectionRow as { can_view: boolean; can_post: boolean; can_edit: boolean; can_lock: boolean }) : null,
+      thread: threadRow ? toFlags(threadRow as { can_view: boolean; can_post: boolean; can_edit: boolean; can_lock: boolean }) : null,
+      role,
+    });
+
+    // Lock gate: locked threads block writes even for can_post (REQ-FORUM-04.3).
+    if (t.is_locked) return fail(403, { message: 'Este hilo está bloqueado' });
+    if (!flags.can_post) return fail(403, { message: 'No puedes responder en esta sección' });
+
+    const form = await request.formData();
+    const content = String(form.get('content') ?? '');
+    if (!content.trim()) return fail(400, { message: 'El mensaje no puede estar vacío' });
+
+    const imgCheck = validateForumImageUrls(content);
+    if (!imgCheck.valid) return fail(400, { message: `Imagen no permitida: ${imgCheck.rejected.join(', ')}` });
+
+    // next post_number = max + 1 (posts ordered ascending)
+    const { data: existingPosts } = await supabase.from('posts').select('post_number').eq('thread_id', t.id);
+    const posts = (existingPosts ?? []) as unknown as { post_number: number }[];
+    const nextNumber = posts.length === 0 ? 1 : Math.max(...posts.map((p) => p.post_number)) + 1;
+
+    const { error: insertError } = await supabase.from('posts').insert({
+      thread_id: t.id,
+      author_id: user!.id,
+      body: content,
+      post_number: nextNumber,
+    });
+
+    if (insertError) return fail(400, { message: insertError.message });
+    throw redirect(303, `/foro/${t.id}`);
+  },
 };
