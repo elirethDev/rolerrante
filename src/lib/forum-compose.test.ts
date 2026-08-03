@@ -85,8 +85,16 @@ describe('forum-compose helpers', () => {
       expect(shouldClearDraft('success')).toBe(true);
     });
 
+    it('clears the draft after a server redirect (REQ-FC-02)', () => {
+      expect(shouldClearDraft('redirect')).toBe(true);
+    });
+
     it('preserves the draft after a failed submit', () => {
       expect(shouldClearDraft('failure')).toBe(false);
+    });
+
+    it('preserves the draft on an unexpected error result', () => {
+      expect(shouldClearDraft('error')).toBe(false);
     });
   });
 

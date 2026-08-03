@@ -51,9 +51,12 @@ export function clearDraft(storage: Storage | null, key: string): void {
 
 /**
  * A successful submit clears the draft; a failed submit preserves it (REQ-FC-02).
+ * Forum actions end with `throw redirect(303, …)`, so SvelteKit `enhance` reports
+ * a successful post as `result.type === 'redirect'` (not `'success'`). Treat both
+ * as success for clearing; `'failure'`/`'error'` must preserve the draft.
  */
 export function shouldClearDraft(resultType: string): boolean {
-  return resultType === 'success';
+  return resultType === 'success' || resultType === 'redirect';
 }
 
 /** Strip HTML to plain text and truncate to at most max chars (REQ-FC-04 / 02.5). */
