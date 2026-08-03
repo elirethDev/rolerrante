@@ -25,7 +25,7 @@ export const actions: Actions = {
 
     const { data: thread } = await supabase
       .from('threads')
-      .select('id, author_id')
+      .select('id, author_id, title, body')
       .eq('id', params.threadId)
       .single();
     if (!thread) return fail(404, { message: 'Hilo no encontrado' });
@@ -48,11 +48,17 @@ export const actions: Actions = {
       .eq('id', params.threadId);
     if (updateError) return fail(400, { message: updateError.message });
 
+    const prev = thread as unknown as { title: string; body: string };
+    const truncate = (s: string, max = 200) => (s.length > max ? `${s.slice(0, max)}…` : s);
+    const changes: Array<{ field: string; old: string; new: string }> = [];
+    if (title !== prev.title) changes.push({ field: 'title', old: prev.title, new: title });
+    if (content !== prev.body) changes.push({ field: 'body', old: truncate(prev.body), new: truncate(content) });
+
     const { error: auditError } = await supabase.rpc('log_audit', {
       p_action: 'editar_post',
       p_entity_type: 'thread',
       p_entity_id: params.threadId,
-      p_details: { title },
+      p_details: { changes },
     });
     if (auditError) console.error('log_audit falló para editar_post', params.threadId, auditError);
 
