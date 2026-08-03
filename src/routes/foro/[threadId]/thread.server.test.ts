@@ -23,6 +23,12 @@ interface Fixture {
   audit?: { name: string; args: Record<string, unknown> }[];
   deletedIds?: string[];
   postSingle?: unknown;
+  // like-action post lookup (posts.maybeSingle) -> { thread_id, thread: { status, author_id } }
+  postForLike?: unknown;
+  // graceful degradation (FIX-3): posts query errors (e.g. reactions table not deployed)
+  postsError?: unknown;
+  basePosts?: unknown[];
+  postsCalls?: number;
   // reactions (like toggle) fixtures
   existingReaction?: unknown;
   insertedReactions?: Array<Record<string, unknown>>;
@@ -50,6 +56,7 @@ function makeSupabase(f: Fixture) {
       order: () => builder,
       maybeSingle: () => {
         if (table === 'reactions') return Promise.resolve({ data: f.existingReaction ?? null, error: null });
+        if (table === 'posts') return Promise.resolve({ data: f.postForLike ?? null, error: null });
         return Promise.resolve({ data: f.thread ?? null, error: null });
       },
       single: () => {
@@ -68,8 +75,15 @@ function makeSupabase(f: Fixture) {
           if (f.reactionsInsertError) return Promise.resolve({ data: null, error: f.reactionsInsertError }).then(res, rej);
           data = f.insertedReactions ?? [];
         } else if (table === 'posts') {
+          // FIX-3: allow the FIRST posts query to error (reactions join missing);
+          // the loader then re-queries base posts on the second call.
+          f.postsCalls = (f.postsCalls ?? 0) + 1;
+          const call = f.postsCalls - 1;
+          if (f.postsError && call === 0) {
+            return Promise.resolve({ data: null, error: f.postsError }).then(res, rej);
+          }
           // emulate .order('post_number', ascending) for posts (route relies on it)
-          data = [...(f.posts ?? [])].sort(
+          data = [...(f.basePosts ?? f.posts ?? [])].sort(
             (a, b) => Number((a as { post_number?: number }).post_number) - Number((b as { post_number?: number }).post_number),
           );
         } else if (table === 'section_permissions') data = f.sectionPerms ?? [];
@@ -232,6 +246,25 @@ describe('thread detail load()', () => {
     expect(result.posts[0].like_count).toBe(1);
     expect(result.posts[0].viewer_has_liked).toBeNull();
   });
+
+  it('degrades to base posts with count 0 (not an empty thread) when the reactions join errors (FIX-3)', async () => {
+    // reactions table/migration not deployed -> embedded join query errors (null data)
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      basePosts: [
+        { id: 'p1', post_number: 1, body: '<p>a</p>', author_id: 'u1', thread_id: 't1', created_at: 'x', updated_at: 'x', edited_by: null, edited_at: null, author: { id: 'u1', display_name: 'A', username: 'a' } },
+        { id: 'p2', post_number: 2, body: '<p>b</p>', author_id: 'u2', thread_id: 't1', created_at: 'x', updated_at: 'x', edited_by: null, edited_at: null, author: { id: 'u2', display_name: 'B', username: 'b' } },
+      ],
+      postsError: { message: 'relation "public.reactions" does not exist' },
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'rolero', 'u1')));
+    // THE FIX: posts are still rendered (not silently empty), with a neutral reaction state
+    expect(result.posts).toHaveLength(2);
+    expect(result.posts[0].like_count).toBe(0);
+    expect(result.posts[0].viewer_has_liked).toBeNull();
+    expect(result.posts[1].like_count).toBe(0);
+    expect(result.posts[1].viewer_has_liked).toBeNull();
+  });
 });
 
 describe('thread detail reply action', () => {
@@ -346,7 +379,12 @@ describe('thread detail like action', () => {
 
   it('inserts a reaction row on first like (REACT-01.3)', async () => {
     const inserted: Array<Record<string, unknown>> = [];
-    const supabase = makeSupabase({ thread: makeThread(), existingReaction: null, insertedReactions: inserted });
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      postForLike: { id: 'p2', thread_id: 't1', thread: { status: 'abierto', author_id: 'u1' } },
+      existingReaction: null,
+      insertedReactions: inserted,
+    });
     // success = redirect thrown (rejection)
     const err = await likeFn(makeLikeEvent(makeLocals(supabase, 'rolero', 'u1'), 'p2')).then(
       () => null,
@@ -361,6 +399,7 @@ describe('thread detail like action', () => {
   it('deletes the reaction row on unlike (re-click, REACT-01.3)', async () => {
     const supabase = makeSupabase({
       thread: makeThread(),
+      postForLike: { id: 'p2', thread_id: 't1', thread: { status: 'abierto', author_id: 'u1' } },
       existingReaction: { post_id: 'p2', user_id: 'u1', created_at: 'x' },
       insertedReactions: [],
     });
@@ -392,6 +431,7 @@ describe('thread detail like action', () => {
   it('treats UNIQUE race (23505) as silent no-op without error (design)', async () => {
     const supabase = makeSupabase({
       thread: makeThread(),
+      postForLike: { id: 'p2', thread_id: 't1', thread: { status: 'abierto', author_id: 'u1' } },
       existingReaction: null,
       insertedReactions: [],
       reactionsInsertError: { code: '23505', message: 'duplicate key value violates unique constraint "reactions_pkey"' },
@@ -404,5 +444,33 @@ describe('thread detail like action', () => {
     expect(err?.status).toBe(303);
     // No fail payload with a toastable message
     expect(err?.status).not.toBe(400);
+  });
+
+  it('rejects a like on a post that does not belong to this thread with 400 (FIX-2)', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      postForLike: null, // no post matches (id, thread_id) -> cross-thread smuggling
+      existingReaction: null,
+      insertedReactions: inserted,
+    });
+    const res = await likeFn(makeLikeEvent(makeLocals(supabase, 'rolero', 'u1'), 'p2'));
+    expect(res.status).toBe(400);
+    expect(inserted).toHaveLength(0);
+    expect(supabase.fixtures.deletedReactionIds ?? []).toHaveLength(0);
+  });
+
+  it('rejects a like on a post inside a hidden (pendiente) thread with 400 (FIX-2)', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      postForLike: { id: 'p2', thread_id: 't1', thread: { status: 'pendiente', author_id: 'u999' } },
+      existingReaction: null,
+      insertedReactions: inserted,
+    });
+    const res = await likeFn(makeLikeEvent(makeLocals(supabase, 'rolero', 'u1'), 'p2'));
+    expect(res.status).toBe(400);
+    expect(inserted).toHaveLength(0);
+    expect(supabase.fixtures.deletedReactionIds ?? []).toHaveLength(0);
   });
 });

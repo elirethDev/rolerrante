@@ -27,13 +27,34 @@ CREATE POLICY "Reacciones contables en hilos visibles" ON public.reactions
     )
   );
 
--- INSERT: el usuario solo puede insertar su propia fila (un like por post).
-CREATE POLICY "Usuario inserta su propia reacción" ON public.reactions
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+-- INSERT: el usuario solo puede insertar su propia fila (un like por post) y solo
+-- dentro de un hilo visible. La subconsulta EXISTS replica el alcance de visibilidad
+-- del SELECT (status IN aprobado/abierto, o dueño del hilo, o staff/GM), de modo que
+-- no se puede inflar el contador de un post en un hilo oculto (pendiente/borrador)
+-- (REACT-01.1, FIX-1). PostgreSQL permite subconsultas a otras tablas en WITH CHECK.
+CREATE POLICY "Usuario inserta su propia reacción en hilo visible" ON public.reactions
+  FOR INSERT WITH CHECK (
+    auth.uid() = user_id
+    AND EXISTS (
+      SELECT 1 FROM public.posts p
+      JOIN public.threads t ON t.id = p.thread_id
+      WHERE p.id = reactions.post_id
+        AND (t.status IN ('aprobado', 'abierto') OR t.author_id = auth.uid() OR is_gm_or_admin())
+    )
+  );
 
--- DELETE: el usuario solo puede eliminar su propia fila (unlike).
-CREATE POLICY "Usuario borra su propia reacción" ON public.reactions
-  FOR DELETE USING (auth.uid() = user_id);
+-- DELETE: el usuario solo puede eliminar su propia fila (unlike) dentro de un hilo
+-- visible. Replica el mismo alcance de visibilidad que INSERT/SELECT (FIX-1).
+CREATE POLICY "Usuario borra su propia reacción en hilo visible" ON public.reactions
+  FOR DELETE USING (
+    auth.uid() = user_id
+    AND EXISTS (
+      SELECT 1 FROM public.posts p
+      JOIN public.threads t ON t.id = p.thread_id
+      WHERE p.id = reactions.post_id
+        AND (t.status IN ('aprobado', 'abierto') OR t.author_id = auth.uid() OR is_gm_or_admin())
+    )
+  );
 
 -- Índice para el conteo agregado por post (REACT-01.1).
 CREATE INDEX idx_reactions_post_id ON public.reactions(post_id);

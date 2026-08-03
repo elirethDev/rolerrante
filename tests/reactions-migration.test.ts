@@ -21,22 +21,39 @@ describe("reactions migration 20260802000001_reactions.sql", () => {
     expect(sql).toContain("ALTER TABLE public.reactions ENABLE ROW LEVEL SECURITY;");
   });
 
-  it("allows a user to INSERT only their own reaction row (REACT-01.1)", () => {
+  it("allows a user to INSERT only their own reaction row within a VISIBLE thread (REACT-01.1 + FIX-1)", () => {
     const insertPolicy =
       /CREATE POLICY ".*?" ON public\.reactions[\s\S]*?FOR INSERT WITH CHECK \((.*?)\);/s.exec(
         sql,
       );
     expect(insertPolicy).not.toBeNull();
-    expect(insertPolicy![1]).toMatch(/auth\.uid\(\)\s*=\s*user_id/);
+    const body = insertPolicy![1];
+    // own-row constraint is preserved
+    expect(body).toMatch(/auth\.uid\(\)\s*=\s*user_id/);
+    // ...AND the write is view-scoped: likeing a post in a hidden thread is rejected.
+    // Mirrors the SELECT visibility gate so a user cannot inflate a hidden thread's count.
+    expect(body).toMatch(/EXISTS/);
+    expect(body).toMatch(/threads/);
+    expect(body).toMatch(/status\s+IN\s*\(\s*'aprobado'\s*,\s*'abierto'\s*\)/);
+    expect(body).not.toMatch(/pendiente/);
+    expect(body).not.toMatch(/borrador/);
   });
 
-  it("allows a user to DELETE only their own reaction row (REACT-01.1)", () => {
+  it("allows a user to DELETE only their own reaction row within a VISIBLE thread (REACT-01.1 + FIX-1)", () => {
     const deletePolicy =
       /CREATE POLICY ".*?" ON public\.reactions[\s\S]*?FOR DELETE USING \((.*?)\);/s.exec(
         sql,
       );
     expect(deletePolicy).not.toBeNull();
-    expect(deletePolicy![1]).toMatch(/auth\.uid\(\)\s*=\s*user_id/);
+    const body = deletePolicy![1];
+    // own-row constraint is preserved
+    expect(body).toMatch(/auth\.uid\(\)\s*=\s*user_id/);
+    // ...AND the write is view-scoped (a stray like in a hidden thread can be removed too)
+    expect(body).toMatch(/EXISTS/);
+    expect(body).toMatch(/threads/);
+    expect(body).toMatch(/status\s+IN\s*\(\s*'aprobado'\s*,\s*'abierto'\s*\)/);
+    expect(body).not.toMatch(/pendiente/);
+    expect(body).not.toMatch(/borrador/);
   });
 
   it("restricts SELECT to posts within visible threads (view-scoped count, REACT-01.1)", () => {

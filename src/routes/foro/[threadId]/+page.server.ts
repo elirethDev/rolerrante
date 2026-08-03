@@ -67,7 +67,7 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, user, p
   const body = (t.body as Json) ?? {};
   const threadBody = typeof body === 'string' ? body : '';
 
-  const { data: posts } = await supabase
+  const { data: posts, error: postsError } = await supabase
     .from('posts')
     .select('*, author:author_id(id, display_name, username), reactions:reactions(post_id, user_id)')
     .eq('thread_id', t.id)
@@ -75,16 +75,37 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, user, p
 
   // Reaction aggregate + viewer's own like via left-join (REQ-REACT-01.2).
   // Guests still see the count but have no like state (viewer_has_liked null).
-  const viewerId = user?.id ?? null;
-  const postsWithReactions = (posts ?? []).map((p) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const reactions = (p as any).reactions ?? [];
-    return {
-      ...p,
-      like_count: reactions.length,
-      viewer_has_liked: viewerId ? reactions.some((r: { user_id: string }) => r.user_id === viewerId) : null,
-    };
-  });
+  let postsWithReactions: unknown[];
+  if (postsError || !posts) {
+    // Graceful degradation (FIX-3): if the reactions join fails (e.g. the
+    // reactions table/migration isn't deployed yet), PostgREST returns null and
+    // the thread would otherwise render EMPTY. Re-query base posts (no reactions
+    // embed) and render every post with a neutral reaction state rather than an
+    // empty thread.
+    console.error('No se pudieron cargar las reacciones; se muestran los posts base', postsError);
+    const { data: basePosts } = await supabase
+      .from('posts')
+      .select('*, author:author_id(id, display_name, username)')
+      .eq('thread_id', t.id)
+      .order('post_number', { ascending: true });
+    postsWithReactions = (basePosts ?? []).map((p) => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ...(p as any),
+      like_count: 0,
+      viewer_has_liked: null,
+    }));
+  } else {
+    const viewerId = user?.id ?? null;
+    postsWithReactions = posts.map((p) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const reactions = (p as any).reactions ?? [];
+      return {
+        ...p,
+        like_count: reactions.length,
+        viewer_has_liked: viewerId ? reactions.some((r: { user_id: string }) => r.user_id === viewerId) : null,
+      };
+    });
+  }
 
   return {
     thread: t,
@@ -184,6 +205,28 @@ export const actions: Actions = {
     requireAuth({ user, profile });
     const form = await request.formData();
     const postId = String(form.get('post_id') ?? '');
+
+    // Validate the target post BEFORE any write: it must exist, belong to the
+    // requested thread, and sit in a thread the viewer may see. This mirrors the
+    // reply action's thread revalidation and stops a client from smuggling a
+    // post_id from another/hidden thread to inflate or tamper with its count
+    // (FIX-2, REACT-01.1).
+    const { data: post } = await supabase
+      .from('posts')
+      .select('id, thread_id, thread:thread_id(status, author_id)')
+      .eq('id', postId)
+      .eq('thread_id', params.threadId)
+      .maybeSingle();
+
+    if (!post) return fail(400, { message: 'No puedes reaccionar a este mensaje' });
+    const p = post as unknown as { thread_id: string; thread: { status: string; author_id: string } | null };
+    const tgtThread = p.thread;
+    const isOwner = !!user && tgtThread?.author_id === user.id;
+    const isStaff = profile?.role === 'gm' || profile?.role === 'admin';
+    const publiclyVisible = tgtThread?.status === 'abierto' || tgtThread?.status === 'aprobado';
+    if (!publiclyVisible && !isOwner && !isStaff) {
+      return fail(400, { message: 'No puedes reaccionar a este mensaje' });
+    }
 
     const { data: existing } = await supabase
       .from('reactions')
