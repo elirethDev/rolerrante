@@ -30,7 +30,7 @@ export interface AuditAction {
  */
 export function getServiceRoleClient(
   url: string = PUBLIC_SUPABASE_URL,
-  key: string = dynamicEnv.SUPABASE_SERVICE_ROLE_KEY
+  key: string = dynamicEnv.env.SUPABASE_SERVICE_ROLE_KEY
 ): ServiceRoleSupabase | null {
   if (!key) return null;
   return createClient<Database>(url, key, {
