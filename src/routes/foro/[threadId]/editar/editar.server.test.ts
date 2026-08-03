@@ -19,6 +19,7 @@ function makeSupabase(fixture: {
   updateThread?: Mock;
   updatePost?: Mock;
   logAudit?: Mock;
+  sanction?: { kind: string; active_until: string | null } | null;
 }) {
   const from = (table: string) => {
     const selected: string[] = [];
@@ -30,7 +31,10 @@ function makeSupabase(fixture: {
       eq: () => b,
       order: () => b,
       or: () => b,
-      maybeSingle: () => Promise.resolve({ data: null, error: null }),
+      maybeSingle: () =>
+        table === 'user_sanctions'
+          ? Promise.resolve({ data: fixture.sanction ?? null, error: null })
+          : Promise.resolve({ data: null, error: null }),
       then: (res: Handler, rej: Handler) => {
         let data: unknown;
         if (table === 'posts') data = fixture.posts ?? [];
@@ -114,6 +118,14 @@ describe('editar route load()', () => {
     const result = await loadFn(makeEvent(makeLocals(supabase)) as never);
     expect(result.thread.title).toBe('Hilo');
     expect(result.isOwner).toBe(true);
+  });
+
+  it('denies a banned user before serving the edit form (ENF-03.2)', async () => {
+    const supabase = makeSupabase({
+      thread: { data: makeThread(), error: null },
+      sanction: { kind: 'ban', active_until: null },
+    });
+    await expectError(() => loadFn(makeEvent(makeLocals(supabase)) as never), 303);
   });
 });
 

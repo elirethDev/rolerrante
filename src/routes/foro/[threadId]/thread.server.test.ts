@@ -28,6 +28,7 @@ interface Fixture {
   insertRows?: Array<Record<string, unknown>>;
   authUser?: { id: string } | null;
   existingReport?: unknown;
+  sanction?: { kind: string; active_until: string | null } | null;
 }
 
 // Fluent supabase mock for the thread detail route. Supports:
@@ -50,7 +51,13 @@ function makeSupabase(f: Fixture) {
       or: () => builder,
       maybeSingle: () => {
         if (table === 'user_sanctions' || table === 'reports') {
-          return Promise.resolve({ data: table === 'reports' ? (f.existingReport ?? null) : null, error: null });
+          return Promise.resolve({
+            data:
+              table === 'reports'
+                ? (f.existingReport ?? null)
+                : (f.sanction ?? null),
+            error: null,
+          });
         }
         return Promise.resolve({ data: f.thread ?? null, error: null });
       },
@@ -198,6 +205,15 @@ describe('thread detail load()', () => {
   it('throws 404 when thread not found or not visible to guest (pendiente status)', async () => {
     const supabase = makeSupabase({ thread: null });
     await expectError(() => loadFn(makeEvent(makeLocals(supabase, 'pendiente', 'other'))), 404);
+  });
+
+  it('denies a suspended user before serving the thread (ENF-03.2)', async () => {
+    const future = new Date(Date.now() + 86_400_000).toISOString();
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      sanction: { kind: 'suspension', active_until: future },
+    });
+    await expectError(() => loadFn(makeEvent(makeLocals(supabase, 'rolero'))), 303);
   });
 });
 
