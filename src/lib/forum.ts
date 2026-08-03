@@ -160,21 +160,27 @@ export async function getOrCreateThread(
 export type RpcResult = { error: null } | { error: string };
 
 /**
- * Report a post (REQ-MOD-REP-01): insert a report row as the authenticated
- * reporter, then fire the reportar audit. Returns an error result on failure.
+ * Report a post (REQ-MOD-REP-01): insert a report row attributed to the
+ * authenticated caller (reporter_id is taken from the session, never from
+ * caller input — prevents reporter spoofing), then fire the reportar audit.
+ * Returns an error result on failure.
  */
 export async function reportPost(
   supabase: SupabaseClient<Database>,
   postId: string,
   reason: string,
-  reporterId: string,
   justification?: string,
 ): Promise<RpcResult> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'No autenticado' };
+
   const { data, error } = await supabase
     .from('reports')
     .insert({
       post_id: postId,
-      reporter_id: reporterId,
+      reporter_id: user.id,
       reason,
       justification: justification ?? null,
     })

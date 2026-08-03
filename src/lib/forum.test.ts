@@ -21,6 +21,7 @@ interface Fixture {
   insertError?: { message: string } | null;
   insertedId?: string | null;
   rpcError?: { message: string } | null;
+  currentUserId?: string | null;
 }
 
 function makeClient(f: Fixture) {
@@ -47,6 +48,13 @@ function makeClient(f: Fixture) {
       rpcCalls.push({ name, args });
       return Promise.resolve({ data: null, error: f.rpcError ?? null });
     },
+    auth: {
+      getUser: () =>
+        Promise.resolve({
+          data: { user: { id: f.currentUserId ?? 'reporter-session' } },
+          error: null,
+        }),
+    },
   };
 
   return {
@@ -57,15 +65,16 @@ function makeClient(f: Fixture) {
 }
 
 describe('reportPost', () => {
-  it('inserts a report row and logs the reportar audit on success', async () => {
+  it('binds reporter_id to the caller uid from the session and logs the reportar audit', async () => {
     const { client, insertCalls, rpcCalls } = makeClient({});
-    const res = await reportPost(client, 'post-1', 'Spam', 'reporter-1', 'Contenido repetido');
+    const res = await reportPost(client, 'post-1', 'Spam', 'Contenido repetido');
 
     expect(res).toEqual({ error: null });
     const reportInsert = insertCalls.find((c) => c.table === 'reports' && c.row.post_id === 'post-1');
     expect(reportInsert?.row).toMatchObject({
       post_id: 'post-1',
-      reporter_id: 'reporter-1',
+      // reporter is the session uid, never a caller-supplied value.
+      reporter_id: 'reporter-session',
       reason: 'Spam',
       justification: 'Contenido repetido',
     });
@@ -83,7 +92,7 @@ describe('reportPost', () => {
 
   it('returns the insert error and does not audit on failure', async () => {
     const { client, rpcCalls } = makeClient({ insertError: { message: 'RLS bloqueado' } });
-    const res = await reportPost(client, 'post-1', 'Spam', 'reporter-1');
+    const res = await reportPost(client, 'post-1', 'Spam');
 
     expect(res).toEqual({ error: 'RLS bloqueado' });
     expect(rpcCalls).toHaveLength(0);

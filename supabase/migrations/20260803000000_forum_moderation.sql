@@ -25,9 +25,11 @@ CREATE TABLE public.reports (
 );
 
 ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
--- Cualquier usuario autenticado puede reportar (REQ-MOD-REP-01.3).
+-- Cualquier usuario autenticado puede reportar (REQ-MOD-REP-01.3), pero el
+-- reporte SIEMPRE se atribuye al propio caller (reporter_id = auth.uid()).
+-- Esto impide suplantar a otro usuario como autor de un reporte.
 CREATE POLICY "Cualquier autenticado reporta" ON public.reports
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+  FOR INSERT WITH CHECK (reporter_id = auth.uid());
 -- Solo admin puede ver/resolver reportes (REQ-MOD-REP-02).
 CREATE POLICY "Solo admin ve reportes" ON public.reports
   FOR SELECT USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
@@ -82,6 +84,15 @@ BEGIN
   END IF;
   IF p_justification IS NULL OR btrim(p_justification) = '' THEN
     RAISE EXCEPTION 'La justificacion es obligatoria';
+  END IF;
+  -- Una suspensión sin expiración (NULL) o ya vencida NO bloquea nada (el gate
+  -- solo deniega con active_until > now()); exigir un expiry futuro obligatorio
+  -- para que la suspensión tenga efecto real (REQ-MOD-ENF-01.1).
+  IF p_active_until IS NULL THEN
+    RAISE EXCEPTION 'active_until es obligatorio para una suspension';
+  END IF;
+  IF p_active_until <= now() THEN
+    RAISE EXCEPTION 'La suspension debe tener una expiracion futura';
   END IF;
   IF EXISTS (SELECT 1 FROM public.profiles WHERE id = p_user_id AND role IN ('gm', 'admin')) THEN
     RAISE EXCEPTION 'No se puede sancionar a un GM o admin';
