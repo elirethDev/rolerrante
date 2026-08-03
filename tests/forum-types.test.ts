@@ -18,6 +18,18 @@ describe("regenerated forum types", () => {
     expectTypeExistence("thread_permissions");
   });
 
+  it("surfaces the reactions table key with PK columns (REQ-REACT-01)", () => {
+    expectTypeExistence("reactions");
+    // Compile-time: must satisfy Row<"reactions"> exactly (PK = post_id + user_id).
+    const reaction: Row<"reactions"> = {
+      post_id: "post-1",
+      user_id: "user-1",
+      created_at: "2026-08-02T00:00:00Z",
+    };
+    expect(reaction.post_id).toBe("post-1");
+    expect(reaction.user_id).toBe("user-1");
+  });
+
   it("types the threads row with linked-entity and moderation columns", () => {
     // Compile-time: must satisfy Row<"threads"> exactly (field names + types).
     const thread: Row<"threads"> = {
