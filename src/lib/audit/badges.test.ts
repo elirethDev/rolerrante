@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   AUDIT_BADGE_MAP,
-  BadgeVariant,
   badgeLabel,
   badgeVariant,
 } from './badges';

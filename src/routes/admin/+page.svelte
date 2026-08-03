@@ -1,4 +1,6 @@
 <script lang="ts">
+  import AuditBanner from '$lib/components/admin/AuditBanner.svelte';
+  import AuditActionBadge from '$lib/components/admin/AuditActionBadge.svelte';
   import { formatDate } from '$lib/utils';
   import type { PageData } from './$types';
 
@@ -10,6 +12,16 @@
 </svelte:head>
 
 <h1 class="text-3xl font-cinzel text-azeroth-gold mb-6">Panel de administración</h1>
+
+{#if data.lastAction}
+  <AuditBanner
+    actor={data.lastAction.actor?.display_name ?? data.lastAction.actor?.username ?? 'Sistema'}
+    action={data.lastAction.action}
+    entityType={data.lastAction.entity_type}
+    entityId={data.lastAction.entity_id}
+    createdAt={data.lastAction.created_at}
+  />
+{/if}
 
 <div class="grid md:grid-cols-3 gap-4 mb-8">
   <div class="stat bg-base-200 border border-azeroth-border rounded-box p-4">
@@ -47,7 +59,7 @@
             <tr>
               <td>{formatDate(log.created_at)}</td>
               <td>{log.actor?.display_name ?? log.actor?.username ?? 'Sistema'}</td>
-              <td>{log.action}</td>
+              <td><AuditActionBadge action={log.action} /></td>
               <td>{log.entity_type}{#if log.entity_id} · {log.entity_id.slice(0, 8)}{/if}</td>
               <td class="text-xs">{JSON.stringify(log.details)}</td>
             </tr>
