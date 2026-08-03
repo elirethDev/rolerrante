@@ -24,3 +24,57 @@ export function isGMOrAdmin(role?: UserRole | null) {
 export function isAdmin(role?: UserRole | null) {
   return role === 'admin';
 }
+
+export type PermissionFlags = {
+  can_view: boolean;
+  can_post: boolean;
+  can_edit: boolean;
+  can_lock: boolean;
+};
+
+export type PermissionInput = {
+  section: PermissionFlags | null;
+  thread: PermissionFlags | null;
+  role: UserRole;
+};
+
+const ROLE_DEFAULTS: Record<UserRole, PermissionFlags> = {
+  // Guests (pendiente) are read-only by default; can_view only when granted by admin.
+  pendiente: { can_view: false, can_post: false, can_edit: false, can_lock: false },
+  rolero: { can_view: true, can_post: true, can_edit: false, can_lock: false },
+  gm: { can_view: true, can_post: true, can_edit: true, can_lock: true },
+  admin: { can_view: true, can_post: true, can_edit: true, can_lock: true },
+};
+
+/**
+ * Merge section-level + thread-level permission flags with the role defaults.
+ * A thread override wins over the section default; can_lock stays GM/admin-only
+ * (an author can never lock their own thread, REQ-FORUM-04.3).
+ */
+export function resolveEffectivePermissions({
+  section,
+  thread,
+  role,
+}: PermissionInput): PermissionFlags {
+  let flags: PermissionFlags = { ...ROLE_DEFAULTS[role] };
+  if (section) flags = { ...flags, ...section };
+  if (thread) flags = { ...flags, ...thread };
+  flags.can_lock = flags.can_lock && isGMOrAdmin(role);
+  return flags;
+}
+
+/**
+ * Server-side validation of image links inside TipTap HTML (REQ-FORUM-03.5).
+ * Only http/https URLs are accepted; javascript:, data:, file: and any other
+ * scheme (or a relative path) is rejected.
+ */
+export function validateForumImageUrls(html: string): { valid: boolean; rejected: string[] } {
+  const rejected: string[] = [];
+  const imgRe = /<img[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>/gi;
+  let match: RegExpExecArray | null;
+  while ((match = imgRe.exec(html)) !== null) {
+    const url = match[1].trim();
+    if (!/^https?:\/\//i.test(url)) rejected.push(url);
+  }
+  return { valid: rejected.length === 0, rejected };
+}

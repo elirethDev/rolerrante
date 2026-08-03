@@ -7,6 +7,22 @@ export function formatDate(iso: string | null | undefined) {
   });
 }
 
+/** Relative time in es-ES (REQ-FORUM-06.1 "fecha relativ a"). Falls back to formatDate. */
+export function formatRelativeTime(iso: string | null | undefined) {
+  if (!iso) return '-';
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return formatDate(iso);
+  const diffMs = Date.now() - then;
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'hace un momento';
+  if (mins < 60) return `hace ${mins} min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `hace ${hours} h`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `hace ${days} d`;
+  return formatDate(iso);
+}
+
 export function formatDateTime(iso: string | null | undefined) {
   if (!iso) return '-';
   return new Date(iso).toLocaleString('es-ES', {
