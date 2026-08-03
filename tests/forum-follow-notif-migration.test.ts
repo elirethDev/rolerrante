@@ -12,6 +12,12 @@ const migrationPath = resolve(
 );
 const sql = readFileSync(migrationPath, "utf8");
 
+const updatePolicyPath = resolve(
+  process.cwd(),
+  "supabase/migrations/20260803000001_thread_follows_update_policy.sql",
+);
+const updatePolicySql = readFileSync(updatePolicyPath, "utf8");
+
 describe("thread_follows_notifications migration", () => {
   it("defines thread_follows with RLS enabled (REQ-FOLLOW-01)", () => {
     expect(sql).toContain("CREATE TABLE public.thread_follows");
@@ -125,6 +131,32 @@ describe("thread_follows_notifications migration", () => {
     );
     expect(sql).toMatch(
       /CREATE INDEX idx_thread_follows_thread ON public\.thread_follows\(thread_id\)/,
+    );
+  });
+});
+
+describe("thread_follows update policy migration (REQ-FOLLOW-02)", () => {
+  it("adds an owner-only UPDATE policy on thread_follows", () => {
+    const updatePolicy =
+      /CREATE POLICY ".*?"\s*ON public\.thread_follows\s*FOR UPDATE\s*USING \((.*?)\)(?: WITH CHECK \((.*?)\))?;/s.exec(
+        updatePolicySql,
+      );
+    expect(updatePolicy).not.toBeNull();
+    expect(updatePolicy![1]).toMatch(/user_id = auth\.uid\(\)/);
+  });
+
+  it("restricts the update WITH CHECK to the owner (no cross-user writes)", () => {
+    const updatePolicy =
+      /CREATE POLICY ".*?"\s*ON public\.thread_follows\s*FOR UPDATE\s*USING \((.*?)\)\s*WITH CHECK \((.*?)\);/s.exec(
+        updatePolicySql,
+      );
+    expect(updatePolicy).not.toBeNull();
+    expect(updatePolicy![2]).toMatch(/user_id = auth\.uid\(\)/);
+  });
+
+  it("does not open UPDATE access via any FOR ALL policy", () => {
+    expect(updatePolicySql).not.toMatch(
+      /ON public\.thread_follows\s*FOR ALL/i,
     );
   });
 });
