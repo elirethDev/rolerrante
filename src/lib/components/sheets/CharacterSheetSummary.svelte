@@ -16,6 +16,7 @@
     mana_source?: 'I' | 'E';
     status?: string;
     rp_points?: number;
+    avatar_url?: string | null;
   }
 
   interface Props {
@@ -24,6 +25,10 @@
   }
 
   let { character, CombatValues }: Props = $props();
+
+  let avatarFailed = $state(false);
+  let avatarUrl = $derived(character.avatar_url ?? '');
+  let initial = $derived(character.name?.trim()?.[0]?.toUpperCase() ?? '?');
 
   const attrKeys = [
     { key: 'attr_fis', label: ATTRIBUTE_LABELS.F },
@@ -48,11 +53,33 @@
 <div class="card bg-base-200 border border-azeroth-border">
   <div class="card-body">
     <div class="flex flex-wrap items-start justify-between gap-3">
-      <div>
-        <h1 class="text-3xl font-cinzel text-azeroth-gold">{character.name}</h1>
-        <p class="text-sm text-gray-400 mt-1">
-          {raceName}{#if character.age != null} · {character.age} años{/if}{#if character.sex} · {character.sex}{/if}
-        </p>
+      <div class="flex items-start gap-4">
+        {#if avatarUrl && !avatarFailed}
+          <figure class="avatar avatar-xl">
+            <img
+              src={avatarUrl}
+              alt={`Avatar de ${character.name}`}
+              class="w-20 h-20 rounded-lg object-cover ring-4 ring-[var(--color-azeroth-gold)]"
+              loading="lazy"
+              onerror={() => (avatarFailed = true)}
+            />
+          </figure>
+        {:else}
+          <figure class="avatar avatar-xl">
+            <div
+              data-testid="character-avatar-initial"
+              class="flex items-center justify-center w-20 h-20 rounded-lg bg-base-100 text-3xl font-cinzel text-azeroth-gold ring-4 ring-[var(--color-azeroth-gold)]"
+            >
+              {initial}
+            </div>
+          </figure>
+        {/if}
+        <div>
+          <h1 class="text-3xl font-cinzel text-azeroth-gold">{character.name}</h1>
+          <p class="text-sm text-gray-400 mt-1">
+            {raceName}{#if character.age != null} · {character.age} años{/if}{#if character.sex} · {character.sex}{/if}
+          </p>
+        </div>
       </div>
       {#if character.status}
         <span class="badge badge-lg {statusColor(character.status)}">{statusLabel(character.status)}</span>
