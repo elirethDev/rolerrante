@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { Editor } from '@tiptap/core';
   import StarterKit from '@tiptap/starter-kit';
+  import Link from '@tiptap/extension-link';
   import Image from '@tiptap/extension-image';
 
   let { content }: { content: string } = $props();
@@ -13,7 +14,9 @@
       element,
       content,
       editable: false,
-      extensions: [StarterKit, Image],
+      // Render symmetry with the editor (REQ-FC-03): Link + Underline are needed
+      // so hrefs and underlined marks written in the composer render identically.
+      extensions: [StarterKit, Link.configure({ openOnClick: true }), Image],
       editorProps: {
         attributes: {
           class: 'prose prose-invert max-w-none',
