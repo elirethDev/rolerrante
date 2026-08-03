@@ -10,6 +10,10 @@
   export let content = '';
   export let onChange: (html: string) => void = () => {};
   export let editable = true;
+  // Optional server-validated image-insert guard (REQ-FORUM-03.5). When provided,
+  // ad image is only inserted if validateImageUrl(url) returns true — mirroring the
+  // server-side validateForumImageUrls() check. Falls back to allowing any URL.
+  export let validateImageUrl: ((url: string) => boolean) | undefined = undefined;
 
   let element: HTMLDivElement;
   let editor: Editor | null = null;
@@ -37,7 +41,12 @@
 
   function addImage() {
     const url = prompt('URL de la imagen');
-    if (url && editor) editor.chain().focus().setImage({ src: url }).run();
+    if (!url || !editor) return;
+    if (validateImageUrl && !validateImageUrl(url)) {
+      window.alert('URL de imagen no permitida (solo http/https).');
+      return;
+    }
+    editor.chain().focus().setImage({ src: url }).run();
   }
 
   $: if (editor && editor.getHTML() !== content && !editor.isFocused) {

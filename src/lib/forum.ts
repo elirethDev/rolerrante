@@ -1,9 +1,64 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database, Json } from './supabase/database.types';
+import type { PermissionFlags } from './auth';
 
 export type ThreadEntityType = 'story' | 'character' | 'event';
 export type ThreadRow = Database['public']['Tables']['threads']['Row'];
-type ThreadStatus = Database['public']['Enums']['thread_status'];
+export type ThreadStatus = Database['public']['Enums']['thread_status'];
+export interface ThreadListItem {
+  id: string;
+  title: string;
+  content_type: string;
+  status: string;
+  is_locked: boolean;
+  created_at: string;
+  edited_at: string | null;
+  category_id: string | null;
+}
+
+export interface CategoryNode {
+  id: string;
+  name: string;
+  description: string | null;
+  is_visible: boolean;
+  children: CategoryNode[];
+  flags: PermissionFlags;
+  threads: ThreadListItem[];
+}
+
+export interface AuthorRef {
+  id: string;
+  display_name?: string | null;
+  username?: string;
+}
+
+export interface ThreadView {
+  id: string;
+  title: string;
+  status: string;
+  content_type: string;
+  body: Json;
+  author_id: string;
+  created_at: string;
+  edited_at: string | null;
+  edited_by: string | null;
+  is_locked: boolean;
+  category_id: string | null;
+  linked_entity_type: string | null;
+  linked_entity_id: string | null;
+  author?: AuthorRef | null;
+}
+
+export interface PostView {
+  id: string;
+  post_number: number;
+  body: Json;
+  author_id: string;
+  created_at: string;
+  edited_at: string | null;
+  edited_by: string | null;
+  author?: AuthorRef | null;
+}
 
 const CONTENT_TYPES: Record<ThreadEntityType, ThreadRow['content_type']> = {
   story: 'historia',
