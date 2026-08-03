@@ -3,7 +3,7 @@
   import { skillUpgradeCost } from '$lib/rules';
   import { User } from '@lucide/svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
-  import Field from '$lib/components/forms/Field.svelte';
+  import Field from '$lib/components/ui/Field.svelte';
   import SkillPicker from './SkillPicker.svelte';
 
   interface CharacterShape {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Field from '$lib/components/forms/Field.svelte';
+  import Field from '$lib/components/ui/Field.svelte';
   import { formatDate } from '$lib/utils';
   import type { PageData } from './$types';
 

@@ -3,7 +3,7 @@
   import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
   import TipTapEditor from '$lib/components/editor/TipTapEditor.svelte';
-  import Field from '$lib/components/forms/Field.svelte';
+  import Field from '$lib/components/ui/Field.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
   import { validateForumImageUrls } from '$lib/auth';
   import type { ActionData, PageData } from './$types';
