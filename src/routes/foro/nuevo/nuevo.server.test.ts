@@ -44,8 +44,9 @@ function makeSupabase(f: Fixture) {
   };
   return {
     from,
+    audit: (f.audit ??= []),
     rpc: (name: string, args: Record<string, unknown>) => {
-      (f.audit ??= []).push({ name, args });
+      f.audit!.push({ name, args });
       return Promise.resolve({ data: null, error: null });
     },
   };
@@ -94,6 +95,17 @@ describe('foro/nuevo default action (create debate thread)', () => {
     expect(inserted[0].content_type).toBe('debate');
     expect(inserted[0].title).toBe('Nuevo debate');
     expect(inserted[0].category_id).toBe('c1');
+    expect(supabase.audit).toEqual([
+      {
+        name: 'log_audit',
+        args: {
+          p_action: 'crear_hilo',
+          p_entity_type: 'thread',
+          p_entity_id: 'thread-1',
+          p_details: { title: 'Nuevo debate', category_id: 'c1' },
+        },
+      },
+    ]);
   });
 
   it('rejects a body with a bad (javascript:) image url with 400', async () => {

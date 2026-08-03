@@ -143,7 +143,12 @@ describe('editar route default action', () => {
       p_action: 'editar_post',
       p_entity_type: 'thread',
       p_entity_id: 't1',
-      p_details: { title: 'Título nuevo' },
+      p_details: {
+        changes: [
+          { field: 'title', old: 'Hilo', new: 'Título nuevo' },
+          { field: 'body', old: '<p>abre</p>', new: '<p>nuevo cuerpo</p>' },
+        ],
+      },
     });
   });
 

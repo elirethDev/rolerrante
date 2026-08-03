@@ -9,7 +9,9 @@
     { href: '/admin', label: 'Dashboard' },
     { href: '/admin/usuarios', label: 'Usuarios' },
     { href: '/admin/catalogos', label: 'Catálogos' },
-    { href: '/admin/logs', label: 'Auditoría' },
+    { href: '/admin/foro', label: 'Foro' },
+    { href: '/admin/moderacion', label: 'Moderación' },
+    { href: '/admin/auditoria', label: 'Auditoría' },
     { href: '/admin/ajustes', label: 'Ajustes' },
   ];
 </script>
