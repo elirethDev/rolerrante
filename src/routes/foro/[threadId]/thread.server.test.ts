@@ -6,6 +6,8 @@ import { load, actions } from './+page.server';
 const loadFn = load as unknown as (...args: unknown[]) => Promise<any>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const replyFn = actions.reply as unknown as (...args: unknown[]) => Promise<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const deleteFn = actions.delete as unknown as (...args: unknown[]) => Promise<any>;
 
 type Handler = (...args: unknown[]) => void;
 
@@ -19,6 +21,8 @@ interface Fixture {
   maxPostNumber?: number;
   insertError?: unknown;
   audit?: { name: string; args: Record<string, unknown> }[];
+  deletedIds?: string[];
+  postSingle?: unknown;
 }
 
 // Fluent supabase mock for the thread detail route. Supports:
@@ -30,25 +34,24 @@ interface Fixture {
 //   posts insert: select().single() -> insertedPosts[last] (allows maxPostNumber)
 function makeSupabase(f: Fixture) {
   const from = (table: string) => {
+    let deleting = false;
     const builder: Record<string, unknown> = {
       select: () => builder,
-      eq: () => {
-        // posts ordering is tracked via order()
+      eq: (col: string, val: unknown) => {
+        if (deleting && table === 'posts') (f.deletedIds ??= []).push(String(val));
         return builder;
       },
       order: () => builder,
       maybeSingle: () => Promise.resolve({ data: f.thread ?? null, error: null }),
       single: () => {
-        if (table === 'threads' || table === 'posts') {
-          const item = f.posts?.length ? f.posts[f.posts.length - 1] : f.thread;
-          if (table === 'posts' && f.insertedPosts?.length) {
-            const last = f.insertedPosts[f.insertedPosts.length - 1];
-            return Promise.resolve({ data: last, error: f.insertError ?? null });
-          }
-          return Promise.resolve({ data: table === 'threads' ? f.thread ?? null : item ?? null, error: null });
-        }
+        if (table === 'threads') return Promise.resolve({ data: f.thread ?? null, error: null });
+        if (table === 'posts') return Promise.resolve({ data: f.postSingle ?? null, error: null });
         // entity tables
         return Promise.resolve({ data: f.entity ?? null, error: null });
+      },
+      delete: () => {
+        deleting = true;
+        return builder;
       },
       then: (res: Handler, rej: Handler) => {
         let data: unknown;
@@ -78,6 +81,7 @@ function makeSupabase(f: Fixture) {
       (f.audit ??= []).push({ name, args });
       return Promise.resolve({ data: null, error: null });
     },
+    fixtures: f,
   };
 }
 
@@ -220,5 +224,46 @@ describe('thread detail reply action', () => {
     const res = await replyFn(makeReplyEvent(makeLocals(supabase), '<img src="data:image/png;base64,xxx">'));
     expect(res.status).toBe(400);
     expect(inserted).toHaveLength(0);
+  });
+});
+
+describe('thread detail delete action', () => {
+  const makeDeleteEvent = (locals: ReturnType<typeof makeLocals>, postId = 'p2') =>
+    ({
+      locals,
+      params: { threadId: 't1', postId },
+      url: new URL('http://localhost/foro/t1'),
+      request: new Request('http://localhost/foro/t1', {
+        method: 'POST',
+        body: new URLSearchParams({ post_id: postId }).toString(),
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      }),
+    }) as never;
+
+  it('deletes an own post, logs eliminar_post, without renumbering', async () => {
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      postSingle: { id: 'p2', post_number: 2, author_id: 'u1', thread_id: 't1', created_at: 'x', updated_at: 'x', edited_by: null, edited_at: null, body: '<p>b</p>' },
+    });
+    const err = await deleteFn(makeDeleteEvent(makeLocals(supabase, 'rolero', 'u1'), 'p2')).then(
+      () => null,
+      (e: { status?: number }) => e,
+    );
+    expect(err?.status).toBe(303);
+    expect(supabase.fixtures.deletedIds).toContain('p2');
+    // audit for eliminar_post
+    const audit = supabase.fixtures.audit ?? [];
+    expect(audit.some((a) => a.name === 'log_audit')).toBe(true);
+    expect(supabase.fixtures.audit?.[0]?.args?.p_action).toBe('eliminar_post');
+  });
+
+  it('blocks deleting another user post with 403', async () => {
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      postSingle: { id: 'p2', post_number: 2, author_id: 'u999', thread_id: 't1', created_at: 'x', updated_at: 'x', edited_by: null, edited_at: null, body: '<p>b</p>' },
+    });
+    const res = await deleteFn(makeDeleteEvent(makeLocals(supabase, 'rolero', 'u1'), 'p2'));
+    expect(res.status).toBe(403);
+    expect(supabase.fixtures.deletedIds ?? []).toHaveLength(0);
   });
 });

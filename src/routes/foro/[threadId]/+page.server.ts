@@ -134,4 +134,32 @@ export const actions: Actions = {
     if (insertError) return fail(400, { message: insertError.message });
     throw redirect(303, `/foro/${t.id}`);
   },
+
+  delete: async ({ request, params, locals: { supabase, user, profile } }) => {
+    requireAuth({ user, profile });
+    const form = await request.formData();
+    const postId = String(form.get('post_id') ?? '');
+
+    const { data: post } = await supabase.from('posts').select('*').eq('id', postId).single();
+    if (!post) return fail(404, { message: 'Mensaje no encontrado' });
+
+    const p = post as unknown as { author_id: string };
+    const isOwner = user!.id === p.author_id;
+    const isStaff = profile?.role === 'gm' || profile?.role === 'admin';
+    if (!isOwner && !isStaff) return fail(403, { message: 'No puedes eliminar un mensaje que no es tuyo' });
+
+    // Delete the row without renumbering post_number (REQ-FORUM-03.4).
+    const { error: deleteError } = await supabase.from('posts').delete().eq('id', postId);
+    if (deleteError) return fail(400, { message: deleteError.message });
+
+    const { error: auditError } = await supabase.rpc('log_audit', {
+      p_action: 'eliminar_post',
+      p_entity_type: 'post',
+      p_entity_id: postId,
+      p_details: { thread_id: params.threadId },
+    });
+    if (auditError) console.error('log_audit falló para eliminar_post', postId, auditError);
+
+    throw redirect(303, `/foro/${params.threadId}`);
+  },
 };
