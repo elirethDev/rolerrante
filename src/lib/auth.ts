@@ -90,30 +90,37 @@ export interface SanctionRow {
  * A moderator sanction is active when it is a permanent ban (kind=ban, no
  * expiry) or when it is a timed suspension whose active_until is still in the
  * future (REQ-MOD-ENF-03.1). Expired suspensions stop blocking forum access.
+ * A suspension with a missing or malformed (non-parseable) active_until is
+ * treated as ACTIVE so the gate fails CLOSED instead of silently allowing.
  */
 export function hasActiveSanction(sanction: SanctionRow | null): boolean {
   if (!sanction) return false;
   if (sanction.kind === 'ban') return true;
-  return (
-    sanction.active_until !== null &&
-    new Date(sanction.active_until).getTime() > Date.now()
-  );
+  const activeUntilTime = sanction.active_until
+    ? new Date(sanction.active_until).getTime()
+    : Number.NaN;
+  return Number.isNaN(activeUntilTime) || activeUntilTime > Date.now();
 }
 
 /**
  * Central forum-access gate (REQ-MOD-ENF-03): a suspended or banned user is
  * denied access to every /foro route. Returns true (allowed) unless there is an
- * active sanction for this profile.
+ * active sanction for this profile. FAILS CLOSED: a query error denies access
+ * rather than allowing a possibly-sanctioned user through.
  */
 export async function forumAccessAllowed(
   supabase: SupabaseClient<Database>,
   profile: Profile,
 ): Promise<boolean> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('user_sanctions')
     .select('kind, active_until')
     .eq('user_id', profile.id)
     .or('kind.eq.ban,active_until.gt.' + new Date().toISOString())
     .maybeSingle();
+  if (error) {
+    console.error('forumAccessAllowed: no se pudo leer sanciones, denegando acceso', error);
+    return false;
+  }
   return !hasActiveSanction(data as SanctionRow | null);
 }

@@ -23,17 +23,29 @@ describe('hasActiveSanction', () => {
     const past = new Date(Date.now() - DAY).toISOString();
     expect(hasActiveSanction({ kind: 'suspension', active_until: past })).toBe(false);
   });
+
+  it('treats a malformed (NaN) active_until as an active/denied sanction', () => {
+    // A non-parseable date must fail CLOSED (deny), never allow.
+    expect(hasActiveSanction({ kind: 'suspension', active_until: 'not-a-date' })).toBe(true);
+  });
+
+  it('treats a NULL active_until on a suspension as an active/denied sanction', () => {
+    expect(hasActiveSanction({ kind: 'suspension', active_until: null })).toBe(true);
+  });
 });
 
 describe('forumAccessAllowed', () => {
   const future = new Date(Date.now() + DAY).toISOString();
 
-  const makeClient = (data: { kind: string; active_until: string | null } | null) => {
+  const makeClient = (
+    data: { kind: string; active_until: string | null } | null,
+    queryError: { message: string } | null = null,
+  ) => {
     const chain = {
       select: () => chain,
       eq: () => chain,
       or: () => chain,
-      maybeSingle: () => Promise.resolve({ data, error: null }),
+      maybeSingle: () => Promise.resolve({ data, error: queryError }),
     };
     return { from: () => chain } as unknown as SupabaseClient<Database>;
   };
@@ -61,5 +73,12 @@ describe('forumAccessAllowed', () => {
     // query returns no active sanction row.
     const supabase = makeClient(null);
     await expect(forumAccessAllowed(supabase, profile)).resolves.toBe(true);
+  });
+
+  it('fails CLOSED (denies) when the sanctions query returns an error', async () => {
+    // A query error must deny access, never allow it (fail-open would let a
+    // sanctioned user through all /foro surfaces).
+    const supabase = makeClient(null, { message: 'network error' });
+    await expect(forumAccessAllowed(supabase, profile)).resolves.toBe(false);
   });
 });
