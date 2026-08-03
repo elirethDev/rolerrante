@@ -86,9 +86,9 @@ describe("unfollowThread", () => {
   it("throws when the delete fails", async () => {
     const m = createMockClient();
     m.setResult({ data: null, error: new Error("gone") });
-    await expect(unfollowThread("thread-1", "user-9", m.client)).rejects.toThrow(
-      "gone",
-    );
+    await expect(
+      unfollowThread("thread-1", "user-9", m.client),
+    ).rejects.toThrow("gone");
   });
 });
 
@@ -96,9 +96,9 @@ describe("getThreadFollow", () => {
   it("reports following=true with the stored notify_in_app when a follow exists", async () => {
     const m = createMockClient();
     m.setResult({ data: { notify_in_app: false }, error: null });
-    await expect(getThreadFollow("thread-1", "user-9", m.client)).resolves.toEqual(
-      { following: true, notify_in_app: false },
-    );
+    await expect(
+      getThreadFollow("thread-1", "user-9", m.client),
+    ).resolves.toEqual({ following: true, notify_in_app: false });
     const maybe = m.calls.find((c) => c.method === "maybeSingle");
     expect(maybe).toBeDefined();
   });
@@ -106,18 +106,16 @@ describe("getThreadFollow", () => {
   it("reports following=false with default in-app enabled when no follow exists", async () => {
     const m = createMockClient();
     m.setResult({ data: null, error: null });
-    await expect(getThreadFollow("thread-1", "user-9", m.client)).resolves.toEqual(
-      { following: false, notify_in_app: true },
-    );
+    await expect(
+      getThreadFollow("thread-1", "user-9", m.client),
+    ).resolves.toEqual({ following: false, notify_in_app: true });
   });
 
   it("queries the follow scoped to this thread and user", async () => {
     const m = createMockClient();
     m.setResult({ data: { notify_in_app: true }, error: null });
     await getThreadFollow("thread-1", "user-9", m.client);
-    const eqs = m.calls
-      .filter((c) => c.method === "eq")
-      .map((c) => c.args);
+    const eqs = m.calls.filter((c) => c.method === "eq").map((c) => c.args);
     expect(eqs).toContainEqual(["thread_id", "thread-1"]);
     expect(eqs).toContainEqual(["user_id", "user-9"]);
   });
@@ -125,9 +123,9 @@ describe("getThreadFollow", () => {
   it("throws on read error", async () => {
     const m = createMockClient();
     m.setResult({ data: null, error: new Error("prem") });
-    await expect(getThreadFollow("thread-1", "user-9", m.client)).rejects.toThrow(
-      "prem",
-    );
+    await expect(
+      getThreadFollow("thread-1", "user-9", m.client),
+    ).rejects.toThrow("prem");
   });
 });
 
@@ -153,9 +151,9 @@ describe("setFollowPreference", () => {
   it("throws when the update fails", async () => {
     const m = createMockClient();
     m.setResult({ data: null, error: new Error("no row") });
-    await expect(setFollowPreference("thread-1", "user-9", false, m.client)).rejects.toThrow(
-      "no row",
-    );
+    await expect(
+      setFollowPreference("thread-1", "user-9", false, m.client),
+    ).rejects.toThrow("no row");
   });
 });
 

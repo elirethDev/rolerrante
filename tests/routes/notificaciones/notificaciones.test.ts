@@ -44,7 +44,8 @@ function makeSupabase(fixture: NotifFixture = {}) {
       },
       then: (res: (r: unknown) => void, rej: (r: unknown) => void) => {
         const updateCalled = calls.some((c) => c.method === "update");
-        if (updateCalled && fixture.updateError) return rej(fixture.updateError);
+        if (updateCalled && fixture.updateError)
+          return rej(fixture.updateError);
         return res({
           data: fixture.notifications ?? null,
           error: fixture.error ?? null,
@@ -85,7 +86,9 @@ function makeLocals(supabase: ReturnType<typeof makeSupabase>, user: unknown) {
   return {
     supabase,
     user,
-    profile: user ? { role: "rolero", display_name: "Ana", username: "ana" } : null,
+    profile: user
+      ? { role: "rolero", display_name: "Ana", username: "ana" }
+      : null,
   };
 }
 
@@ -135,9 +138,13 @@ describe("notificaciones load() (REQ-NOTIF-02)", () => {
     expect(result.notifications[0].read_at).toBeNull();
     expect(result.notifications[1].id).toBe("n2");
 
-    const eqs = supabase.calls.filter((c) => c.method === "eq").map((c) => c.args);
+    const eqs = supabase.calls
+      .filter((c) => c.method === "eq")
+      .map((c) => c.args);
     expect(eqs).toContainEqual(["user_id", "u1"]);
-    const orders = supabase.calls.filter((c) => c.method === "order").map((c) => c.args);
+    const orders = supabase.calls
+      .filter((c) => c.method === "order")
+      .map((c) => c.args);
     expect(orders).toContainEqual(["created_at", { ascending: false }]);
   });
 
@@ -169,9 +176,13 @@ describe("notificaciones markRead action (REQ-NOTIF-02)", () => {
     expect(update).toBeDefined();
     const readAt = (update!.args[0] as { read_at: unknown }).read_at;
     expect(typeof readAt).toBe("string");
-    const eqs = supabase.calls.filter((c) => c.method === "eq").map((c) => c.args);
+    const eqs = supabase.calls
+      .filter((c) => c.method === "eq")
+      .map((c) => c.args);
     expect(eqs).toContainEqual(["user_id", "u1"]);
-    const isNull = supabase.calls.filter((c) => c.method === "is").map((c) => c.args);
+    const isNull = supabase.calls
+      .filter((c) => c.method === "is")
+      .map((c) => c.args);
     expect(isNull).toContainEqual(["read_at", null]);
   });
 

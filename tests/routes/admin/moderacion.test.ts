@@ -279,7 +279,9 @@ describe("admin/moderacion report queue (REQ-MOD-REP-02)", () => {
     expect(res.success).toBe(true);
     const rpcCall = supabase.calls.rpc.find(
       (r) => (r as { name: string }).name === "resolve_report",
-    ) as { args: { p_report_id: string; p_status: string; p_justification: string } };
+    ) as {
+      args: { p_report_id: string; p_status: string; p_justification: string };
+    };
     expect(rpcCall).toBeTruthy();
     expect(rpcCall.args.p_report_id).toBe("rep-1");
     expect(rpcCall.args.p_status).toBe("resuelta");
@@ -305,7 +307,10 @@ describe("admin/moderacion report queue (REQ-MOD-REP-02)", () => {
   it("requires a justification to resolve (REP-02.2 mandatory)", async () => {
     const supabase = makeSupabase();
     const res = (await act("resolveReport")(
-      makeEvent(makeLocals(supabase, "admin", "a1"), "reportId=rep-1&justification="),
+      makeEvent(
+        makeLocals(supabase, "admin", "a1"),
+        "reportId=rep-1&justification=",
+      ),
     )) as { status: number };
     expect(res.status).toBe(400);
   });
@@ -350,7 +355,12 @@ const openReport = (over: Record<string, unknown> = {}) => ({
     id: "p1",
     thread_id: "t1",
     post_number: 2,
-    author: { id: "author-1", display_name: "Frodo", username: "frodo", role: "rolero" },
+    author: {
+      id: "author-1",
+      display_name: "Frodo",
+      username: "frodo",
+      role: "rolero",
+    },
   },
   ...over,
 });
@@ -369,7 +379,13 @@ describe("admin/moderacion enforcement actions (REQ-MOD-ENF-01/02/04)", () => {
     expect(res.success).toBe(true);
     const rpcCall = supabase.calls.rpc.find(
       (r) => (r as { name: string }).name === "suspend_user",
-    ) as { args: { p_user_id: string; p_active_until: string; p_justification: string } };
+    ) as {
+      args: {
+        p_user_id: string;
+        p_active_until: string;
+        p_justification: string;
+      };
+    };
     expect(rpcCall).toBeTruthy();
     expect(rpcCall.args.p_user_id).toBe("author-1");
     // active_until is computed as now + 7 days.
@@ -407,7 +423,9 @@ describe("admin/moderacion enforcement actions (REQ-MOD-ENF-01/02/04)", () => {
     )) as { status: number };
     expect(res.status).toBe(400);
     expect(
-      supabase.calls.rpc.some((r) => (r as { name: string }).name === "suspend_user"),
+      supabase.calls.rpc.some(
+        (r) => (r as { name: string }).name === "suspend_user",
+      ),
     ).toBe(false);
   });
 
@@ -421,7 +439,9 @@ describe("admin/moderacion enforcement actions (REQ-MOD-ENF-01/02/04)", () => {
     )) as { status: number };
     expect(res.status).toBe(400);
     expect(
-      supabase.calls.rpc.some((r) => (r as { name: string }).name === "suspend_user"),
+      supabase.calls.rpc.some(
+        (r) => (r as { name: string }).name === "suspend_user",
+      ),
     ).toBe(false);
   });
 
@@ -436,7 +456,9 @@ describe("admin/moderacion enforcement actions (REQ-MOD-ENF-01/02/04)", () => {
     )) as { status: number };
     expect(res.status).toBe(400);
     expect(
-      supabase.calls.rpc.some((r) => (r as { name: string }).name === "ban_user"),
+      supabase.calls.rpc.some(
+        (r) => (r as { name: string }).name === "ban_user",
+      ),
     ).toBe(false);
   });
 
@@ -453,7 +475,9 @@ describe("admin/moderacion enforcement actions (REQ-MOD-ENF-01/02/04)", () => {
       403,
     );
     expect(
-      supabase.calls.rpc.some((r) => (r as { name: string }).name === "suspend_user"),
+      supabase.calls.rpc.some(
+        (r) => (r as { name: string }).name === "suspend_user",
+      ),
     ).toBe(false);
   });
 
@@ -469,7 +493,9 @@ describe("admin/moderacion enforcement actions (REQ-MOD-ENF-01/02/04)", () => {
     )) as { status: number };
     expect(res.status).toBe(400);
     expect(
-      supabase.calls.rpc.some((r) => (r as { name: string }).name === "ban_user"),
+      supabase.calls.rpc.some(
+        (r) => (r as { name: string }).name === "ban_user",
+      ),
     ).toBe(false);
   });
 
@@ -509,9 +535,17 @@ describe("admin/moderacion enforcement actions (REQ-MOD-ENF-01/02/04)", () => {
     const supabase = makeSupabase({
       threads: [storyThread()],
       reports: [openReport()],
-      sanctions: [{ user_id: "author-1", kind: "suspension", active_until: "2099-01-01T00:00:00.000Z" }],
+      sanctions: [
+        {
+          user_id: "author-1",
+          kind: "suspension",
+          active_until: "2099-01-01T00:00:00.000Z",
+        },
+      ],
     });
-    const result = (await loadFn(makeEvent(makeLocals(supabase, "admin", "a1")))) as {
+    const result = (await loadFn(
+      makeEvent(makeLocals(supabase, "admin", "a1")),
+    )) as {
       sanctions: Record<string, { kind: string }>;
       isAdmin: boolean;
     };
@@ -521,7 +555,9 @@ describe("admin/moderacion enforcement actions (REQ-MOD-ENF-01/02/04)", () => {
 
   it("load reports a GM as non-admin so the queue renders read-only", async () => {
     const supabase = makeSupabase({ reports: [openReport()] });
-    const result = (await loadFn(makeEvent(makeLocals(supabase, "gm", "g1")))) as {
+    const result = (await loadFn(
+      makeEvent(makeLocals(supabase, "gm", "g1")),
+    )) as {
       isAdmin: boolean;
       reports: unknown[];
     };

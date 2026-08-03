@@ -14,11 +14,19 @@ const sql = readFileSync(migrationPath, "utf8");
 describe("reactions migration 20260802000001_reactions.sql", () => {
   it("defines the reactions table with PK (post_id, user_id) and RLS enabled (REACT-01.1)", () => {
     expect(sql).toContain("CREATE TABLE public.reactions");
-    expect(sql).toMatch(/post_id\s+uuid\s+NOT NULL\s+REFERENCES public\.posts\s*\(id\)/);
-    expect(sql).toMatch(/user_id\s+uuid\s+NOT NULL\s+REFERENCES public\.profiles\s*\(id\)/);
-    expect(sql).toMatch(/created_at\s+timestamptz\s+NOT NULL\s+DEFAULT now\(\)/);
+    expect(sql).toMatch(
+      /post_id\s+uuid\s+NOT NULL\s+REFERENCES public\.posts\s*\(id\)/,
+    );
+    expect(sql).toMatch(
+      /user_id\s+uuid\s+NOT NULL\s+REFERENCES public\.profiles\s*\(id\)/,
+    );
+    expect(sql).toMatch(
+      /created_at\s+timestamptz\s+NOT NULL\s+DEFAULT now\(\)/,
+    );
     expect(sql).toMatch(/PRIMARY KEY\s*\(\s*post_id\s*,\s*user_id\s*\)/);
-    expect(sql).toContain("ALTER TABLE public.reactions ENABLE ROW LEVEL SECURITY;");
+    expect(sql).toContain(
+      "ALTER TABLE public.reactions ENABLE ROW LEVEL SECURITY;",
+    );
   });
 
   it("allows a user to INSERT only their own reaction row within a VISIBLE thread (REACT-01.1 + FIX-1)", () => {

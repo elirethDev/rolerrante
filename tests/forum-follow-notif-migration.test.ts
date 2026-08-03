@@ -22,7 +22,10 @@ const notificationsUpdatePolicyPath = resolve(
   process.cwd(),
   "supabase/migrations/20260803000002_notifications_update_policy.sql",
 );
-const notificationsUpdatePolicySql = readFileSync(notificationsUpdatePolicyPath, "utf8");
+const notificationsUpdatePolicySql = readFileSync(
+  notificationsUpdatePolicyPath,
+  "utf8",
+);
 
 describe("thread_follows_notifications migration", () => {
   it("defines thread_follows with RLS enabled (REQ-FOLLOW-01)", () => {
@@ -33,8 +36,12 @@ describe("thread_follows_notifications migration", () => {
   });
 
   it("thread_follows has UNIQUE(thread_id, user_id) and notify_in_app default true (REQ-FOLLOW-01/02)", () => {
-    expect(sql).toMatch(/thread_id\s+uuid\s+NOT NULL\s+REFERENCES public\.threads\s*\(id\)/);
-    expect(sql).toMatch(/user_id\s+uuid\s+NOT NULL\s+REFERENCES public\.profiles\s*\(id\)/);
+    expect(sql).toMatch(
+      /thread_id\s+uuid\s+NOT NULL\s+REFERENCES public\.threads\s*\(id\)/,
+    );
+    expect(sql).toMatch(
+      /user_id\s+uuid\s+NOT NULL\s+REFERENCES public\.profiles\s*\(id\)/,
+    );
     expect(sql).toMatch(/notify_in_app\s+boolean\s+NOT NULL\s+DEFAULT\s+true/);
     expect(sql).toMatch(/UNIQUE\s*\(\s*thread_id\s*,\s*user_id\s*\)/);
   });
@@ -44,14 +51,24 @@ describe("thread_follows_notifications migration", () => {
     expect(sql).toContain(
       "ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;",
     );
-    expect(sql).toMatch(/type\s+text\s+NOT NULL\s+CHECK\s*\(\s*type\s*=\s*'new_reply'\s*\)/s);
+    expect(sql).toMatch(
+      /type\s+text\s+NOT NULL\s+CHECK\s*\(\s*type\s*=\s*'new_reply'\s*\)/s,
+    );
   });
 
   it("notifications references threads/posts/profiles with CASCADE where appropriate", () => {
-    expect(sql).toMatch(/thread_id\s+uuid\s+NOT NULL\s+REFERENCES public\.threads\s*\(id\)\s+ON DELETE CASCADE/);
-    expect(sql).toMatch(/post_id\s+uuid\s+NOT NULL\s+REFERENCES public\.posts\s*\(id\)\s+ON DELETE CASCADE/);
-    expect(sql).toMatch(/user_id\s+uuid\s+NOT NULL\s+REFERENCES public\.profiles\s*\(id\)/);
-    expect(sql).toMatch(/actor_id\s+uuid\s+NOT NULL\s+REFERENCES public\.profiles\s*\(id\)/);
+    expect(sql).toMatch(
+      /thread_id\s+uuid\s+NOT NULL\s+REFERENCES public\.threads\s*\(id\)\s+ON DELETE CASCADE/,
+    );
+    expect(sql).toMatch(
+      /post_id\s+uuid\s+NOT NULL\s+REFERENCES public\.posts\s*\(id\)\s+ON DELETE CASCADE/,
+    );
+    expect(sql).toMatch(
+      /user_id\s+uuid\s+NOT NULL\s+REFERENCES public\.profiles\s*\(id\)/,
+    );
+    expect(sql).toMatch(
+      /actor_id\s+uuid\s+NOT NULL\s+REFERENCES public\.profiles\s*\(id\)/,
+    );
   });
 
   it("thread_follows RLS confines follows to the owner (REQ-FOLLOW-01)", () => {
@@ -118,7 +135,9 @@ describe("thread_follows_notifications migration", () => {
     expect(body).toMatch(/SELECT\s+tf\.user_id/);
     expect(body).toMatch(/FROM\s+public\.thread_follows\s+tf/);
     // Self-exclusion: replier (author) must not notify themselves.
-    expect(body).toMatch(/tf\.user_id\s*<>\s*NEW\.author_id|NEW\.author_id\s*<>\s*tf\.user_id/);
+    expect(body).toMatch(
+      /tf\.user_id\s*<>\s*NEW\.author_id|NEW\.author_id\s*<>\s*tf\.user_id/,
+    );
     // In-app preference respected.
     expect(body).toMatch(/tf\.notify_in_app\s*=\s*true/);
     // Only the triggering thread's followers.
@@ -161,9 +180,7 @@ describe("thread_follows update policy migration (REQ-FOLLOW-02)", () => {
   });
 
   it("does not open UPDATE access via any FOR ALL policy", () => {
-    expect(updatePolicySql).not.toMatch(
-      /ON public\.thread_follows\s*FOR ALL/i,
-    );
+    expect(updatePolicySql).not.toMatch(/ON public\.thread_follows\s*FOR ALL/i);
   });
 });
 

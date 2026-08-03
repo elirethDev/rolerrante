@@ -7,7 +7,9 @@ import { load } from "../../src/routes/+layout.server";
 // degrade to zero instead of taking the whole app down on a query failure.
 const loadFn = load as unknown as (...args: unknown[]) => Promise<any>;
 
-function makeSupabase(fixture: { count?: number | null; error?: unknown } = {}) {
+function makeSupabase(
+  fixture: { count?: number | null; error?: unknown } = {},
+) {
   const calls: { table: string; method: string; args: unknown[] }[] = [];
   const from = vi.fn((table: string) => {
     const chain: Record<string, unknown> = {
@@ -32,7 +34,12 @@ function makeSupabase(fixture: { count?: number | null; error?: unknown } = {}) 
 }
 
 function makeLocals(supabase: ReturnType<typeof makeSupabase>, user: unknown) {
-  return { supabase, user, profile: user ? { role: "rolero" } : null, session: null };
+  return {
+    supabase,
+    user,
+    profile: user ? { role: "rolero" } : null,
+    session: null,
+  };
 }
 
 describe("root layout load() unreadCount (REQ-NOTIF-02)", () => {
@@ -48,9 +55,13 @@ describe("root layout load() unreadCount (REQ-NOTIF-02)", () => {
     const result = await loadFn({ locals: makeLocals(supabase, { id: "u1" }) });
     expect(result.unreadCount).toBe(3);
     expect(supabase.from).toHaveBeenCalledWith("notifications");
-    const eqs = supabase.calls.filter((c) => c.method === "eq").map((c) => c.args);
+    const eqs = supabase.calls
+      .filter((c) => c.method === "eq")
+      .map((c) => c.args);
     expect(eqs).toContainEqual(["user_id", "u1"]);
-    const isNull = supabase.calls.filter((c) => c.method === "is").map((c) => c.args);
+    const isNull = supabase.calls
+      .filter((c) => c.method === "is")
+      .map((c) => c.args);
     expect(isNull).toContainEqual(["read_at", null]);
   });
 

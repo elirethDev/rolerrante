@@ -14,7 +14,9 @@ const sql = readFileSync(migrationPath, "utf8");
 
 function extractFunction(name: string): string {
   const match = sql.match(
-    new RegExp(`CREATE OR REPLACE FUNCTION public\\.${name}[\\s\\S]*?\\n\\$\\$;`),
+    new RegExp(
+      `CREATE OR REPLACE FUNCTION public\\.${name}[\\s\\S]*?\\n\\$\\$;`,
+    ),
   );
   expect(match, `expected ${name} function body`).not.toBeNull();
   return match![0];
@@ -71,6 +73,8 @@ describe("forum moderation migration 20260803000000_forum_moderation.sql", () =>
     // Bans must not inherit the suspension timing guard.
     expect(banFn).not.toMatch(/p_active_until/);
     expect(banFn).not.toMatch(/now\(\)/);
-    expect(banFn).toMatch(/INSERT INTO public\.user_sanctions[\s\S]*?VALUES \(p_user_id, 'ban', NULL/);
+    expect(banFn).toMatch(
+      /INSERT INTO public\.user_sanctions[\s\S]*?VALUES \(p_user_id, 'ban', NULL/,
+    );
   });
 });
