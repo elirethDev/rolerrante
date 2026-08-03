@@ -4,6 +4,7 @@
   import type { PermissionFlags } from '$lib/auth';
   import type { PostView, ThreadView } from '$lib/forum';
   import { formatRelativeTime } from '$lib/utils';
+  import PinBadge from './PinBadge.svelte';
   import PostCard from './PostCard.svelte';
 
   let {
@@ -13,6 +14,7 @@
     entity,
     flags,
     isLocked,
+    isSticky,
     isOwner,
     isStaff,
   }: {
@@ -22,6 +24,7 @@
     entity: { name: string; status: string } | null;
     flags: PermissionFlags;
     isLocked: boolean;
+    isSticky: boolean;
     isOwner: boolean;
     isStaff: boolean;
   } = $props();
@@ -45,11 +48,22 @@
   <header class="mb-6">
     <div class="flex flex-wrap items-center gap-3">
       <h1 class="text-2xl font-cinzel text-azeroth-gold">{thread.title}</h1>
+      {#if isSticky}<PinBadge />{/if}
       {#if isLocked}<Lock size={18} class="text-error" />{/if}
       {#if thread.status === 'pendiente'}
         <span class="badge badge-warning">Pendiente</span>
       {/if}
     </div>
+
+    {#if isStaff}
+      <div class="mt-2">
+        <form method="POST" action={isSticky ? '?/unpin' : '?/pin'}>
+          <button type="submit" class="btn btn-outline btn-xs">
+            {isSticky ? 'Desfijar hilo' : 'Fijar hilo'}
+          </button>
+        </form>
+      </div>
+    {/if}
 
     {#if entity}
       <p class="text-sm text-gray-400 mt-2">
