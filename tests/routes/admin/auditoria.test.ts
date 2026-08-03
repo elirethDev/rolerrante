@@ -3,10 +3,42 @@ import { describe, expect, it } from "vitest";
 import Page from "../../../src/routes/admin/auditoria/+page.svelte";
 
 const logs = [
-  { id: "1", created_at: "2026-01-01T00:00:00Z", actor: { display_name: "Pablo" }, action: "crear_hilo", entity_type: "thread", entity_id: "t1", details: {} },
-  { id: "2", created_at: "2026-01-01T00:00:00Z", actor: { display_name: "Ana" }, action: "login", entity_type: "user", entity_id: "u1", details: {} },
-  { id: "3", created_at: "2026-01-01T00:00:00Z", actor: { display_name: "Pablo" }, action: "editar_permisos", entity_type: "category", entity_id: "c1", details: {} },
-  { id: "4", created_at: "2026-01-01T00:00:00Z", actor: { display_name: "Ana" }, action: "otorgar_xp", entity_type: "event", entity_id: "e1", details: {} },
+  {
+    id: "1",
+    created_at: "2026-01-01T00:00:00Z",
+    actor: { display_name: "Pablo" },
+    action: "crear_hilo",
+    entity_type: "thread",
+    entity_id: "t1",
+    details: {},
+  },
+  {
+    id: "2",
+    created_at: "2026-01-01T00:00:00Z",
+    actor: { display_name: "Ana" },
+    action: "login",
+    entity_type: "user",
+    entity_id: "u1",
+    details: {},
+  },
+  {
+    id: "3",
+    created_at: "2026-01-01T00:00:00Z",
+    actor: { display_name: "Pablo" },
+    action: "editar_permisos",
+    entity_type: "category",
+    entity_id: "c1",
+    details: {},
+  },
+  {
+    id: "4",
+    created_at: "2026-01-01T00:00:00Z",
+    actor: { display_name: "Ana" },
+    action: "otorgar_xp",
+    entity_type: "event",
+    entity_id: "e1",
+    details: {},
+  },
 ];
 
 describe("admin/auditoria forum filter (REQ-FORUM-04.4)", () => {
