@@ -1,6 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import Field from '$lib/components/forms/Field.svelte';
+  import Field from '$lib/components/ui/Field.svelte';
   import type { ActionData, PageData } from './$types';
 
   export let data: PageData;

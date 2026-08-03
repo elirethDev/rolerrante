@@ -5,7 +5,7 @@
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
   import AttributeInput from '$lib/components/forms/AttributeInput.svelte';
-  import Field from '$lib/components/forms/Field.svelte';
+  import Field from '$lib/components/ui/Field.svelte';
   import CombatValues from '$lib/components/sheets/CombatValues.svelte';
   import type { ActionData, PageData } from './$types';
   import type { Skill } from '$lib/types';

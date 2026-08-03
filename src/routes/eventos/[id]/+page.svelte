@@ -5,7 +5,7 @@
   import TipTapViewer from '$lib/components/editor/TipTapViewer.svelte';
   import ParticipantList from '$lib/components/events/ParticipantList.svelte';
   import SessionList from '$lib/components/events/SessionList.svelte';
-  import Field from '$lib/components/forms/Field.svelte';
+  import Field from '$lib/components/ui/Field.svelte';
   import type { ActionData, PageData } from './$types';
 
   export let data: PageData;
