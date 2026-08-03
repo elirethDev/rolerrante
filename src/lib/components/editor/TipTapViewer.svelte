@@ -4,6 +4,12 @@
   import StarterKit from '@tiptap/starter-kit';
   import Image from '@tiptap/extension-image';
 
+  // REQ-SPOIL-01: Spoiler node registered only in TipTapViewer for rendering.
+  // TipTapEditor registration is deferred to the S2 forum-composer change
+  // (REQ-COMPOSER-STUB-01) — do NOT import Spoiler here.
+  import { Spoiler } from './Spoiler';
+  import './spoiler.css';
+
   let { content }: { content: string } = $props();
 
   let element: HTMLDivElement;
@@ -13,7 +19,7 @@
       element,
       content,
       editable: false,
-      extensions: [StarterKit, Image],
+      extensions: [StarterKit, Image, Spoiler],
       editorProps: {
         attributes: {
           class: 'prose prose-invert max-w-none',
