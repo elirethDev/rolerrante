@@ -94,7 +94,7 @@
 
   <div class="mt-6">
     {#each posts as post (post.id)}
-      <PostCard {post} {onCitar} editorName={post.author?.display_name ?? post.author?.username ?? null} />
+      <PostCard {post} threadId={thread.id} {onCitar} editorName={post.author?.display_name ?? post.author?.username ?? null} />
     {/each}
   </div>
 
