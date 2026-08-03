@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import ReplyComposer from './ReplyComposer.svelte';
 
 function getEditorEl(container: HTMLElement): HTMLElement {
@@ -114,6 +114,90 @@ describe('ReplyComposer', () => {
       expect(screen.queryByText(/Respondiendo a/)).not.toBeInTheDocument();
       expect(document.querySelector('input[name="quote_author"]')).toBeNull();
       expect(document.querySelector('input[name="quote_post_id"]')).toBeNull();
+    });
+
+    it('prefills the editor when a quote arrives after mount (Citar flow, REQ-FC-04)', async () => {
+      const { container, rerender } = render(ReplyComposer);
+      const el = getEditorEl(container);
+      expect(el.textContent).not.toContain('La nave será nuestra');
+
+      await rerender({
+        quotePayload: {
+          author_display_name: 'Legolas',
+          body_excerpt: 'La nave será nuestra',
+          post_id: 'p2',
+        },
+      });
+
+      await waitFor(() => {
+        expect(el.textContent).toContain('La nave será nuestra');
+        expect(el.textContent).toContain('Legolas');
+      });
+      expect(document.querySelector('input[name="quote_author"]')).toHaveValue('Legolas');
+      expect(document.querySelector('input[name="quote_excerpt"]')).toHaveValue(
+        'La nave será nuestra',
+      );
+      expect(document.querySelector('input[name="quote_post_id"]')).toHaveValue('p2');
+    });
+
+    it('does not overwrite already-typed content when a quote arrives (REQ-FC-04)', async () => {
+      const user = userEvent.setup();
+      const { container, rerender } = render(ReplyComposer);
+      const el = getEditorEl(container);
+      el.focus();
+      await user.type(el, 'mi respuesta');
+
+      await rerender({
+        quotePayload: {
+          author_display_name: 'Galadriel',
+          body_excerpt: 'Incluso la más pequeña',
+          post_id: 'p5',
+        },
+      });
+
+      expect(el.textContent).toContain('mi respuesta');
+      expect(el.textContent).not.toContain('Incluso la más pequeña');
+    });
+
+    it('removes the quoted blockquote from the editor on clear (REQ-FC-04)', async () => {
+      const user = userEvent.setup();
+      const onClearQuote = vi.fn();
+      const { container, rerender } = render(ReplyComposer, { onClearQuote });
+
+      await rerender({
+        onClearQuote,
+        quotePayload: {
+          author_display_name: 'Gimli',
+          body_excerpt: 'Piedra y metal',
+          post_id: 'p3',
+        },
+      });
+
+      const el = getEditorEl(container);
+      await waitFor(() => expect(el.textContent).toContain('Piedra y metal'));
+
+      await user.click(screen.getByRole('button', { name: 'Cancelar cita' }));
+
+      expect(onClearQuote).toHaveBeenCalledTimes(1);
+      expect(el.textContent).not.toContain('Piedra y metal');
+    });
+
+    it('restores a saved draft over a quote at mount (REQ-FC-04/02)', () => {
+      window.localStorage.setItem(
+        'forum:draft:t3',
+        JSON.stringify({ content: '<p>borrador gana</p>', title: undefined, timestamp: 1 }),
+      );
+      const { container } = render(ReplyComposer, {
+        draftKey: 'forum:draft:t3',
+        quotePayload: {
+          author_display_name: 'Boromir',
+          body_excerpt: 'Uno no puede simplemente',
+          post_id: 'p4',
+        },
+      });
+      const el = getEditorEl(container);
+      expect(el.textContent).toContain('borrador gana');
+      expect(el.textContent).not.toContain('Uno no puede simplemente');
     });
   });
 });

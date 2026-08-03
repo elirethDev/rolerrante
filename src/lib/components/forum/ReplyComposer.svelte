@@ -41,7 +41,11 @@
   let charCount = $state(0);
   let savedIndicator = $state(false);
   let saveTimer: ReturnType<typeof setTimeout> | undefined;
-
+  // Content is "established" once a restored draft or user input fills the editor;
+  // an incoming quote must never clobber it. Plain lets (not $state) so the
+  // `$effect` below only re-runs on `quotePayload` changes.
+  let contentEstablished = false;
+  let appliedQuoteId = '';
   // Client-side mirror of the server validateForumImageUrls() (REQ-FORUM-03.5).
   function isValidImageUrl(url: string): boolean {
     return validateForumImageUrls(`<img src="${url}">`).valid;
@@ -61,6 +65,7 @@
 
   function handleChange(html: string) {
     content = html;
+    contentEstablished = true;
     scheduleAutosave();
   }
 
@@ -76,11 +81,37 @@
       content = draft.content;
       charCount = plainTextLength(content);
       savedIndicator = true;
+      contentEstablished = true;
     } else if (quotePayload) {
       content = buildQuoteBlock(quotePayload, maxLength);
       charCount = plainTextLength(content);
+      appliedQuoteId = quotePayload.post_id;
+      contentEstablished = true;
     }
   });
+
+  // Quote prefill must be reactive (REQ-FC-04): the route sets `quotePayload`
+  // AFTER mount when the user clicks Citar, so an onMount-only branch never runs.
+  // Apply the blockquote only for a NEW quote and only while the editor has no
+  // restored draft or user-typed content — both of those always win.
+  $effect(() => {
+    if (quotePayload && !contentEstablished && appliedQuoteId !== quotePayload.post_id) {
+      appliedQuoteId = quotePayload.post_id;
+      content = buildQuoteBlock(quotePayload, maxLength);
+      charCount = plainTextLength(content);
+      contentEstablished = true;
+    }
+  });
+
+  // Clear also removes the prefilled blockquote so × leaves no stale quoted text.
+  function handleClearQuote() {
+    if (quotePayload) {
+      const block = buildQuoteBlock(quotePayload, maxLength);
+      content = content.replace(block, '').trim();
+      charCount = plainTextLength(content);
+    }
+    onClearQuote?.();
+  }
 
   onDestroy(() => {
     clearTimeout(saveTimer);
@@ -114,7 +145,7 @@
           type="button"
           class="btn btn-xs btn-ghost ml-auto"
           aria-label="Cancelar cita"
-          onclick={onClearQuote}
+          onclick={handleClearQuote}
         >
           ×
         </button>
