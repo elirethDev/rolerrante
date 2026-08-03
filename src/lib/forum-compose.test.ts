@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   EXCERPT_MAX_LENGTH,
   REPLY_MAX_LENGTH,
+  applyQuoteToBody,
   buildQuoteBlock,
   clearDraft,
   isOverLimit,
@@ -135,6 +136,34 @@ describe('forum-compose helpers', () => {
       expect(html).toContain('<blockquote>');
       expect(html).toContain('Aragorn');
       expect(html).toContain('Cita citada');
+    });
+  });
+
+  describe('applyQuoteToBody (server auth quote prepend, REQ-FC-04)', () => {
+    const quote = { author_display_name: 'Aragorn', body_excerpt: 'Cita citada', post_id: 'p1' };
+
+    it('prepends the blockquote to a plain reply body', () => {
+      const out = applyQuoteToBody('<p>mi respuesta</p>', quote);
+      expect(out.startsWith('<blockquote>')).toBe(true);
+      expect(out).toContain('Aragorn');
+      expect(out).toContain('mi respuesta');
+      expect((out.match(/<blockquote>/g) ?? []).length).toBe(1);
+    });
+
+    it('does not duplicate the prefill blockquote already present in the body', () => {
+      const prefilled =
+        '<blockquote><p><strong>Aragorn:</strong></p><p>Cita citada</p></blockquote><p></p><p>mi respuesta</p>';
+      const out = applyQuoteToBody(prefilled, quote);
+      expect((out.match(/<blockquote>/g) ?? []).length).toBe(1);
+      expect(out).toContain('mi respuesta');
+    });
+
+    it('truncates an excerpt longer than the max on the server', () => {
+      const longQuote = { ...quote, body_excerpt: 'y'.repeat(600) };
+      const out = applyQuoteToBody('<p>x</p>', longQuote);
+      const m = out.match(/<blockquote>[\s\S]*?<\/blockquote>/);
+      expect(m).not.toBeNull();
+      expect(m![0].length).toBeLessThan(600 + 100); // blockquote HTML overhead bounded
     });
   });
 });

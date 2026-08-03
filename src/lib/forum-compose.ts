@@ -89,3 +89,20 @@ export function buildQuoteBlock(
   const excerpt = toExcerpt(quote.body_excerpt, max);
   return `<blockquote><p><strong>${quote.author_display_name}:</strong></p><p>${excerpt}</p></blockquote><p></p>`;
 }
+
+/**
+ * Server-side quote application (REQ-FC-04 / REQ-FORUM-03.2). Prepends an
+ * authoritative quote blockquote to the reply body. The composer prefill already
+ * embeds a blockquote in the submitted `content`, so any existing leading
+ * blockquote is removed first to avoid duplicating the quote; the server-built
+ * one (from the already-validated payload, excerpt truncated server-side) is
+ * then prepended.
+ */
+export function applyQuoteToBody(
+  body: string,
+  quote: QuotePayload,
+  max: number = EXCERPT_MAX_LENGTH,
+): string {
+  const stripped = body.replace(/^<blockquote>[\s\S]*?<\/blockquote>\s*(?:<p>\s*<\/p>)?/i, '').trimStart();
+  return buildQuoteBlock(quote, max) + stripped;
+}

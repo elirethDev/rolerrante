@@ -23,6 +23,7 @@ interface Fixture {
   audit?: { name: string; args: Record<string, unknown> }[];
   deletedIds?: string[];
   postSingle?: unknown;
+  quoteSearchId?: string;
 }
 
 // Fluent supabase mock for the thread detail route. Supports:
@@ -39,10 +40,20 @@ function makeSupabase(f: Fixture) {
       select: () => builder,
       eq: (col: string, val: unknown) => {
         if (deleting && table === 'posts') (f.deletedIds ??= []).push(String(val));
+        if (!deleting && table === 'posts' && col === 'id') f.quoteSearchId = String(val);
         return builder;
       },
       order: () => builder,
-      maybeSingle: () => Promise.resolve({ data: f.thread ?? null, error: null }),
+      maybeSingle: () => {
+        if (table === 'posts') {
+          // emulate `.eq('id', quotePostId)`: return the matching post if present
+          const ids = Array.isArray(f.posts) ? (f.posts as Array<{ id: string }>).map((p) => p.id) : [];
+          const target = f.quoteSearchId ?? (ids.length ? ids[0] : null);
+          const match = ids.includes(String(target)) ? f.posts!.find((p) => (p as { id: string }).id === target) : null;
+          return Promise.resolve({ data: match ?? null, error: null });
+        }
+        return Promise.resolve({ data: f.thread ?? null, error: null });
+      },
       single: () => {
         if (table === 'threads') return Promise.resolve({ data: f.thread ?? null, error: null });
         if (table === 'posts') return Promise.resolve({ data: f.postSingle ?? null, error: null });
@@ -175,14 +186,14 @@ describe('thread detail load()', () => {
 });
 
 describe('thread detail reply action', () => {
-  const makeReplyEvent = (locals: ReturnType<typeof makeLocals>, content = '<p>respuesta</p>') =>
+  const makeReplyEvent = (locals: ReturnType<typeof makeLocals>, fields: Record<string, string> = { content: '<p>respuesta</p>' }) =>
     ({
       locals,
       params: { threadId: 't1' },
       url: new URL('http://localhost/foro/t1'),
       request: new Request('http://localhost/foro/t1', {
         method: 'POST',
-        body: new URLSearchParams({ content }).toString(),
+        body: new URLSearchParams(fields).toString(),
         headers: { 'content-type': 'application/x-www-form-urlencoded' },
       }),
     }) as never;
@@ -221,7 +232,112 @@ describe('thread detail reply action', () => {
   it('rejects a reply with a bad image url with 400', async () => {
     const inserted: Array<Record<string, unknown>> = [];
     const supabase = makeSupabase({ thread: makeThread({ is_locked: false }), insertedPosts: inserted });
-    const res = await replyFn(makeReplyEvent(makeLocals(supabase), '<img src="data:image/png;base64,xxx">'));
+    const res = await replyFn(makeReplyEvent(makeLocals(supabase), { content: '<img src="data:image/png;base64,xxx">' }));
+    expect(res.status).toBe(400);
+    expect(inserted).toHaveLength(0);
+  });
+
+  it('rejects a reply with a javascript: href with 400 (REQ-FC-03/03.5)', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({ thread: makeThread({ is_locked: false }), insertedPosts: inserted });
+    const res = await replyFn(
+      makeReplyEvent(makeLocals(supabase), { content: '<p>leer <a href="javascript:alert(1)">acá</a></p>' }),
+    );
+    expect(res.status).toBe(400);
+    expect(inserted).toHaveLength(0);
+  });
+
+  // REQ-FC-04 / REQ-FORUM-03.2: server validates the quote payload and prepends
+  // an authoritative blockquote to the saved body (deduplicating the prefill).
+  const quoteFields = (over: Record<string, string> = {}) => ({
+    quote_author: 'Aragorn',
+    quote_excerpt: 'Cita citada',
+    quote_post_id: 'p1',
+    ...over,
+  });
+
+  const makeQuoteReplyEvent = (locals: ReturnType<typeof makeLocals>, over: Record<string, string> = {}) =>
+    makeReplyEvent(locals, { content: '<p>mi respuesta</p>', ...quoteFields(over) });
+
+  it('valid quote → blockquote prepended once, reply preserved (REQ-FC-04)', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread({ is_locked: false }),
+      // existing post p1 is the quoted post, present in this thread
+      posts: [
+        { id: 'p1', post_number: 1, body: '<p>cita</p>', author_id: 'u9', created_at: 'x', updated_at: 'x', edited_by: null, edited_at: null },
+      ],
+      insertedPosts: inserted,
+    });
+    const err = await replyFn(makeQuoteReplyEvent(makeLocals(supabase))).then(
+      () => null,
+      (e: { status?: number }) => e,
+    );
+    expect(err?.status).toBe(303);
+    expect(inserted).toHaveLength(1);
+    const body = String(inserted[0].body);
+    const blocks = body.match(/<blockquote>/g) ?? [];
+    expect(blocks).toHaveLength(1);
+    expect(body.startsWith('<blockquote>')).toBe(true);
+    expect(body).toContain('Aragorn');
+    expect(body).toContain('Cita citada');
+    expect(body).toContain('mi respuesta');
+  });
+
+  it('does not duplicate the blockquote when content already carries the prefill (dedup)', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread({ is_locked: false }),
+      posts: [{ id: 'p1', post_number: 1, body: '<p>cita</p>', author_id: 'u9', created_at: 'x', updated_at: 'x', edited_by: null, edited_at: null }],
+      insertedPosts: inserted,
+    });
+    const prefilled =
+      '<blockquote><p><strong>Aragorn:</strong></p><p>Cita citada</p></blockquote><p></p><p>mi respuesta</p>';
+    const err = await replyFn(
+      makeReplyEvent(makeLocals(supabase), { content: prefilled, ...quoteFields() }),
+    ).then(
+      () => null,
+      (e: { status?: number }) => e,
+    );
+    expect(err?.status).toBe(303);
+    expect(inserted).toHaveLength(1);
+    const blocks = String(inserted[0].body).match(/<blockquote>/g) ?? [];
+    expect(blocks).toHaveLength(1);
+  });
+
+  it('rejects a quote with empty author with 400 and does not insert', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread({ is_locked: false }),
+      posts: [{ id: 'p1', post_number: 1, body: '<p>cita</p>', author_id: 'u9', created_at: 'x', updated_at: 'x', edited_by: null, edited_at: null }],
+      insertedPosts: inserted,
+    });
+    const res = await replyFn(makeQuoteReplyEvent(makeLocals(supabase), { quote_author: '' }));
+    expect(res.status).toBe(400);
+    expect(inserted).toHaveLength(0);
+  });
+
+  it('rejects a quote with excerpt > 500 chars with 400 and does not insert', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread({ is_locked: false }),
+      posts: [{ id: 'p1', post_number: 1, body: '<p>cita</p>', author_id: 'u9', created_at: 'x', updated_at: 'x', edited_by: null, edited_at: null }],
+      insertedPosts: inserted,
+    });
+    const res = await replyFn(makeQuoteReplyEvent(makeLocals(supabase), { quote_excerpt: 'x'.repeat(501) }));
+    expect(res.status).toBe(400);
+    expect(inserted).toHaveLength(0);
+  });
+
+  it('rejects a quote whose post_id is not in this thread with 400 and does not insert', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread({ is_locked: false }),
+      // thread only has post p1; quoting p999 (from elsewhere) must be rejected
+      posts: [{ id: 'p1', post_number: 1, body: '<p>cita</p>', author_id: 'u9', created_at: 'x', updated_at: 'x', edited_by: null, edited_at: null }],
+      insertedPosts: inserted,
+    });
+    const res = await replyFn(makeQuoteReplyEvent(makeLocals(supabase), { quote_post_id: 'p999' }));
     expect(res.status).toBe(400);
     expect(inserted).toHaveLength(0);
   });
