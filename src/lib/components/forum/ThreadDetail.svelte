@@ -4,6 +4,7 @@
   import type { PermissionFlags } from '$lib/auth';
   import type { PostView, ThreadView } from '$lib/forum';
   import { formatRelativeTime } from '$lib/utils';
+  import Pager from '$lib/components/ui/Pager.svelte';
   import PostCard from './PostCard.svelte';
 
   let {
@@ -15,6 +16,8 @@
     isLocked,
     isOwner,
     isStaff,
+    currentPage = 1,
+    totalPages = 1,
   }: {
     thread: ThreadView;
     threadBody: string;
@@ -24,6 +27,8 @@
     isLocked: boolean;
     isOwner: boolean;
     isStaff: boolean;
+    currentPage?: number;
+    totalPages?: number;
   } = $props();
 
   const authorName = $derived(thread.author?.display_name ?? thread.author?.username ?? 'Anónimo');
@@ -76,4 +81,17 @@
       <PostCard {post} editorName={post.author?.display_name ?? post.author?.username ?? null} />
     {/each}
   </div>
+
+  {#if totalPages > 1}
+    <div class="mt-6 flex justify-center">
+      <Pager
+        total={totalPages}
+        current={currentPage}
+        onChange={(page) => {
+          if (page === currentPage) return;
+          window.location.href = `?page=${page}`;
+        }}
+      />
+    </div>
+  {/if}
 </article>

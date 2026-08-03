@@ -35,13 +35,22 @@ interface Fixture {
 function makeSupabase(f: Fixture) {
   const from = (table: string) => {
     let deleting = false;
+    let countOnly = false;
+    let rangeBounds: [number, number] | null = null;
     const builder: Record<string, unknown> = {
-      select: () => builder,
+      select: (_sel?: unknown, opts?: { count?: string }) => {
+        if (opts?.count) countOnly = true;
+        return builder;
+      },
       eq: (col: string, val: unknown) => {
         if (deleting && table === 'posts') (f.deletedIds ??= []).push(String(val));
         return builder;
       },
       order: () => builder,
+      range: (a: number, b: number) => {
+        rangeBounds = [a, b];
+        return builder;
+      },
       maybeSingle: () => Promise.resolve({ data: f.thread ?? null, error: null }),
       single: () => {
         if (table === 'threads') return Promise.resolve({ data: f.thread ?? null, error: null });
@@ -56,10 +65,13 @@ function makeSupabase(f: Fixture) {
       then: (res: Handler, rej: Handler) => {
         let data: unknown;
         if (table === 'posts') {
+          if (countOnly) return Promise.resolve({ data: null, error: null, count: (f.posts ?? []).length }).then(res, rej);
           // emulate .order('post_number', ascending) for posts (route relies on it)
-          data = [...(f.posts ?? [])].sort(
+          let list = [...(f.posts ?? [])].sort(
             (a, b) => Number((a as { post_number?: number }).post_number) - Number((b as { post_number?: number }).post_number),
           );
+          if (rangeBounds) list = list.slice(rangeBounds[0], rangeBounds[1] + 1);
+          data = list;
         } else if (table === 'section_permissions') data = f.sectionPerms ?? [];
         else if (table === 'thread_permissions') data = f.threadPerms ?? [];
         else data = [];
@@ -109,8 +121,24 @@ const makeThread = (p: Partial<Record<string, unknown>> = {}) => ({
 const makeLocals = (supabase: ReturnType<typeof makeSupabase>, role = 'rolero', userId = 'u1') =>
   ({ supabase, user: { id: userId }, profile: { id: userId, role } }) as never;
 
-const makeEvent = (locals: ReturnType<typeof makeLocals>, params = { threadId: 't1' }) =>
-  ({ locals, params, url: new URL('http://localhost/foro/t1') }) as never;
+const makePost = (n: number) => ({
+  id: `p${n}`,
+  post_number: n,
+  body: `<p>${n}</p>`,
+  author_id: 'u1',
+  created_at: 'x',
+  updated_at: 'x',
+  edited_by: null,
+  edited_at: null,
+  author: { id: 'u1', display_name: 'Autor', username: 'autor' },
+});
+
+const makeEvent = (locals: ReturnType<typeof makeLocals>, params = { threadId: 't1' }, page?: string) =>
+  ({
+    locals,
+    params,
+    url: new URL(`http://localhost/foro/t1${page ? `?page=${page}` : ''}`),
+  }) as never;
 
 const expectError = (fn: () => Promise<unknown>, status: number) =>
   fn().then(
@@ -171,6 +199,59 @@ describe('thread detail load()', () => {
   it('throws 404 when thread not found or not visible to guest (pendiente status)', async () => {
     const supabase = makeSupabase({ thread: null });
     await expectError(() => loadFn(makeEvent(makeLocals(supabase, 'pendiente', 'other'))), 404);
+  });
+});
+
+describe('thread detail pagination (REQ-FORUM-02.3)', () => {
+  it('defaults to page 1 and exposes totalPosts/totalPages/currentPage', async () => {
+    const posts = Array.from({ length: 25 }, (_, i) => makePost(i + 1));
+    const supabase = makeSupabase({ thread: makeThread(), posts });
+    const result = await loadFn(makeEvent(makeLocals(supabase)));
+    expect(result.totalPosts).toBe(25);
+    expect(result.totalPages).toBe(2);
+    expect(result.currentPage).toBe(1);
+    const numbers = result.posts.map((p: { post_number: number }) => p.post_number);
+    expect(numbers).toEqual(Array.from({ length: 20 }, (_, i) => i + 1)); // posts 1..20
+  });
+
+  it('?page=2 returns the 21-40 slice of a 45-post thread', async () => {
+    const posts = Array.from({ length: 45 }, (_, i) => makePost(i + 1));
+    const supabase = makeSupabase({ thread: makeThread(), posts });
+    const result = await loadFn(makeEvent(makeLocals(supabase), { threadId: 't1' }, '2'));
+    expect(result.totalPosts).toBe(45);
+    expect(result.totalPages).toBe(3);
+    expect(result.currentPage).toBe(2);
+    const numbers = result.posts.map((p: { post_number: number }) => p.post_number);
+    expect(numbers[0]).toBe(21);
+    expect(numbers[numbers.length - 1]).toBe(40);
+    expect(numbers).toHaveLength(20);
+  });
+
+  it('clamps out-of-bounds ?page=5 to page 1 for a 30-post thread', async () => {
+    const posts = Array.from({ length: 30 }, (_, i) => makePost(i + 1));
+    const supabase = makeSupabase({ thread: makeThread(), posts });
+    const result = await loadFn(makeEvent(makeLocals(supabase), { threadId: 't1' }, '5'));
+    expect(result.totalPosts).toBe(30);
+    expect(result.totalPages).toBe(2);
+    expect(result.currentPage).toBe(1);
+    const numbers = result.posts.map((p: { post_number: number }) => p.post_number);
+    expect(numbers[0]).toBe(1);
+  });
+
+  it('clamps page 0 / negative to page 1', async () => {
+    const posts = Array.from({ length: 30 }, (_, i) => makePost(i + 1));
+    const supabase = makeSupabase({ thread: makeThread(), posts });
+    const result = await loadFn(makeEvent(makeLocals(supabase), { threadId: 't1' }, '0'));
+    expect(result.currentPage).toBe(1);
+  });
+
+  it('single-page thread (15 posts) returns all posts with totalPages 1', async () => {
+    const posts = Array.from({ length: 15 }, (_, i) => makePost(i + 1));
+    const supabase = makeSupabase({ thread: makeThread(), posts });
+    const result = await loadFn(makeEvent(makeLocals(supabase)));
+    expect(result.totalPages).toBe(1);
+    expect(result.currentPage).toBe(1);
+    expect(result.posts).toHaveLength(15);
   });
 });
 

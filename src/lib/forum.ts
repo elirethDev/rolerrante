@@ -5,6 +5,11 @@ import type { PermissionFlags } from './auth';
 export type ThreadEntityType = 'story' | 'character' | 'event';
 export type ThreadRow = Database['public']['Tables']['threads']['Row'];
 export type ThreadStatus = Database['public']['Enums']['thread_status'];
+export interface LastPostInfo {
+  avatar_url?: string | null;
+  author_display_name?: string | null;
+}
+
 export interface ThreadListItem {
   id: string;
   title: string;
@@ -14,6 +19,8 @@ export interface ThreadListItem {
   created_at: string;
   edited_at: string | null;
   category_id: string | null;
+  posts_count: number;
+  lastPost?: LastPostInfo | null;
 }
 
 export interface CategoryNode {
@@ -24,6 +31,9 @@ export interface CategoryNode {
   children: CategoryNode[];
   flags: PermissionFlags;
   threads: ThreadListItem[];
+  threads_count: number;
+  posts_count: number;
+  lastPost?: LastPostInfo | null;
 }
 
 export interface AuthorRef {
@@ -58,6 +68,79 @@ export interface PostView {
   edited_at: string | null;
   edited_by: string | null;
   author?: AuthorRef | null;
+}
+
+export interface SearchThreadOptions {
+  /** Admin sees every matching thread regardless of category visibility. */
+  isAdminUser: boolean;
+  /** Category ids visible to the current role; used to hide guests from hidden sections. */
+  visibleCategoryIds: string[];
+}
+
+const VISIBLE_THREAD_STATUSES: ThreadStatus[] = ['abierto', 'aprobado'];
+
+/**
+ * Search threads by ILIKE on title and on the display name of a linked character
+ * (REQ-SEARCH-01). Runs two parallel ILIKE queries — title match and character
+ * name match via `linked_entity` — then unions and dedups client-side. Guests
+ * never see pending/hidden threads or threads in invisible categories.
+ */
+export async function searchThreads(
+  q: string,
+  supabase: SupabaseClient<Database>,
+  opts: SearchThreadOptions,
+): Promise<ThreadListItem[]> {
+  const pattern = `%${q}%`;
+
+  const [titleRes, charRes] = await Promise.all([
+    supabase
+      .from('threads')
+      .select('*')
+      .ilike('title', pattern)
+      .in('status', VISIBLE_THREAD_STATUSES),
+    supabase.from('characters').select('id').ilike('name', pattern),
+  ]);
+
+  const titleThreads = (titleRes.data ?? []) as unknown as ThreadListItem[];
+
+  const charIds = (charRes.data ?? []).map((c) => c.id);
+  let charThreads: ThreadListItem[] = [];
+  if (charIds.length > 0) {
+    const { data } = await supabase
+      .from('threads')
+      .select('*')
+      .in('linked_entity_id', charIds)
+      .eq('linked_entity_type', 'character')
+      .in('status', VISIBLE_THREAD_STATUSES);
+    charThreads = (data ?? []) as unknown as ThreadListItem[];
+  }
+
+  // Client-side union + dedup by thread id.
+  const byId = new Map<string, ThreadListItem>();
+  for (const t of [...titleThreads, ...charThreads]) {
+    if ((VISIBLE_THREAD_STATUSES as string[]).includes(t.status) && !byId.has(t.id)) {
+      byId.set(t.id, t);
+    }
+  }
+  const merged = [...byId.values()];
+
+  // Guests must not see threads inside invisible categories; admin bypasses.
+  const final: ThreadListItem[] = opts.isAdminUser
+    ? merged
+    : merged.filter((t) => !t.category_id || opts.visibleCategoryIds.includes(t.category_id));
+
+  if (final.length === 0) return final;
+
+  // Reply counts for the flat search list (REQ-FORUM-02.2).
+  const { data: posts } = await supabase
+    .from('posts')
+    .select('thread_id')
+    .in('thread_id', final.map((t) => t.id));
+  const count = new Map<string, number>();
+  for (const p of (posts ?? []) as { thread_id: string }[]) {
+    count.set(p.thread_id, (count.get(p.thread_id) ?? 0) + 1);
+  }
+  return final.map((t) => ({ ...t, posts_count: count.get(t.id) ?? 0 }));
 }
 
 const CONTENT_TYPES: Record<ThreadEntityType, ThreadRow['content_type']> = {

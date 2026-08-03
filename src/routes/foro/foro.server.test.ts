@@ -14,28 +14,63 @@ interface CategoryFixture {
   sort_order: number;
 }
 
-// Fluent supabase mock: categories list, section_permissions list, threads list.
+// Fluent supabase mock: categories list, section_permissions list, threads list,
+// posts list, and (search) characters + linked/character thread variants.
 function makeSupabase(fixture: {
   categories?: CategoryFixture[];
   perms?: unknown[];
   threads?: unknown[];
+  posts?: Array<Record<string, unknown>>;
+  searchTitle?: unknown[]; // threads matching title ILIKE
+  charNames?: Array<{ id: string; name?: string }>; // characters matching name ILIKE
+  charThreads?: unknown[]; // threads matched via linked_entity (character)
   threadsOrder?: Mock;
 }) {
   const from = (table: string) => {
     const orders: string[] = [];
+    const marks: string[] = [];
+    const inSet: Record<string, string[]> = {};
     const b: Record<string, unknown> = {
       select: () => b,
       order: (col: string) => {
         orders.push(col);
         return b;
       },
-      in: () => b,
+      ilike: (col: string) => {
+        marks.push(`ilike:${col}`);
+        return b;
+      },
+      in: (col: string, values: unknown[]) => {
+        marks.push(`in:${col}`);
+        inSet[col] = (values ?? []).map(String);
+        return b;
+      },
       eq: () => b,
       then: (res: Handler, rej: Handler) => {
-        let result: { data: unknown; error: unknown };
-        if (table === 'categories') result = { data: fixture.categories ?? [], error: null };
-        else if (table === 'section_permissions') result = { data: fixture.perms ?? [], error: null };
-        else result = { data: fixture.threads ?? [], error: null };
+        let data: unknown;
+        const error: unknown = null;
+        if (table === 'categories') data = fixture.categories ?? [];
+        else if (table === 'section_permissions') data = fixture.perms ?? [];
+        else if (table === 'characters') data = fixture.charNames ?? [];
+        else if (table === 'threads') {
+          if (marks.includes('ilike:title')) data = fixture.searchTitle ?? [];
+          else if (marks.includes('in:linked_entity_id')) data = fixture.charThreads ?? [];
+          else {
+            let list = fixture.threads ?? [];
+            if (inSet['category_id']) {
+              list = list.filter((t) => inSet['category_id'].includes(String((t as { category_id: string | null }).category_id)));
+            }
+            if (inSet['status']) {
+              list = list.filter((t) => inSet['status'].includes(String((t as { status: string }).status)));
+            }
+            data = list;
+          }
+        } else if (table === 'posts') {
+          if (inSet['thread_id']) {
+            data = (fixture.posts ?? []).filter((p) => inSet['thread_id'].includes(String(p.thread_id)));
+          } else data = fixture.posts ?? [];
+        } else data = [];
+        const result = { data, error };
         if (fixture.threadsOrder && table === 'threads') fixture.threadsOrder(orders);
         return Promise.resolve(result).then(res, rej);
       },
@@ -59,8 +94,8 @@ const cat = (p: Partial<CategoryFixture>): CategoryFixture => ({
 const makeLocals = (supabase: ReturnType<typeof makeSupabase>, role: string = 'pendiente') =>
   ({ supabase, user: role === 'pendiente' ? null : { id: 'u1' }, profile: { id: 'u1', role } }) as never;
 
-const makeEvent = (locals: ReturnType<typeof makeLocals>) =>
-  ({ locals, url: new URL('http://localhost/foro'), params: {} }) as never;
+const makeEvent = (locals: ReturnType<typeof makeLocals>, query: string = '') =>
+  ({ locals, url: new URL(`http://localhost/foro${query}`), params: {} }) as never;
 
 describe('foro landing load()', () => {
   it('guest (pendiente) sees only visible categories with can_view from section perms', async () => {
@@ -114,5 +149,194 @@ describe('foro landing load()', () => {
     const sub = root.children.find((c: { id: string }) => c.id === 'sub1');
     expect(sub.threads).toHaveLength(1);
     expect(sub.threads[0].title).toBe('Hilo uno');
+  });
+});
+
+describe('foro search load() ?q=', () => {
+  const thread = (id: string, title: string, p: Partial<Record<string, unknown>> = {}) => ({
+    id,
+    title,
+    status: 'abierto',
+    is_locked: false,
+    content_type: 'debate',
+    created_at: '2026-08-02T00:00:00Z',
+    category_id: 'c-visible',
+    ...p,
+  });
+
+  it('guest: returns public threads whose title matches q (REQ-SEARCH-01)', async () => {
+    const supabase = makeSupabase({
+      categories: [cat({ id: 'c-visible', name: 'General', is_visible: true })],
+      searchTitle: [thread('t1', 'El dragón guardián')],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'pendiente'), '?q=drag%C3%B3n'));
+    expect(result.isSearch).toBe(true);
+    expect(result.searchResults).toHaveLength(1);
+    expect(result.searchResults[0].title).toBe('El dragón guardián');
+  });
+
+  it('admin: returns threads for a character whose name matches q (REQ-SEARCH-01.2)', async () => {
+    const supabase = makeSupabase({
+      categories: [],
+      charNames: [{ id: 'char-9', name: 'Elara' }],
+      charThreads: [thread('t2', 'Ficha de Elara', { category_id: null, linked_entity_type: 'character', linked_entity_id: 'char-9' })],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'admin'), '?q=Elara'));
+    expect(result.isSearch).toBe(true);
+    expect(result.searchResults).toHaveLength(1);
+  });
+
+  it('guest: hidden/pending threads are NOT returned (REQ-SEARCH-01.3)', async () => {
+    const supabase = makeSupabase({
+      categories: [cat({ id: 'c-oculta', name: 'Oculto', is_visible: false })],
+      searchTitle: [
+        thread('t-pend', 'Pendiente secreto', { status: 'pendiente' }),
+        thread('t-hide', 'Hilo en sección oculta', { category_id: 'c-oculta' }),
+      ],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'pendiente'), '?q=secreto'));
+    expect(result.isSearch).toBe(true);
+    expect(result.searchResults).toHaveLength(0);
+  });
+
+  it('empty or absent q renders the default tree (isSearch false) (REQ-SEARCH-01.4)', async () => {
+    const supabase = makeSupabase({ categories: [cat({ id: 'c-root' })] });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'pendiente'), '?q='));
+    expect(result.isSearch).toBe(false);
+    expect(result.categories).toHaveLength(1);
+  });
+
+  it('dedups a thread that matches on both title and character overlap', async () => {
+    const supabase = makeSupabase({
+      categories: [cat({ id: 'c-visible', name: 'General', is_visible: true })],
+      searchTitle: [thread('t1', 'Elara, la exploradora')],
+      charNames: [{ id: 'char-1', name: 'Elara' }],
+      charThreads: [thread('t1', 'Elara, la exploradora', { category_id: null })],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'admin'), '?q=Elara'));
+    expect(result.isSearch).toBe(true);
+    expect(result.searchResults).toHaveLength(1);
+    expect(result.searchResults[0].id).toBe('t1');
+  });
+});
+
+describe('foro category counts + last-post (REQ-FORUM-02.1/02.2)', () => {
+  const trow = (id: string, category_id: string, created_at: string) => ({
+    id,
+    category_id,
+    title: `Hilo ${id}`,
+    status: 'abierto',
+    is_locked: false,
+    content_type: 'debate',
+    created_at,
+  });
+  const post = (id: string, thread_id: string, created_at: string, author: Record<string, unknown>) => ({
+    id,
+    thread_id,
+    created_at,
+    author,
+  });
+  const author = (display_name: string, avatar_url: string | null = null) => ({
+    id: `u-${display_name}`,
+    display_name,
+    username: display_name.toLowerCase(),
+    avatar_url,
+  });
+  // 3 threads in sub1: 2 + 4 + 6 = 12 posts. Newest post belongs to t3 (created_at latest).
+  const supabase = makeSupabase({
+    categories: [
+      cat({ id: 'r1', name: 'General', sort_order: 1 }),
+      cat({ id: 'sub1', name: 'Debates', parent_id: 'r1', sort_order: 1 }),
+    ],
+    threads: [
+      trow('t1', 'sub1', '2026-08-01T00:00:00Z'),
+      trow('t2', 'sub1', '2026-08-02T00:00:00Z'),
+      trow('t3', 'sub1', '2026-08-03T00:00:00Z'),
+    ],
+    posts: [
+      post('p1', 't1', '2026-08-01T01:00:00Z', author('Una')),
+      post('p2', 't1', '2026-08-01T02:00:00Z', author('Dos')),
+      post('p3', 't2', '2026-08-02T01:00:00Z', author('Tres')),
+      post('p4', 't2', '2026-08-02T02:00:00Z', author('Cuatro')),
+      post('p5', 't2', '2026-08-02T03:00:00Z', author('Cinco')),
+      post('p6', 't2', '2026-08-02T04:00:00Z', author('Seis')),
+      post('p7', 't3', '2026-08-03T01:00:00Z', author('Siete')),
+      post('p8', 't3', '2026-08-03T02:00:00Z', author('Ocho')),
+      post('p9', 't3', '2026-08-03T03:00:00Z', author('Nueve')),
+      post('p10', 't3', '2026-08-03T04:00:00Z', author('Diez')),
+      post('p11', 't3', '2026-08-03T05:00:00Z', author('Once')),
+      post('p12', 't3', '2026-08-03T06:00:00Z', author('Doce', 'https://x/avatar.png')),
+    ],
+  });
+
+  it('category exposes threads_count 3 and posts_count 12, with last post avatar+author (02.1)', async () => {
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'rolero')));
+    const root = result.categories.find((r: { id: string }) => r.id === 'r1');
+    const sub = root.children.find((c: { id: string }) => c.id === 'sub1');
+    expect(sub.threads_count).toBe(3);
+    expect(sub.posts_count).toBe(12);
+    // lastPost is the most recent visible post: p12 by "Doce" with an avatar.
+    expect(sub.lastPost).toEqual({
+      avatar_url: 'https://x/avatar.png',
+      author_display_name: 'Doce',
+    });
+  });
+
+  it('each thread row carries its own posts_count (02.2)', async () => {
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'rolero')));
+    const root = result.categories.find((r: { id: string }) => r.id === 'r1');
+    const sub = root.children.find((c: { id: string }) => c.id === 'sub1');
+    expect(sub.threads).toHaveLength(3);
+    const byId = new Map<string, { posts_count: number }>(
+      (sub.threads as Array<{ id: string; posts_count: number }>).map((t) => [t.id, t]),
+    );
+    expect(byId.get('t1')?.posts_count).toBe(2);
+    expect(byId.get('t2')?.posts_count).toBe(4);
+    expect(byId.get('t3')?.posts_count).toBe(6);
+  });
+
+  it('empty category exposes 0/0 and no lastPost (02.1)', async () => {
+    const empty = makeSupabase({
+      categories: [
+        cat({ id: 'r1', name: 'General', sort_order: 1 }),
+        cat({ id: 'sub1', name: 'Vacía', parent_id: 'r1', sort_order: 1 }),
+      ],
+      threads: [],
+    });
+    const result = await loadFn(makeEvent(makeLocals(empty, 'rolero')));
+    const root = result.categories.find((r: { id: string }) => r.id === 'r1');
+    const sub = root.children.find((c: { id: string }) => c.id === 'sub1');
+    expect(sub.threads_count).toBe(0);
+    expect(sub.posts_count).toBe(0);
+    expect(sub.lastPost).toBeNull();
+  });
+
+  it('guest counts exclude invisible categories and pending threads (visibility-filtered)', async () => {
+    const guest = makeSupabase({
+      categories: [
+        cat({ id: 'pb', name: 'Público', is_visible: true, sort_order: 1 }),
+        cat({ id: 'hide', name: 'Oculta', is_visible: false, sort_order: 2 }),
+        cat({ id: 'sub', name: 'Sub', parent_id: 'pb', is_visible: true, sort_order: 1 }),
+      ],
+      threads: [
+        trow('t-pub', 'sub', '2026-08-01T00:00:00Z'),
+        { ...trow('t-pend', 'sub', '2026-08-02T00:00:00Z'), status: 'pendiente' },
+        trow('t-hide', 'hide', '2026-08-03T00:00:00Z'),
+      ],
+      posts: [
+        post('pa1', 't-pub', '2026-08-01T01:00:00Z', author('Pub')),
+        post('pa2', 't-pend', '2026-08-02T01:00:00Z', author('Pend')),
+        post('pa3', 't-hide', '2026-08-03T01:00:00Z', author('Hid')),
+      ],
+    });
+    // Guest role: hidden category excluded, pending thread excluded by status filter.
+    const result = await loadFn(makeEvent(makeLocals(guest, 'pendiente')));
+    const names = result.categories.map((r: { name: string }) => r.name);
+    expect(names).not.toContain('Oculta');
+    const root = result.categories.find((r: { id: string }) => r.id === 'pb');
+    const sub = root.children.find((c: { id: string }) => c.id === 'sub');
+    expect(sub.threads_count).toBe(1);
+    expect(sub.posts_count).toBe(1);
+    expect(sub.lastPost).toEqual({ avatar_url: null, author_display_name: 'Pub' });
   });
 });
