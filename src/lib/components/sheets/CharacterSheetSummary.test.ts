@@ -55,3 +55,35 @@ describe('CharacterSheetSummary avatar', () => {
     expect(screen.getByTestId('character-avatar-initial')).toHaveTextContent('L');
   });
 });
+
+describe('CharacterSheetSummary ficha layout (OD .kpis + badge row)', () => {
+  it('renders the KPI row with Raza/Clase/Origen/Alineamiento labels and real data where available', () => {
+    render(CharacterSheetSummary, {
+      character: { ...base, race: { name: 'Dúnedain', group_name: 'Reinos Aliados' } },
+    });
+
+    const kpis = screen.getByTestId('character-kpis');
+    expect(kpis).toBeInTheDocument();
+    expect(screen.getByText('Raza')).toBeInTheDocument();
+    expect(screen.getByText('Dúnedain')).toBeInTheDocument();
+    expect(screen.getByText('Origen')).toBeInTheDocument();
+    expect(screen.getByText('Reinos Aliados')).toBeInTheDocument();
+    expect(screen.getByText('Clase')).toBeInTheDocument();
+    expect(screen.getByText('Alineamiento')).toBeInTheDocument();
+  });
+
+  it('shows status badge, gold Canon badge and optional Nivel badge for approved characters', () => {
+    render(CharacterSheetSummary, { character: { ...base, status: 'aprobado', nivel: 12 } });
+
+    expect(screen.getByTestId('character-status-badge')).toHaveTextContent('Aprobado');
+    expect(screen.getByTestId('character-canon-badge')).toHaveTextContent('Canon');
+    expect(screen.getByText('Nivel 12')).toBeInTheDocument();
+  });
+
+  it('hides the Canon badge for non-approved characters', () => {
+    render(CharacterSheetSummary, { character: { ...base, status: 'pendiente' } });
+
+    expect(screen.getByTestId('character-status-badge')).toHaveTextContent('Pendiente');
+    expect(screen.queryByTestId('character-canon-badge')).not.toBeInTheDocument();
+  });
+});

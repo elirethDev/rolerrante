@@ -5,7 +5,7 @@
 
   interface CharacterShape {
     name: string;
-    race?: string | { name?: string } | null;
+    race?: string | { name?: string; group_name?: string | null } | null;
     age?: number | null;
     sex?: string | null;
     attr_fis: number;
@@ -17,6 +17,7 @@
     status?: string;
     rp_points?: number;
     avatar_url?: string | null;
+    nivel?: number | null;
   }
 
   interface Props {
@@ -41,6 +42,9 @@
   let raceName = $derived(
     typeof character.race === 'string' ? character.race : (character.race?.name ?? 'Desconocida'),
   );
+  let originName = $derived(
+    typeof character.race === 'string' ? '—' : (character.race?.group_name ?? '—'),
+  );
   let manaLabel = $derived(
     character.mana_source === 'I'
       ? 'Inteligencia'
@@ -48,12 +52,19 @@
         ? 'Espíritu'
         : '—',
   );
+
+  let kpis = $derived([
+    { key: 'raza', label: 'Raza', value: raceName },
+    { key: 'clase', label: 'Clase', value: '—' },
+    { key: 'origen', label: 'Origen', value: originName },
+    { key: 'alineamiento', label: 'Alineamiento', value: '—' },
+  ]);
 </script>
 
 <div class="card bg-base-200 border border-azeroth-border">
   <div class="card-body">
     <div class="flex flex-wrap items-start justify-between gap-3">
-      <div class="flex items-start gap-4">
+      <div class="flex items-start gap-4 min-w-0">
         {#if avatarUrl && !avatarFailed}
           <figure class="avatar avatar-xl">
             <img
@@ -76,14 +87,38 @@
         {/if}
         <div>
           <h1 class="text-3xl font-cinzel text-azeroth-gold">{character.name}</h1>
-          <p class="text-sm text-gray-400 mt-1">
+          <p class="text-sm text-azeroth-gold-soft mt-1">
             {raceName}{#if character.age != null} · {character.age} años{/if}{#if character.sex} · {character.sex}{/if}
           </p>
+          {#if character.status}
+            <div class="flex flex-wrap gap-2 mt-3">
+              <span
+                data-testid="character-status-badge"
+                class="badge badge-lg {statusColor(character.status)}"
+              >
+                {statusLabel(character.status)}
+              </span>
+              {#if character.status === 'aprobado'}
+                <span data-testid="character-canon-badge" class="badge badge-lg badge-primary">
+                  Canon
+                </span>
+              {/if}
+              {#if character.nivel != null}
+                <span class="badge badge-lg badge-neutral">Nivel {character.nivel}</span>
+              {/if}
+            </div>
+          {/if}
         </div>
       </div>
-      {#if character.status}
-        <span class="badge badge-lg {statusColor(character.status)}">{statusLabel(character.status)}</span>
-      {/if}
+    </div>
+
+    <div data-testid="character-kpis" class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+      {#each kpis as kpi (kpi.key)}
+        <div class="bg-base-100 rounded-lg p-3 text-center border border-azeroth-border">
+          <p class="font-cinzel text-lg text-azeroth-gold truncate" title={kpi.value}>{kpi.value}</p>
+          <p class="text-xs text-gray-400 uppercase tracking-wide">{kpi.label}</p>
+        </div>
+      {/each}
     </div>
 
     <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
