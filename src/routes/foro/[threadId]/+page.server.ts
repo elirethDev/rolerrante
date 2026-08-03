@@ -1,9 +1,9 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { resolveEffectivePermissions, validateForumImageUrls, validateForumHrefs, requireAuth, isGMOrAdmin, type PermissionFlags } from '$lib/auth';
+import { resolveEffectivePermissions, validateForumImageUrls, validateForumHrefs, requireAuth, isGMOrAdmin, forumAccessAllowed, type PermissionFlags } from '$lib/auth';
 import { applyQuoteToBody, EXCERPT_MAX_LENGTH } from '$lib/forum-compose';
-import { getOrCreateThread, getThreadFollow, followThread, unfollowThread, setFollowPreference, type ThreadView, type PostView } from '$lib/forum';
+import { getOrCreateThread, getThreadFollow, followThread, unfollowThread, setFollowPreference, reportPost, type ThreadView, type PostView } from '$lib/forum';
 import type { Json } from '$lib/supabase/database.types';
-import type { UserRole } from '$lib/types';
+import type { UserRole, Profile } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
 
 const PAGE_SIZE = 20;
@@ -15,7 +15,18 @@ function toFlags(p: { can_view: boolean; can_post: boolean; can_edit: boolean; c
   return { can_view: p.can_view, can_post: p.can_post, can_edit: p.can_edit, can_lock: p.can_lock };
 }
 
+// Suspended/banned users are denied forum access (REQ-MOD-ENF-03.2).
+async function gateForumAccess(
+  supabase: Parameters<typeof forumAccessAllowed>[0],
+  profile: Profile | null,
+) {
+  if (profile && !(await forumAccessAllowed(supabase, profile))) {
+    throw redirect(303, '/');
+  }
+}
+
 export const load: PageServerLoad = async ({ url, params, locals: { supabase, user, profile } }) => {
+  await gateForumAccess(supabase, profile);
   const role: UserRole = profile?.role ?? 'pendiente';
   const isStaff = role === 'gm' || role === 'admin';
 
@@ -144,8 +155,8 @@ export const load: PageServerLoad = async ({ url, params, locals: { supabase, us
 };
 
 export const actions: Actions = {
-  reply: async ({ request, params, locals: { supabase, user, profile } }) => {
-    requireAuth({ user, profile });
+  reply: async ({ request, params, locals: { supabase, user, profile } }) => {    requireAuth({ user, profile });
+    await gateForumAccess(supabase, profile);
     const role: UserRole = profile?.role ?? 'pendiente';
 
     const { data: thread } = await supabase
@@ -226,6 +237,7 @@ export const actions: Actions = {
 
   delete: async ({ request, params, locals: { supabase, user, profile } }) => {
     requireAuth({ user, profile });
+    await gateForumAccess(supabase, profile);
     const form = await request.formData();
     const postId = String(form.get('post_id') ?? '');
 
@@ -391,5 +403,37 @@ export const actions: Actions = {
     const notify = form.get('notify_in_app') === 'on';
     await setFollowPreference(params.threadId, user!.id, notify, supabase);
     return { ok: true, notify_in_app: notify };
+  },
+
+  report: async ({ request, params, locals: { supabase, user, profile } }) => {
+    requireAuth({ user, profile });
+    await gateForumAccess(supabase, profile);
+
+    const form = await request.formData();
+    const postId = String(form.get('post_id') ?? '');
+    const reason = String(form.get('reason') ?? '').trim();
+
+    if (!postId) return fail(400, { message: 'Mensaje obligatorio' });
+    if (!reason) return fail(400, { message: 'El motivo del reporte es obligatorio' });
+    if (reason.length > 500) return fail(400, { message: 'El motivo no puede superar 500 caracteres' });
+
+    // Dedupe/rate-limit: a reporter cannot open the same post report twice
+    // (REP-01 same-user same-post scenario). RLS lets the reporter read their
+    // own rows (reporter self-SELECT policy), so this check works in-app.
+    const { data: existing } = await supabase
+      .from('reports')
+      .select('id')
+      .eq('post_id', postId)
+      .eq('reporter_id', user!.id)
+      .eq('status', 'abierta')
+      .maybeSingle();
+    if (existing) {
+      return fail(400, { message: 'Ya reportaste este mensaje' });
+    }
+
+    const result = await reportPost(supabase, postId, reason);
+    if (result.error) return fail(400, { message: result.error });
+
+    throw redirect(303, `/foro/${params.threadId}`);
   },
 };

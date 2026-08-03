@@ -5,6 +5,7 @@
   import type { PostView, QuotePayload } from '$lib/forum';
   import { EXCERPT_MAX_LENGTH, toExcerpt } from '$lib/forum-compose';
   import { formatDateTime, formatRelativeTime } from '$lib/utils';
+  import ReportModal from './ReportModal.svelte';
 
   let {
     post,
@@ -89,7 +90,8 @@
       <p class="text-xs text-gray-500 mt-3" data-testid="edit-marker">{editMarker}</p>
     {/if}
 
-    <div class="mt-3 flex justify-end">
+    <div class="mt-3 flex justify-end gap-3">
+      <ReportModal postId={post.id} />
       <button type="button" class="btn btn-xs btn-ghost" onclick={handleCitar}>Citar</button>
     </div>
 

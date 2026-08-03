@@ -12,6 +12,8 @@ const deleteFn = actions.delete as unknown as (...args: unknown[]) => Promise<an
 const pinFn = actions.pin as unknown as (...args: unknown[]) => Promise<any>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const unpinFn = actions.unpin as unknown as (...args: unknown[]) => Promise<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const reportFn = actions.report as unknown as (...args: unknown[]) => Promise<any>;
 
 type Handler = (...args: unknown[]) => void;
 
@@ -44,6 +46,11 @@ interface Fixture {
   updateError?: unknown;
   // follow/watch fixtures
   followState?: { notify_in_app: boolean } | null;
+  // moderation fixtures (report action + ENF gate)
+  insertRows?: Array<Record<string, unknown>>;
+  authUser?: { id: string } | null;
+  existingReport?: unknown;
+  sanction?: { kind: string; active_until: string | null } | null;
 }
 
 // Fluent supabase mock for the thread detail route. Supports:
@@ -76,9 +83,12 @@ function makeSupabase(f: Fixture) {
         rangeBounds = [a, b];
         return builder;
       },
+      or: () => builder,
       maybeSingle: () => {
         if (table === 'thread_follows') return Promise.resolve({ data: f.followState ?? null, error: null });
         if (table === 'reactions') return Promise.resolve({ data: f.existingReaction ?? null, error: null });
+        if (table === 'user_sanctions') return Promise.resolve({ data: f.sanction ?? null, error: null });
+        if (table === 'reports') return Promise.resolve({ data: f.existingReport ?? null, error: null });
         if (table === 'posts') {
           // like action selects the thread join -> serve postForLike
           if (selection.includes('thread:')) return Promise.resolve({ data: f.postForLike ?? null, error: null });
@@ -93,6 +103,11 @@ function makeSupabase(f: Fixture) {
       single: () => {
         if (table === 'threads') return Promise.resolve({ data: f.thread ?? null, error: null });
         if (table === 'posts') return Promise.resolve({ data: f.postSingle ?? null, error: null });
+        // reports insert read-back: mimic the reporter self-SELECT policy returning the new id.
+        if (table === 'reports') {
+          const last = (f.insertRows ?? [])[Math.max((f.insertRows?.length ?? 1) - 1, 0)];
+          return Promise.resolve({ data: last ? { id: last.id ?? 'rep-new' } : { id: 'rep-new' }, error: null });
+        }
         // entity tables
         return Promise.resolve({ data: f.entity ?? null, error: null });
       },
@@ -133,6 +148,10 @@ function makeSupabase(f: Fixture) {
         if (table === 'reactions') {
           (f.insertedReactions ??= []).push({ id: `reaction-${(f.insertedReactions?.length ?? 0) + 1}`, ...row });
         }
+        if (table === 'reports') {
+          const newRow = { id: `rep-${(f.insertRows?.length ?? 0) + 1}`, ...row };
+          (f.insertRows ??= []).push(newRow);
+        }
         return builder;
       },
       update: (row: Record<string, unknown>) => {
@@ -144,6 +163,13 @@ function makeSupabase(f: Fixture) {
   };
   return {
     from,
+    auth: {
+      getUser: () =>
+        Promise.resolve({
+          data: { user: f.authUser ?? { id: 'u1' } },
+          error: null,
+        }),
+    },
     rpc: (name: string, args: Record<string, unknown>) => {
       (f.audit ??= []).push({ name, args });
       return Promise.resolve({ data: null, error: null });
@@ -319,6 +345,15 @@ describe('thread detail load()', () => {
     expect(result.posts[0].viewer_has_liked).toBeNull();
     expect(result.posts[1].like_count).toBe(0);
     expect(result.posts[1].viewer_has_liked).toBeNull();
+  });
+
+  it('denies a suspended user before serving the thread (ENF-03.2)', async () => {
+    const future = new Date(Date.now() + 86_400_000).toISOString();
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      sanction: { kind: 'suspension', active_until: future },
+    });
+    await expectError(() => loadFn(makeEvent(makeLocals(supabase, 'rolero'))), 303);
   });
 });
 
@@ -553,6 +588,75 @@ describe('thread detail reply action', () => {
       insertedPosts: inserted,
     });
     const res = await replyFn(makeQuoteReplyEvent(makeLocals(supabase), { quote_post_id: 'p999' }));
+    expect(res.status).toBe(400);
+    expect(inserted).toHaveLength(0);
+  });
+});
+
+describe('thread detail report action (REQ-MOD-REP-01)', () => {
+  const makeReportEvent = (locals: ReturnType<typeof makeLocals>, reason = 'Spam') =>
+    ({
+      locals,
+      params: { threadId: 't1' },
+      url: new URL('http://localhost/foro/t1'),
+      request: new Request('http://localhost/foro/t1', {
+        method: 'POST',
+        body: new URLSearchParams({ post_id: 'p1', reason }).toString(),
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      }),
+    }) as never;
+
+  it('requires auth before reporting (unauthenticated -> redirect to /login)', async () => {
+    const supabase = makeSupabase({ thread: makeThread() });
+    // No user -> requireAuth throws a 303 redirect to /login.
+    const err = await reportFn({
+      locals: { supabase, user: null, profile: null },
+      params: { threadId: 't1' },
+      url: new URL('http://localhost/foro/t1'),
+      request: new Request('http://localhost/foro/t1', {
+        method: 'POST',
+        body: new URLSearchParams({ post_id: 'p1', reason: 'Spam' }).toString(),
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      }),
+    }).then(
+      () => null,
+      (e: { status?: number; location?: string }) => e,
+    );
+    expect(err?.status).toBe(303);
+    expect((err as { location?: string })?.location).toContain('/login');
+  });
+
+  it('redirects on success and inserts a report attributed to the reporter', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      insertRows: inserted,
+    });
+    const err = await reportFn(makeReportEvent(makeLocals(supabase, 'rolero', 'u1'))).then(
+      () => null,
+      (e: { status?: number }) => e,
+    );
+    expect(err?.status).toBe(303);
+    expect(inserted).toHaveLength(1);
+    expect(inserted[0]).toMatchObject({ post_id: 'p1', reporter_id: 'u1' });
+  });
+
+  it('rejects an empty reason with 400 (REP-01)', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({ thread: makeThread(), insertRows: inserted });
+    const res = await reportFn(makeReportEvent(makeLocals(supabase, 'rolero', 'u1'), '   '));
+    expect(res.status).toBe(400);
+    expect(inserted).toHaveLength(0);
+  });
+
+  it('dedupes an existing open report from the same reporter on the same post', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      insertRows: inserted,
+      existingReport: { id: 'rep-existing' },
+    });
+    const res = await reportFn(makeReportEvent(makeLocals(supabase, 'rolero', 'u1')));
     expect(res.status).toBe(400);
     expect(inserted).toHaveLength(0);
   });

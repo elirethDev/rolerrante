@@ -388,3 +388,128 @@ export async function markNotificationsRead(
     throw error;
   }
 }
+
+export type RpcResult = { error: null } | { error: string };
+
+/**
+ * Report a post (REQ-MOD-REP-01): insert a report row attributed to the
+ * authenticated caller (reporter_id is taken from the session, never from
+ * caller input — prevents reporter spoofing), then fire the reportar audit.
+ * Returns an error result on failure.
+ */
+export async function reportPost(
+  supabase: SupabaseClient<Database>,
+  postId: string,
+  reason: string,
+  justification?: string,
+): Promise<RpcResult> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'No autenticado' };
+
+  const { data, error } = await supabase
+    .from('reports')
+    .insert({
+      post_id: postId,
+      reporter_id: user.id,
+      reason,
+      justification: justification ?? null,
+    })
+    .select('id')
+    .single();
+
+  if (error) return { error: error.message };
+  if (!data) return { error: 'No se pudo crear el reporte' };
+
+  await supabase.rpc('log_audit', {
+    p_action: 'reportar',
+    p_entity_type: 'report',
+    p_entity_id: data.id,
+    p_details: { post_id: postId, reason },
+  });
+
+  return { error: null };
+}
+
+/** Suspend a user's forum access until activeUntil (REQ-MOD-ENF-01). */
+export async function suspendUser(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  activeUntil: string,
+  justification: string,
+): Promise<RpcResult> {
+  const { error } = await supabase.rpc('suspend_user', {
+    p_user_id: userId,
+    p_active_until: activeUntil,
+    p_justification: justification,
+  });
+  return error ? { error: error.message } : { error: null };
+}
+
+/** Permanently ban a user from the forum (REQ-MOD-ENF-02). */
+export async function banUser(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  justification: string,
+): Promise<RpcResult> {
+  const { error } = await supabase.rpc('ban_user', {
+    p_user_id: userId,
+    p_justification: justification,
+  });
+  return error ? { error: error.message } : { error: null };
+}
+
+/** Resolve or discard an open report (REQ-MOD-REP-02). */
+export async function resolveReport(
+  supabase: SupabaseClient<Database>,
+  reportId: string,
+  status: 'resuelta' | 'descartada',
+  justification: string,
+): Promise<RpcResult> {
+  const { error } = await supabase.rpc('resolve_report', {
+    p_report_id: reportId,
+    p_status: status,
+    p_justification: justification,
+  });
+  return error ? { error: error.message } : { error: null };
+}
+
+export interface ReportListItem {
+  id: string;
+  reason: string;
+  justification: string | null;
+  status: string;
+  created_at: string;
+  reporter: { id: string; display_name: string | null; username: string } | null;
+  post: {
+    id: string;
+    thread_id: string;
+    post_number: number;
+    // The REPORTED USER (post author) and their role let the queue show
+    // per-user suspend/ban controls and block admin/GM targets (REQ-MOD-ENF-04).
+    author: { id: string; display_name: string | null; username: string; role: string } | null;
+  } | null;
+}
+
+/**
+ * List open (abierta) reports for the admin queue (REQ-MOD-REP-02.1), each with
+ * the reporter and the linked post so the queue can show a post link. RLS
+ * restricts SELECT to admins (plus the reporter's own rows via the self-select
+ * policy, so a non-admin calling this sees their own only - callers should
+ * require staff). Returns the list plus an optional error message.
+ */
+export async function listReports(
+  supabase: SupabaseClient<Database>,
+): Promise<{ data: ReportListItem[] | null; error: string | null }> {
+  const { data, error } = await supabase
+    .from('reports')
+    .select(
+      'id, reason, justification, status, created_at, reporter:reporter_id(id, display_name, username), post:post_id(id, thread_id, post_number, author:author_id(id, display_name, username, role))',
+    )
+    .eq('status', 'abierta')
+    .order('created_at', { ascending: false });
+
+  if (error) return { data: null, error: error.message };
+  return { data: (data ?? []) as unknown as ReportListItem[], error: null };
+}

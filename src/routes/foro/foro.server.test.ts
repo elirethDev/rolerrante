@@ -25,6 +25,7 @@ function makeSupabase(fixture: {
   charNames?: Array<{ id: string; name?: string }>; // characters matching name ILIKE
   charThreads?: unknown[]; // threads matched via linked_entity (character)
   threadsOrder?: Mock;
+  sanction?: { kind: string; active_until: string | null } | null;
 }) {
   const from = (table: string) => {
     const orders: string[] = [];
@@ -46,6 +47,11 @@ function makeSupabase(fixture: {
         return b;
       },
       eq: () => b,
+      or: () => b,
+      maybeSingle: () =>
+        table === 'user_sanctions'
+          ? Promise.resolve({ data: fixture.sanction ?? null, error: null })
+          : Promise.resolve({ data: null, error: null }),
       then: (res: Handler, rej: Handler) => {
         let data: unknown;
         const error: unknown = null;
@@ -338,5 +344,38 @@ describe('foro category counts + last-post (REQ-FORUM-02.1/02.2)', () => {
     expect(sub.threads_count).toBe(1);
     expect(sub.posts_count).toBe(1);
     expect(sub.lastPost).toEqual({ avatar_url: null, author_display_name: 'Pub' });
+  });
+});
+
+describe('foro landing gate (REQ-MOD-ENF-03.2)', () => {
+  const DAY = 86_400_000;
+  const future = new Date(Date.now() + DAY).toISOString();
+
+  const expectRedirectHome = async (locals: ReturnType<typeof makeLocals>) => {
+    let caught: { status?: number; location?: string } | null = null;
+    try {
+      await loadFn(makeEvent(locals));
+    } catch (e) {
+      caught = e as { status?: number; location?: string };
+    }
+    expect(caught?.status).toBe(303);
+    expect(caught?.location).toBe('/');
+  };
+
+  it('denies a user with an active suspension (redirects home)', async () => {
+    const supabase = makeSupabase({ sanction: { kind: 'suspension', active_until: future } });
+    await expectRedirectHome(makeLocals(supabase, 'rolero'));
+  });
+
+  it('denies a permanently banned user (redirects home)', async () => {
+    const supabase = makeSupabase({ sanction: { kind: 'ban', active_until: null } });
+    await expectRedirectHome(makeLocals(supabase, 'rolero'));
+  });
+
+  it('allows a user with no sanction (guest/clear) into the landing', async () => {
+    const supabase = makeSupabase({ sanction: null });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'pendiente')));
+    // Reached the categories load instead of redirecting.
+    expect(Array.isArray(result.categories)).toBe(true);
   });
 });

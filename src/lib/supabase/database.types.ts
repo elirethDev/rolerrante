@@ -1048,6 +1048,109 @@ export type Database = {
           },
         ]
       }
+      reports: {
+        Row: {
+          created_at: string
+          id: string
+          justification: string | null
+          post_id: string
+          reason: string
+          reporter_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          justification?: string | null
+          post_id: string
+          reason: string
+          reporter_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          justification?: string | null
+          post_id?: string
+          reason?: string
+          reporter_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_sanctions: {
+        Row: {
+          active_until: string | null
+          created_at: string
+          id: string
+          issued_by: string | null
+          justification: string
+          kind: string
+          user_id: string
+        }
+        Insert: {
+          active_until?: string | null
+          created_at?: string
+          id?: string
+          issued_by?: string | null
+          justification: string
+          kind: string
+          user_id: string
+        }
+        Update: {
+          active_until?: string | null
+          created_at?: string
+          id?: string
+          issued_by?: string | null
+          justification?: string
+          kind?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_sanctions_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_sanctions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       // eslint-disable-next-line no-unused-vars
@@ -1064,6 +1167,10 @@ export type Database = {
       }
       approve_story: {
         Args: { p_notes?: string; p_story_id: string }
+        Returns: undefined
+      }
+      ban_user: {
+        Args: { p_justification: string; p_user_id: string }
         Returns: undefined
       }
       confirm_event_completion: {
@@ -1097,6 +1204,14 @@ export type Database = {
         Args: { p_notes: string; p_story_id: string }
         Returns: undefined
       }
+      resolve_report: {
+        Args: { p_justification: string; p_report_id: string; p_status: string }
+        Returns: undefined
+      }
+      suspend_user: {
+        Args: { p_active_until: string; p_justification: string; p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       approval_status: "borrador" | "pendiente" | "aprobado" | "rechazado"
@@ -1117,6 +1232,11 @@ export type Database = {
         | "editar_permisos"
         | "fijar_hilo"
         | "desfijar_hilo"
+        | "reportar"
+        | "suspender"
+        | "banear"
+        | "reportar_resuelto"
+        | "reportar_descartado"
       event_status:
         | "publicado"
         | "en_curso"
@@ -1272,6 +1392,11 @@ export const Constants = {
         "editar_permisos",
         "fijar_hilo",
         "desfijar_hilo",
+        "reportar",
+        "suspender",
+        "banear",
+        "reportar_resuelto",
+        "reportar_descartado",
       ],
       event_status: [
         "publicado",

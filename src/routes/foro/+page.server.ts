@@ -1,4 +1,5 @@
-import { resolveEffectivePermissions, type PermissionFlags } from '$lib/auth';
+import { redirect } from '@sveltejs/kit';
+import { resolveEffectivePermissions, forumAccessAllowed, type PermissionFlags } from '$lib/auth';
 import { searchThreads, type CategoryNode, type LastPostInfo, type ThreadListItem } from '$lib/forum';
 import type { UserRole } from '$lib/types';
 import type { PageServerLoad } from './$types';
@@ -13,6 +14,11 @@ type CategoryRow = {
 };
 
 export const load: PageServerLoad = async ({ locals: { supabase, profile }, url }) => {
+  // Suspended/banned users are denied forum access (REQ-MOD-ENF-03.2).
+  if (profile && !(await forumAccessAllowed(supabase, profile))) {
+    throw redirect(303, '/');
+  }
+
   const role: UserRole = profile?.role ?? 'pendiente';
   const isAdminUser = role === 'admin';
   const isStaff = role === 'gm' || role === 'admin';
