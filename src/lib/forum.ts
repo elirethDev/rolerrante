@@ -250,7 +250,14 @@ export interface ReportListItem {
   status: string;
   created_at: string;
   reporter: { id: string; display_name: string | null; username: string } | null;
-  post: { id: string; thread_id: string; post_number: number } | null;
+  post: {
+    id: string;
+    thread_id: string;
+    post_number: number;
+    // The REPORTED USER (post author) and their role let the queue show
+    // per-user suspend/ban controls and block admin/GM targets (REQ-MOD-ENF-04).
+    author: { id: string; display_name: string | null; username: string; role: string } | null;
+  } | null;
 }
 
 /**
@@ -266,7 +273,7 @@ export async function listReports(
   const { data, error } = await supabase
     .from('reports')
     .select(
-      'id, reason, justification, status, created_at, reporter:reporter_id(id, display_name, username), post:post_id(id, thread_id, post_number)',
+      'id, reason, justification, status, created_at, reporter:reporter_id(id, display_name, username), post:post_id(id, thread_id, post_number, author:author_id(id, display_name, username, role))',
     )
     .eq('status', 'abierta')
     .order('created_at', { ascending: false });

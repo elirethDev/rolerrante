@@ -124,3 +124,31 @@ export async function forumAccessAllowed(
   }
   return !hasActiveSanction(data as SanctionRow | null);
 }
+
+/**
+ * Map the currently-active sanctions for a set of users (keyed by user_id), so
+ * the moderation queue can show sanction state for each reported user. Only
+ * rows that are still active (ban, or suspension with active_until in the
+ * future) are returned — matching the forumAccessAllowed gate. Degrades to an
+ * empty map on query error so the queue still renders.
+ */
+export async function listActiveSanctions(
+  supabase: SupabaseClient<Database>,
+  userIds: string[],
+): Promise<Record<string, SanctionRow>> {
+  if (userIds.length === 0) return {};
+  const { data, error } = await supabase
+    .from('user_sanctions')
+    .select('user_id, kind, active_until')
+    .in('user_id', userIds)
+    .or('kind.eq.ban,active_until.gt.' + new Date().toISOString());
+  if (error) {
+    console.error('listActiveSanctions: no se pudieron leer sanciones', error);
+    return {};
+  }
+  const byUser: Record<string, SanctionRow> = {};
+  for (const row of data ?? []) {
+    byUser[row.user_id] = { kind: row.kind, active_until: row.active_until };
+  }
+  return byUser;
+}

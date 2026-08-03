@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './supabase/database.types';
-import { forumAccessAllowed, hasActiveSanction } from './auth';
+import { forumAccessAllowed, hasActiveSanction, listActiveSanctions } from './auth';
 
 const DAY = 86_400_000;
 
@@ -80,5 +80,53 @@ describe('forumAccessAllowed', () => {
     // sanctioned user through all /foro surfaces).
     const supabase = makeClient(null, { message: 'network error' });
     await expect(forumAccessAllowed(supabase, profile)).resolves.toBe(false);
+  });
+});
+
+describe('listActiveSanctions', () => {
+  type Row = { user_id: string; kind: string; active_until: string | null };
+
+  const makeClient = (
+    rows: Row[],
+    queryError: { message: string } | null = null,
+    onQuery?: (uid: string[]) => void,
+  ) => {
+    const chain = {
+      select: () => chain,
+      in: (col: string, vals: string[]) => {
+        if (col === 'user_id') onQuery?.(vals);
+        return chain;
+      },
+      or: () => chain,
+      then: (res: (v: unknown) => void, rej: (e: unknown) => void) =>
+        Promise.resolve({ data: queryError ? null : rows, error: queryError }).then(res, rej),
+    };
+    return { from: () => chain } as unknown as SupabaseClient<Database>;
+  };
+
+  it('maps active sanctions to user_id for a set of reported users', async () => {
+    const supabase = makeClient([
+      { user_id: 'u2', kind: 'suspension', active_until: '2099-01-01T00:00:00Z' },
+      { user_id: 'u3', kind: 'ban', active_until: null },
+    ]);
+    const map = await listActiveSanctions(supabase, ['u2', 'u3', 'u4']);
+    expect(map['u2'].kind).toBe('suspension');
+    expect(map['u3'].kind).toBe('ban');
+    expect(map['u4']).toBeUndefined();
+  });
+
+  it('returns an empty map when there are no user ids (no query issued)', async () => {
+    let queried = false;
+    const supabase = makeClient([], null, () => {
+      queried = true;
+    });
+    const map = await listActiveSanctions(supabase, []);
+    expect(map).toEqual({});
+    expect(queried).toBe(false);
+  });
+
+  it('returns an empty map on query error so the queue still renders', async () => {
+    const supabase = makeClient([], { message: 'forbidden' });
+    await expect(listActiveSanctions(supabase, ['u2'])).resolves.toEqual({});
   });
 });

@@ -29,6 +29,7 @@ interface Fixture {
 function makeClient(f: Fixture) {
   const rpcCalls: RpcCall[] = [];
   const insertCalls: InsertCall[] = [];
+  const selectCalls: string[] = [];
 
   const client = {
     from: (table: string) => {
@@ -37,7 +38,10 @@ function makeClient(f: Fixture) {
           insertCalls.push({ table, row });
           return builder;
         },
-        select: () => builder,
+        select: (cols?: string) => {
+          if (cols) selectCalls.push(cols);
+          return builder;
+        },
         eq: () => builder,
         order: () => builder,
         single: () =>
@@ -69,6 +73,7 @@ function makeClient(f: Fixture) {
     client: client as unknown as SupabaseClient<Database>,
     rpcCalls,
     insertCalls,
+    selectCalls,
   };
 }
 
@@ -175,7 +180,7 @@ describe('resolveReport', () => {
 
 describe('listReports', () => {
   it('returns abierta reports with reporter + post link when the query succeeds', async () => {
-    const { client } = makeClient({
+    const { client, selectCalls } = makeClient({
       listRows: [
         {
           id: 'rep-1',
@@ -184,7 +189,12 @@ describe('listReports', () => {
           status: 'abierta',
           created_at: '2026-08-03T00:00:00Z',
           reporter: { id: 'u1', display_name: 'Aragorn', username: 'aragon' },
-          post: { id: 'p1', thread_id: 't1', post_number: 2 },
+          post: {
+            id: 'p1',
+            thread_id: 't1',
+            post_number: 2,
+            author: { id: 'author-1', display_name: 'Frodo', username: 'frodo', role: 'rolero' },
+          },
         },
       ],
     });
@@ -195,6 +205,16 @@ describe('listReports', () => {
     expect(res.data?.[0]).toMatchObject({ id: 'rep-1', reason: 'Spam', status: 'abierta' });
     expect(res.data?.[0].reporter?.display_name).toBe('Aragorn');
     expect(res.data?.[0].post).toMatchObject({ id: 'p1', thread_id: 't1' });
+    // The queue must know the REPORTED USER (post author) and their role so the
+    // UI can show sanction controls and block admin/GM targets (ENF-04).
+    expect(res.data?.[0].post?.author).toMatchObject({
+      id: 'author-1',
+      username: 'frodo',
+      role: 'rolero',
+    });
+    expect(
+      selectCalls.some((s) => s.includes('author:author_id(id, display_name, username, role)')),
+    ).toBe(true);
   });
 
   it('returns an empty list when there are no open reports', async () => {
