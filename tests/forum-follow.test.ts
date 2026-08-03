@@ -5,6 +5,7 @@ import {
   setFollowPreference,
   getThreadFollow,
   getUnreadCount,
+  markNotificationsRead,
 } from "../src/lib/forum";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../src/lib/supabase/database.types";
@@ -186,5 +187,32 @@ describe("getUnreadCount", () => {
     const m = createMockClient();
     m.setResult({ count: null, error: new Error("db down") });
     await expect(getUnreadCount("user-9", m.client)).rejects.toThrow("db down");
+  });
+});
+
+describe("markNotificationsRead", () => {
+  it("updates read_at on notifications scoped to this user's unread rows only", async () => {
+    const m = createMockClient();
+    await markNotificationsRead("user-9", m.client);
+    expect(m.calls.map((c) => c.table)).toContain("notifications");
+    const update = m.calls.find((c) => c.method === "update");
+    expect(update).toBeDefined();
+    const readAt = (update!.args[0] as { read_at: unknown }).read_at;
+    // The helper must write a real timestamp (not null/undefined) so RLS-level
+    // read_at IS NOT NULL semantics hold after the visit.
+    expect(typeof readAt).toBe("string");
+    expect(Date.parse(readAt as string)).not.toBeNaN();
+    const eqs = m.calls.filter((c) => c.method === "eq").map((c) => c.args);
+    expect(eqs).toContainEqual(["user_id", "user-9"]);
+    const isNull = m.calls.filter((c) => c.method === "is").map((c) => c.args);
+    expect(isNull).toContainEqual(["read_at", null]);
+  });
+
+  it("throws when the update fails", async () => {
+    const m = createMockClient();
+    m.setResult({ data: null, error: new Error("update denied") });
+    await expect(markNotificationsRead("user-9", m.client)).rejects.toThrow(
+      "update denied",
+    );
   });
 });

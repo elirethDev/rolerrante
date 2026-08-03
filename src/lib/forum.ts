@@ -60,6 +60,18 @@ export interface PostView {
   author?: AuthorRef | null;
 }
 
+export interface NotificationView {
+  id: string;
+  type: string;
+  thread_id: string;
+  post_id: string;
+  actor_id: string;
+  read_at: string | null;
+  created_at: string;
+  actor?: AuthorRef | null;
+  thread?: { id: string; title: string } | null;
+}
+
 const CONTENT_TYPES: Record<ThreadEntityType, ThreadRow['content_type']> = {
   story: 'historia',
   character: 'ficha',
@@ -254,4 +266,25 @@ export async function getUnreadCount(
     throw error;
   }
   return count ?? 0;
+}
+
+/**
+ * Mark every unread notification for a user as read (REQ-NOTIF-02 visit
+ * center). Scoped to `user_id` and `read_at IS NULL` so the update passes the
+ * notifications UPDATE RLS policy (recipient only) and leaves already-read
+ * rows untouched. A visit to /notificaciones sets read_at=now() and the bell
+ * badge drops to zero.
+ */
+export async function markNotificationsRead(
+  userId: string,
+  supabase: SupabaseClient<Database>,
+): Promise<void> {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .is('read_at', null);
+  if (error) {
+    throw error;
+  }
 }
