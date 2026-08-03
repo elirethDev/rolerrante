@@ -146,6 +146,7 @@ export type Database = {
           attr_fis: number
           attr_int: number
           attr_per: number
+          avatar_url: string | null
           created_at: string
           id: string
           mana_source: string
@@ -168,6 +169,7 @@ export type Database = {
           attr_fis?: number
           attr_int?: number
           attr_per?: number
+          avatar_url?: string | null
           created_at?: string
           id?: string
           mana_source?: string
@@ -190,6 +192,7 @@ export type Database = {
           attr_fis?: number
           attr_int?: number
           attr_per?: number
+          avatar_url?: string | null
           created_at?: string
           id?: string
           mana_source?: string
