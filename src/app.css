@@ -29,10 +29,13 @@
 @theme {
   --font-cinzel: 'Cinzel', 'Trajan Pro', 'Palatino Linotype', Georgia, serif;
   --font-sans: 'Inter', 'Open Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
   --color-azeroth-bg: #0A0D14;
   --color-azeroth-bg-deep: #070910;
   --color-azeroth-bg-soft: #0D111C;
   --color-azeroth-surface: #121725;
+  --color-azeroth-surface-2: #171E30;
+  --color-azeroth-surface-3: #1D2639;
   --color-azeroth-sunken: #0C101C;
   --color-azeroth-border: #232C42;
   --color-azeroth-border-strong: #35415F;
@@ -46,8 +49,20 @@
   --color-azeroth-blue-mid: #3860BE;
   --color-azeroth-link: #0E86CA;
   --color-azeroth-cream: #EBE2C2;
+  --color-azeroth-text-soft: #C9C5B8;
+  --color-azeroth-muted: #8B93A8;
+  --color-azeroth-faint: #5E6881;
   --color-azeroth-danger: #AA2409;
   --color-azeroth-success: #3C7356;
+  --shadow-1:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 10px 28px -14px rgba(0, 0, 0, 0.65);
+  --shadow-2:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 46px -18px rgba(0, 0, 0, 0.8);
+  --gold-hairline:
+    linear-gradient(90deg, rgba(248, 183, 0, 0), rgba(248, 183, 0, 0.55) 50%, rgba(248, 183, 0, 0));
+  --focus-ring: 0 0 0 3px rgba(248, 183, 0, 0.28);
   --radius-xs: 6px;
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -55,6 +70,19 @@
   --radius-xl: 24px;
   --radius-pill: 999px;
 }
+
+@utility azeroth-hairline-top {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: -1px;
+    height: 1px;
+    background: var(--gold-hairline);
+  }
+}
+
 html {
   font-family: var(--font-sans);
   background-color: var(--color-base-100);
