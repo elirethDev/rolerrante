@@ -24,6 +24,17 @@ interface Fixture {
   deletedIds?: string[];
   postSingle?: unknown;
   quoteSearchId?: string;
+  // like-action post lookup (posts.maybeSingle) -> { thread_id, thread: { status, author_id } }
+  postForLike?: unknown;
+  // graceful degradation (FIX-3): posts query errors (e.g. reactions table not deployed)
+  postsError?: unknown;
+  basePosts?: unknown[];
+  postsCalls?: number;
+  // reactions (like toggle) fixtures
+  existingReaction?: unknown;
+  insertedReactions?: Array<Record<string, unknown>>;
+  deletedReactionIds?: string[];
+  reactionsInsertError?: unknown;
 }
 
 // Fluent supabase mock for the thread detail route. Supports:
@@ -38,13 +49,16 @@ function makeSupabase(f: Fixture) {
     let deleting = false;
     let countOnly = false;
     let rangeBounds: [number, number] | null = null;
+    let selection = '';
     const builder: Record<string, unknown> = {
-      select: (_sel?: unknown, opts?: { count?: string }) => {
+      select: (sel?: unknown, opts?: { count?: string }) => {
         if (opts?.count) countOnly = true;
+        if (typeof sel === 'string') selection = sel;
         return builder;
       },
       eq: (col: string, val: unknown) => {
         if (deleting && table === 'posts') (f.deletedIds ??= []).push(String(val));
+        if (deleting && table === 'reactions') (f.deletedReactionIds ??= []).push(String(val));
         if (!deleting && table === 'posts' && col === 'id') f.quoteSearchId = String(val);
         return builder;
       },
@@ -54,8 +68,11 @@ function makeSupabase(f: Fixture) {
         return builder;
       },
       maybeSingle: () => {
+        if (table === 'reactions') return Promise.resolve({ data: f.existingReaction ?? null, error: null });
         if (table === 'posts') {
-          // emulate `.eq('id', quotePostId)`: return the matching post if present
+          // like action selects the thread join -> serve postForLike
+          if (selection.includes('thread:')) return Promise.resolve({ data: f.postForLike ?? null, error: null });
+          // quote compose `.eq('id', quotePostId)`: return the matching post if present
           const ids = Array.isArray(f.posts) ? (f.posts as Array<{ id: string }>).map((p) => p.id) : [];
           const target = f.quoteSearchId ?? (ids.length ? ids[0] : null);
           const match = ids.includes(String(target)) ? f.posts!.find((p) => (p as { id: string }).id === target) : null;
@@ -77,12 +94,22 @@ function makeSupabase(f: Fixture) {
         let data: unknown;
         if (table === 'posts') {
           if (countOnly) return Promise.resolve({ data: null, error: null, count: (f.posts ?? []).length }).then(res, rej);
+          // FIX-3: allow the FIRST posts query to error (reactions join missing);
+          // the loader then re-queries base posts on the next call.
+          f.postsCalls = (f.postsCalls ?? 0) + 1;
+          const call = f.postsCalls - 1;
+          if (f.postsError && call === 0) {
+            return Promise.resolve({ data: null, error: f.postsError }).then(res, rej);
+          }
           // emulate .order('post_number', ascending) for posts (route relies on it)
-          let list = [...(f.posts ?? [])].sort(
+          let list = [...(f.basePosts ?? f.posts ?? [])].sort(
             (a, b) => Number((a as { post_number?: number }).post_number) - Number((b as { post_number?: number }).post_number),
           );
           if (rangeBounds) list = list.slice(rangeBounds[0], rangeBounds[1] + 1);
           data = list;
+        } else if (table === 'reactions') {
+          if (f.reactionsInsertError) return Promise.resolve({ data: null, error: f.reactionsInsertError }).then(res, rej);
+          data = f.insertedReactions ?? [];
         } else if (table === 'section_permissions') data = f.sectionPerms ?? [];
         else if (table === 'thread_permissions') data = f.threadPerms ?? [];
         else data = [];
@@ -92,6 +119,9 @@ function makeSupabase(f: Fixture) {
         if (table === 'posts') {
           const newRow = { id: `post-${(f.insertedPosts?.length ?? 0) + 1}`, post_number: f.maxPostNumber, ...row };
           (f.insertedPosts ??= []).push(newRow);
+        }
+        if (table === 'reactions') {
+          (f.insertedReactions ??= []).push({ id: `reaction-${(f.insertedReactions?.length ?? 0) + 1}`, ...row });
         }
         return builder;
       },
@@ -129,8 +159,8 @@ const makeThread = (p: Partial<Record<string, unknown>> = {}) => ({
   ...p,
 });
 
-const makeLocals = (supabase: ReturnType<typeof makeSupabase>, role = 'rolero', userId = 'u1') =>
-  ({ supabase, user: { id: userId }, profile: { id: userId, role } }) as never;
+const makeLocals = (supabase: ReturnType<typeof makeSupabase>, role = 'rolero', userId: string | null = 'u1') =>
+  ({ supabase, user: userId ? { id: userId } : null, profile: userId ? { id: userId, role } : null }) as never;
 
 const makePost = (n: number) => ({
   id: `p${n}`,
@@ -210,6 +240,70 @@ describe('thread detail load()', () => {
   it('throws 404 when thread not found or not visible to guest (pendiente status)', async () => {
     const supabase = makeSupabase({ thread: null });
     await expectError(() => loadFn(makeEvent(makeLocals(supabase, 'pendiente', 'other'))), 404);
+  });
+
+  it('carries like_count and viewer_has_liked per post via reactions left-join (REACT-01.2)', async () => {
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      posts: [
+        {
+          id: 'p1', post_number: 1, body: '<p>a</p>', author_id: 'u1', created_at: 'x', updated_at: 'x',
+          edited_by: null, edited_at: null, author: { id: 'u1', display_name: 'A', username: 'a' },
+          reactions: [
+            { post_id: 'p1', user_id: 'u1' },
+            { post_id: 'p1', user_id: 'u2' },
+            { post_id: 'p1', user_id: 'u3' },
+          ],
+        },
+        {
+          id: 'p2', post_number: 2, body: '<p>b</p>', author_id: 'u2', created_at: 'x', updated_at: 'x',
+          edited_by: null, edited_at: null, author: { id: 'u2', display_name: 'B', username: 'b' },
+          reactions: [],
+        },
+      ],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'rolero', 'u1')));
+    const [p1, p2] = result.posts;
+    // viewer u1 liked p1 (3 likes total); p2 has no likes
+    expect(p1.like_count).toBe(3);
+    expect(p1.viewer_has_liked).toBe(true);
+    expect(p2.like_count).toBe(0);
+    expect(p2.viewer_has_liked).toBe(false);
+  });
+
+  it('sets viewer_has_liked null for guests but still exposes the count (REQ-02.3)', async () => {
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      posts: [
+        {
+          id: 'p1', post_number: 1, body: '<p>a</p>', author_id: 'u1', created_at: 'x', updated_at: 'x',
+          edited_by: null, edited_at: null, author: { id: 'u1', display_name: 'A', username: 'a' },
+          reactions: [{ post_id: 'p1', user_id: 'u2' }],
+        },
+      ],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'pendiente', null)));
+    expect(result.posts[0].like_count).toBe(1);
+    expect(result.posts[0].viewer_has_liked).toBeNull();
+  });
+
+  it('degrades to base posts with count 0 (not an empty thread) when the reactions join errors (FIX-3)', async () => {
+    // reactions table/migration not deployed -> embedded join query errors (null data)
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      basePosts: [
+        { id: 'p1', post_number: 1, body: '<p>a</p>', author_id: 'u1', thread_id: 't1', created_at: 'x', updated_at: 'x', edited_by: null, edited_at: null, author: { id: 'u1', display_name: 'A', username: 'a' } },
+        { id: 'p2', post_number: 2, body: '<p>b</p>', author_id: 'u2', thread_id: 't1', created_at: 'x', updated_at: 'x', edited_by: null, edited_at: null, author: { id: 'u2', display_name: 'B', username: 'b' } },
+      ],
+      postsError: { message: 'relation "public.reactions" does not exist' },
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'rolero', 'u1')));
+    // THE FIX: posts are still rendered (not silently empty), with a neutral reaction state
+    expect(result.posts).toHaveLength(2);
+    expect(result.posts[0].like_count).toBe(0);
+    expect(result.posts[0].viewer_has_liked).toBeNull();
+    expect(result.posts[1].like_count).toBe(0);
+    expect(result.posts[1].viewer_has_liked).toBeNull();
   });
 });
 
@@ -462,5 +556,119 @@ describe('thread detail delete action', () => {
     const res = await deleteFn(makeDeleteEvent(makeLocals(supabase, 'rolero', 'u1'), 'p2'));
     expect(res.status).toBe(403);
     expect(supabase.fixtures.deletedIds ?? []).toHaveLength(0);
+  });
+});
+
+describe('thread detail like action', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const likeFn = actions.like as unknown as (...args: unknown[]) => Promise<any>;
+
+  const makeLikeEvent = (locals: ReturnType<typeof makeLocals>, postId = 'p2') =>
+    ({
+      locals,
+      params: { threadId: 't1' },
+      url: new URL('http://localhost/foro/t1'),
+      request: new Request('http://localhost/foro/t1', {
+        method: 'POST',
+        body: new URLSearchParams({ post_id: postId }).toString(),
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      }),
+    }) as never;
+
+  it('inserts a reaction row on first like (REACT-01.3)', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      postForLike: { id: 'p2', thread_id: 't1', thread: { status: 'abierto', author_id: 'u1' } },
+      existingReaction: null,
+      insertedReactions: inserted,
+    });
+    // success = redirect thrown (rejection)
+    const err = await likeFn(makeLikeEvent(makeLocals(supabase, 'rolero', 'u1'), 'p2')).then(
+      () => null,
+      (e: { status?: number }) => e,
+    );
+    expect(err?.status).toBe(303);
+    expect(inserted).toHaveLength(1);
+    expect(inserted[0].post_id).toBe('p2');
+    expect(inserted[0].user_id).toBe('u1');
+  });
+
+  it('deletes the reaction row on unlike (re-click, REACT-01.3)', async () => {
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      postForLike: { id: 'p2', thread_id: 't1', thread: { status: 'abierto', author_id: 'u1' } },
+      existingReaction: { post_id: 'p2', user_id: 'u1', created_at: 'x' },
+      insertedReactions: [],
+    });
+    const err = await likeFn(makeLikeEvent(makeLocals(supabase, 'rolero', 'u1'), 'p2')).then(
+      () => null,
+      (e: { status?: number }) => e,
+    );
+    expect(err?.status).toBe(303);
+    expect(supabase.fixtures.insertedReactions ?? []).toHaveLength(0);
+    // DELETE filtered by post_id + user_id (only own row)
+    expect(supabase.fixtures.deletedReactionIds).toContain('p2');
+    expect(supabase.fixtures.deletedReactionIds).toContain('u1');
+  });
+
+  it('blocks guest like with 401/redirect and no mutation (REACT-01.1)', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({ thread: makeThread(), existingReaction: null, insertedReactions: inserted });
+    // guest locals: no user
+    const guestLocals = { supabase, user: null, profile: null } as never;
+    const err = await likeFn(makeLikeEvent(guestLocals, 'p2')).then(
+      () => null,
+      (e: { status?: number }) => e,
+    );
+    expect(err?.status).toBe(303); // requireAuth redirects to /login
+    expect(inserted).toHaveLength(0);
+    expect(supabase.fixtures.deletedReactionIds ?? []).toHaveLength(0);
+  });
+
+  it('treats UNIQUE race (23505) as silent no-op without error (design)', async () => {
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      postForLike: { id: 'p2', thread_id: 't1', thread: { status: 'abierto', author_id: 'u1' } },
+      existingReaction: null,
+      insertedReactions: [],
+      reactionsInsertError: { code: '23505', message: 'duplicate key value violates unique constraint "reactions_pkey"' },
+    });
+    // No error surfaced: redirect (success) instead of fail() with message
+    const err = await likeFn(makeLikeEvent(makeLocals(supabase, 'rolero', 'u1'), 'p2')).then(
+      () => null,
+      (e: { status?: number }) => e,
+    );
+    expect(err?.status).toBe(303);
+    // No fail payload with a toastable message
+    expect(err?.status).not.toBe(400);
+  });
+
+  it('rejects a like on a post that does not belong to this thread with 400 (FIX-2)', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      postForLike: null, // no post matches (id, thread_id) -> cross-thread smuggling
+      existingReaction: null,
+      insertedReactions: inserted,
+    });
+    const res = await likeFn(makeLikeEvent(makeLocals(supabase, 'rolero', 'u1'), 'p2'));
+    expect(res.status).toBe(400);
+    expect(inserted).toHaveLength(0);
+    expect(supabase.fixtures.deletedReactionIds ?? []).toHaveLength(0);
+  });
+
+  it('rejects a like on a post inside a hidden (pendiente) thread with 400 (FIX-2)', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      postForLike: { id: 'p2', thread_id: 't1', thread: { status: 'pendiente', author_id: 'u999' } },
+      existingReaction: null,
+      insertedReactions: inserted,
+    });
+    const res = await likeFn(makeLikeEvent(makeLocals(supabase, 'rolero', 'u1'), 'p2'));
+    expect(res.status).toBe(400);
+    expect(inserted).toHaveLength(0);
+    expect(supabase.fixtures.deletedReactionIds ?? []).toHaveLength(0);
   });
 });

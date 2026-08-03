@@ -79,17 +79,51 @@ export const load: PageServerLoad = async ({ url, params, locals: { supabase, us
   // Page ≤ 0 or > max clamps to 1 (REQ-FORUM-02.3).
   const currentPage = Number.isInteger(requestedPage) && requestedPage >= 1 && requestedPage <= totalPages ? requestedPage : 1;
 
-  const { data: posts } = await supabase
+  const { data: posts, error: postsError } = await supabase
     .from('posts')
-    .select('*, author:author_id(id, display_name, username)')
+    .select('*, author:author_id(id, display_name, username), reactions:reactions(post_id, user_id)')
     .eq('thread_id', t.id)
     .order('post_number', { ascending: true })
     .range((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE - 1);
 
+  // Reaction aggregate + viewer's own like via left-join (REQ-REACT-01.2).
+  // Guests still see the count but have no like state (viewer_has_liked null).
+  let postsWithReactions: unknown[];
+  if (postsError || !posts) {
+    // Graceful degradation (FIX-3): if the reactions join fails (e.g. the
+    // reactions table/migration isn't deployed yet), PostgREST returns null and
+    // the thread would otherwise render EMPTY. Re-query base posts (no reactions
+    // embed) and render every post with a neutral reaction state rather than an
+    // empty thread.
+    console.error('No se pudieron cargar las reacciones; se muestran los posts base', postsError);
+    const { data: basePosts } = await supabase
+      .from('posts')
+      .select('*, author:author_id(id, display_name, username)')
+      .eq('thread_id', t.id)
+      .order('post_number', { ascending: true });
+    postsWithReactions = (basePosts ?? []).map((p) => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ...(p as any),
+      like_count: 0,
+      viewer_has_liked: null,
+    }));
+  } else {
+    const viewerId = user?.id ?? null;
+    postsWithReactions = posts.map((p) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const reactions = (p as any).reactions ?? [];
+      return {
+        ...p,
+        like_count: reactions.length,
+        viewer_has_liked: viewerId ? reactions.some((r: { user_id: string }) => r.user_id === viewerId) : null,
+      };
+    });
+  }
+
   return {
     thread: t,
     threadBody,
-    posts: (posts ?? []) as unknown as PostView[],
+    posts: postsWithReactions as unknown as PostView[],
     totalPosts,
     totalPages,
     currentPage,
@@ -206,6 +240,64 @@ export const actions: Actions = {
       p_details: { thread_id: params.threadId },
     });
     if (auditError) console.error('log_audit falló para eliminar_post', postId, auditError);
+
+    throw redirect(303, `/foro/${params.threadId}`);
+  },
+
+  // Like ("Gracias") toggle — idempotent (REQ-REACT-01.3). First click inserts the
+  // row; re-click deletes it. RLS enforces own-row insert/delete. UNIQUE race on
+  // (post_id, user_id) is a silent no-op: 23505 is NOT surfaced as an error toast
+  // (design decision B). No log_audit for likes (decision F).
+  like: async ({ request, params, locals: { supabase, user, profile } }) => {
+    requireAuth({ user, profile });
+    const form = await request.formData();
+    const postId = String(form.get('post_id') ?? '');
+
+    // Validate the target post BEFORE any write: it must exist, belong to the
+    // requested thread, and sit in a thread the viewer may see. This mirrors the
+    // reply action's thread revalidation and stops a client from smuggling a
+    // post_id from another/hidden thread to inflate or tamper with its count
+    // (FIX-2, REACT-01.1).
+    const { data: post } = await supabase
+      .from('posts')
+      .select('id, thread_id, thread:thread_id(status, author_id)')
+      .eq('id', postId)
+      .eq('thread_id', params.threadId)
+      .maybeSingle();
+
+    if (!post) return fail(400, { message: 'No puedes reaccionar a este mensaje' });
+    const p = post as unknown as { thread_id: string; thread: { status: string; author_id: string } | null };
+    const tgtThread = p.thread;
+    const isOwner = !!user && tgtThread?.author_id === user.id;
+    const isStaff = profile?.role === 'gm' || profile?.role === 'admin';
+    const publiclyVisible = tgtThread?.status === 'abierto' || tgtThread?.status === 'aprobado';
+    if (!publiclyVisible && !isOwner && !isStaff) {
+      return fail(400, { message: 'No puedes reaccionar a este mensaje' });
+    }
+
+    const { data: existing } = await supabase
+      .from('reactions')
+      .select('*')
+      .eq('post_id', postId)
+      .eq('user_id', user!.id)
+      .maybeSingle();
+
+    if (existing) {
+      const { error: deleteError } = await supabase
+        .from('reactions')
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', user!.id);
+      if (deleteError) return fail(400, { message: deleteError.message });
+    } else {
+      const { error: insertError } = await supabase
+        .from('reactions')
+        .insert({ post_id: postId, user_id: user!.id });
+      // 23505 = concurrent like already inserted -> idempotent, silent success
+      if (insertError && insertError.code !== '23505') {
+        return fail(400, { message: insertError.message });
+      }
+    }
 
     throw redirect(303, `/foro/${params.threadId}`);
   },
