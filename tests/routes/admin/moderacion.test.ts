@@ -23,6 +23,7 @@ interface Fixture {
   thread?: ThreadRow | null;
   threads?: ThreadRow[];
   eventStatus?: string;
+  reports?: unknown[];
 }
 
 function makeSupabase(fixture: Fixture = {}) {
@@ -58,7 +59,12 @@ function makeSupabase(fixture: Fixture = {}) {
         res: (...a: unknown[]) => void,
         rej: (...a: unknown[]) => void,
       ) => {
-        const list = table === "threads" ? (fixture.threads ?? []) : null;
+        const list =
+          table === "threads"
+            ? (fixture.threads ?? [])
+            : table === "reports"
+              ? (fixture.reports ?? [])
+              : null;
         return Promise.resolve({ data: list, error: null }).then(res, rej);
       },
     };
@@ -216,5 +222,93 @@ describe("admin/moderacion event review (REQ-FORUM-05.3)", () => {
     ) as { args: { p_event_id: string } };
     expect(conf).toBeTruthy();
     expect(conf.args.p_event_id).toBe("ev-1");
+  });
+});
+
+describe("admin/moderacion report queue (REQ-MOD-REP-02)", () => {
+  it("loads abierta reports into an independent queue (REP-02.1/02.3)", async () => {
+    const supabase = makeSupabase({
+      threads: [storyThread()],
+      reports: [
+        {
+          id: "rep-1",
+          reason: "Spam",
+          justification: "Repetido",
+          status: "abierta",
+          created_at: "2026-08-03T00:00:00Z",
+          reporter: { id: "u1", display_name: "Aragorn", username: "aragon" },
+          post: { id: "p1", thread_id: "t1", post_number: 2 },
+        },
+      ],
+    });
+    const result = (await loadFn(makeEvent(makeLocals(supabase)))) as {
+      reports: unknown[];
+    };
+    // The queue is a separate field, never merged into pendingThreads.
+    expect(result.reports).toHaveLength(1);
+    expect((result.reports[0] as { reason: string }).reason).toBe("Spam");
+    expect(
+      (result.reports[0] as { reporter: { display_name: string } }).reporter
+        .display_name,
+    ).toBe("Aragorn");
+    expect(
+      (result.reports[0] as { post: { thread_id: string } }).post.thread_id,
+    ).toBe("t1");
+  });
+
+  it("resolves a report via resolve_report RPC with justification (REP-02.2)", async () => {
+    const supabase = makeSupabase();
+    const res = (await act("resolveReport")(
+      makeEvent(
+        makeLocals(supabase, "admin", "a1"),
+        "reportId=rep-1&justification=Se retiro el contenido",
+      ),
+    )) as { success: boolean };
+    expect(res.success).toBe(true);
+    const rpcCall = supabase.calls.rpc.find(
+      (r) => (r as { name: string }).name === "resolve_report",
+    ) as { args: { p_report_id: string; p_status: string; p_justification: string } };
+    expect(rpcCall).toBeTruthy();
+    expect(rpcCall.args.p_report_id).toBe("rep-1");
+    expect(rpcCall.args.p_status).toBe("resuelta");
+    expect(rpcCall.args.p_justification).toBe("Se retiro el contenido");
+  });
+
+  it("discards a report via resolve_report RPC with status descartada", async () => {
+    const supabase = makeSupabase();
+    const res = (await act("discardReport")(
+      makeEvent(
+        makeLocals(supabase, "admin", "a1"),
+        "reportId=rep-2&justification=Sin evidencia suficiente",
+      ),
+    )) as { success: boolean };
+    expect(res.success).toBe(true);
+    const rpcCall = supabase.calls.rpc.find(
+      (r) => (r as { name: string }).name === "resolve_report",
+    ) as { args: { p_report_id: string; p_status: string } };
+    expect(rpcCall).toBeTruthy();
+    expect(rpcCall.args.p_status).toBe("descartada");
+  });
+
+  it("requires a justification to resolve (REP-02.2 mandatory)", async () => {
+    const supabase = makeSupabase();
+    const res = (await act("resolveReport")(
+      makeEvent(makeLocals(supabase, "admin", "a1"), "reportId=rep-1&justification="),
+    )) as { status: number };
+    expect(res.status).toBe(400);
+  });
+
+  it("blocks a non-staff from resolving reports", async () => {
+    const supabase = makeSupabase();
+    await expectError(
+      () =>
+        act("resolveReport")(
+          makeEvent(
+            makeLocals(supabase, "rolero", "r1"),
+            "reportId=rep-1&justification=abuso",
+          ),
+        ),
+      403,
+    );
   });
 });
