@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   followThread,
   unfollowThread,
+  setFollowPreference,
   getThreadFollow,
   getUnreadCount,
 } from "../src/lib/forum";
@@ -25,6 +26,7 @@ function createMockClient() {
     const chain: Record<string, unknown> = {
       insert: (v: unknown) => record("insert", v),
       select: (...a: unknown[]) => record("select", ...a),
+      update: (v: unknown) => record("update", v),
       delete: () => record("delete"),
       eq: (...a: unknown[]) => record("eq", ...a),
       is: (...a: unknown[]) => record("is", ...a),
@@ -124,6 +126,34 @@ describe("getThreadFollow", () => {
     m.setResult({ data: null, error: new Error("prem") });
     await expect(getThreadFollow("thread-1", "user-9", m.client)).rejects.toThrow(
       "prem",
+    );
+  });
+});
+
+describe("setFollowPreference", () => {
+  it("updates notify_in_app scoped to the thread and user", async () => {
+    const m = createMockClient();
+    await setFollowPreference("thread-1", "user-9", false, m.client);
+    const update = m.calls.find((c) => c.method === "update");
+    expect(update).toBeDefined();
+    expect(update!.args[0]).toEqual({ notify_in_app: false });
+    const eqs = m.calls.filter((c) => c.method === "eq").map((c) => c.args);
+    expect(eqs).toContainEqual(["thread_id", "thread-1"]);
+    expect(eqs).toContainEqual(["user_id", "user-9"]);
+  });
+
+  it("writes notify_in_app true when re-enabled", async () => {
+    const m = createMockClient();
+    await setFollowPreference("thread-1", "user-9", true, m.client);
+    const update = m.calls.find((c) => c.method === "update");
+    expect(update!.args[0]).toEqual({ notify_in_app: true });
+  });
+
+  it("throws when the update fails", async () => {
+    const m = createMockClient();
+    m.setResult({ data: null, error: new Error("no row") });
+    await expect(setFollowPreference("thread-1", "user-9", false, m.client)).rejects.toThrow(
+      "no row",
     );
   });
 });

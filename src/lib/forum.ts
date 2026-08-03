@@ -194,6 +194,26 @@ export async function unfollowThread(
 }
 
 /**
+ * Toggle the in-app notification preference for a follow (REQ-FOLLOW-02). Scoped
+ * to the thread and user so the update passes thread_follows RLS (own rows).
+ */
+export async function setFollowPreference(
+  threadId: string,
+  userId: string,
+  notifyInApp: boolean,
+  supabase: SupabaseClient<Database>,
+): Promise<void> {
+  const { error } = await supabase
+    .from('thread_follows')
+    .update({ notify_in_app: notifyInApp })
+    .eq('thread_id', threadId)
+    .eq('user_id', userId);
+  if (error) {
+    throw error;
+  }
+}
+
+/**
  * Read the current follow state for a thread (REQ-FOLLOW-01). When no follow
  * exists the user is reported as not following with the default in-app preference
  * enabled.

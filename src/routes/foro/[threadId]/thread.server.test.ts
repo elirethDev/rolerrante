@@ -23,6 +23,7 @@ interface Fixture {
   audit?: { name: string; args: Record<string, unknown> }[];
   deletedIds?: string[];
   postSingle?: unknown;
+  followState?: { notify_in_app: boolean } | null;
 }
 
 // Fluent supabase mock for the thread detail route. Supports:
@@ -42,7 +43,10 @@ function makeSupabase(f: Fixture) {
         return builder;
       },
       order: () => builder,
-      maybeSingle: () => Promise.resolve({ data: f.thread ?? null, error: null }),
+      maybeSingle: () => {
+        if (table === 'thread_follows') return Promise.resolve({ data: f.followState ?? null, error: null });
+        return Promise.resolve({ data: f.thread ?? null, error: null });
+      },
       single: () => {
         if (table === 'threads') return Promise.resolve({ data: f.thread ?? null, error: null });
         if (table === 'posts') return Promise.resolve({ data: f.postSingle ?? null, error: null });
@@ -171,6 +175,31 @@ describe('thread detail load()', () => {
   it('throws 404 when thread not found or not visible to guest (pendiente status)', async () => {
     const supabase = makeSupabase({ thread: null });
     await expectError(() => loadFn(makeEvent(makeLocals(supabase, 'pendiente', 'other'))), 404);
+  });
+});
+
+describe('thread detail load() follow state (Slice 2)', () => {
+  it('reports following=true with the stored in-app preference for an authenticated follow', async () => {
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      followState: { notify_in_app: false },
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'rolero', 'u1')));
+    expect(result.follow).toEqual({ following: true, notify_in_app: false });
+    expect(result.isAuthenticated).toBe(true);
+  });
+
+  it('reports following=true with default preference when the stored follow has it enabled', async () => {
+    const supabase = makeSupabase({ thread: makeThread(), followState: { notify_in_app: true } });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'rolero', 'u1')));
+    expect(result.follow).toEqual({ following: true, notify_in_app: true });
+  });
+
+  it('reports following=false for a guest without querying follows', async () => {
+    const supabase = makeSupabase({ thread: makeThread() });
+    const result = await loadFn(makeEvent({ supabase, user: null, profile: null } as never));
+    expect(result.follow).toEqual({ following: false, notify_in_app: true });
+    expect(result.isAuthenticated).toBe(false);
   });
 });
 

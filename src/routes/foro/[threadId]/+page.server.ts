@@ -1,6 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { resolveEffectivePermissions, validateForumImageUrls, requireAuth, type PermissionFlags } from '$lib/auth';
-import { getOrCreateThread, type ThreadView, type PostView } from '$lib/forum';
+import { getOrCreateThread, getThreadFollow, followThread, unfollowThread, setFollowPreference, type ThreadView, type PostView } from '$lib/forum';
 import type { Json } from '$lib/supabase/database.types';
 import type { UserRole } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
@@ -73,6 +73,11 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, user, p
     .eq('thread_id', t.id)
     .order('post_number', { ascending: true });
 
+  // Follow state for the watch modal (REQ-FOLLOW-01/02). Guests never follow.
+  const follow = user
+    ? await getThreadFollow(t.id, user.id, supabase)
+    : { following: false, notify_in_app: true };
+
   return {
     thread: t,
     threadBody,
@@ -82,6 +87,8 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, user, p
     isLocked: t.is_locked,
     isOwner,
     isStaff,
+    follow,
+    isAuthenticated: !!user,
   };
 };
 
@@ -161,5 +168,32 @@ export const actions: Actions = {
     if (auditError) console.error('log_audit falló para eliminar_post', postId, auditError);
 
     throw redirect(303, `/foro/${params.threadId}`);
+  },
+
+  // Slice 2 — follow/unfollow + in-app preference (REQ-FOLLOW-01/02).
+  follow: async ({ params, locals: { supabase, user, profile } }) => {
+    requireAuth({ user, profile });
+    try {
+      await followThread(params.threadId, user!.id, supabase);
+    } catch (e) {
+      // A second Seguir on an existing follow hits the UNIQUE(thread_id,user_id)
+      // constraint — treat it as idempotent success (REQ-FOLLOW-01 duplicate).
+      if ((e as { code?: string }).code !== '23505') throw e;
+    }
+    return { ok: true, following: true };
+  },
+
+  unfollow: async ({ params, locals: { supabase, user, profile } }) => {
+    requireAuth({ user, profile });
+    await unfollowThread(params.threadId, user!.id, supabase);
+    return { ok: true, following: false };
+  },
+
+  preference: async ({ request, params, locals: { supabase, user, profile } }) => {
+    requireAuth({ user, profile });
+    const form = await request.formData();
+    const notify = form.get('notify_in_app') === 'on';
+    await setFollowPreference(params.threadId, user!.id, notify, supabase);
+    return { ok: true, notify_in_app: notify };
   },
 };
