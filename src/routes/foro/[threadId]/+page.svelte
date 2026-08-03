@@ -3,9 +3,12 @@
   import { resolve } from '$app/paths';
   import ReplyComposer from '$lib/components/forum/ReplyComposer.svelte';
   import ThreadDetail from '$lib/components/forum/ThreadDetail.svelte';
+  import WatchModal from '$lib/components/forum/WatchModal.svelte';
   import type { PageData } from './$types';
 
-  export let data: PageData;
+  let { data }: { data: PageData } = $props();
+
+  let watchOpen = $state(false);
 </script>
 
 <svelte:head>
@@ -13,16 +16,26 @@
 </svelte:head>
 
 <section class="max-w-3xl mx-auto">
-  <ThreadDetail
-    thread={data.thread}
-    threadBody={data.threadBody}
-    posts={data.posts}
-    entity={data.entity}
-    flags={data.flags}
-    isLocked={data.isLocked}
-    isOwner={data.isOwner}
-    isStaff={data.isStaff}
-  />
+  <div class="flex items-start justify-between gap-4">
+    <ThreadDetail
+      thread={data.thread}
+      threadBody={data.threadBody}
+      posts={data.posts}
+      entity={data.entity}
+      flags={data.flags}
+      isLocked={data.isLocked}
+      isOwner={data.isOwner}
+      isStaff={data.isStaff}
+    />
+
+    <div class="shrink-0">
+      {#if data.isAuthenticated}
+        <button type="button" class="btn btn-outline btn-sm" onclick={() => (watchOpen = true)}>
+          {data.follow.following ? 'Siguiendo' : 'Seguir'}
+        </button>
+      {/if}
+    </div>
+  </div>
 
   <div class="mt-6 flex gap-3">
     {#if data.flags.can_post && !data.isLocked}
@@ -41,3 +54,11 @@
     {/if}
   </div>
 </section>
+
+<WatchModal
+  open={watchOpen}
+  following={data.follow.following}
+  notifyInApp={data.follow.notify_in_app}
+  guest={!data.isAuthenticated}
+  onClose={() => (watchOpen = false)}
+/>
