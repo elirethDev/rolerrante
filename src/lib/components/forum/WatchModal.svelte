@@ -15,6 +15,10 @@
     onClose?: () => void;
   } = $props();
 
+  // The in-app toggle lives INSIDE the ?/preference form and carries its own
+  // name="notify_in_app" value="on", so the browser submits "on" when checked
+  // and nothing when unchecked. checked={notifyInApp} seeds it from the loader;
+  // the user's DOM toggle is what gets posted (no stale hidden input).
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === 'Escape') onClose();
   }
@@ -46,20 +50,18 @@
           </button>
         </form>
 
-        <label class="label mt-4 flex cursor-pointer items-center gap-2">
-          <input
-            type="checkbox"
-            name="notify_in_app"
-            value="on"
-            checked={notifyInApp}
-            data-testid="notify-toggle"
-            class="checkbox checkbox-sm"
-          />
-          <span class="text-sm">Notificarme en la app</span>
-        </label>
-
-        <form method="POST" action="?/preference" class="mt-1">
-          <input type="hidden" name="notify_in_app" value={notifyInApp ? 'on' : ''} />
+        <form method="POST" action="?/preference" class="mt-4">
+          <label class="label flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              name="notify_in_app"
+              value="on"
+              checked={notifyInApp}
+              data-testid="notify-toggle"
+              class="checkbox checkbox-sm"
+            />
+            <span class="text-sm">Notificarme en la app</span>
+          </label>
           <button type="submit" class="btn btn-ghost btn-sm" data-testid="save-pref">
             Guardar preferencia
           </button>
