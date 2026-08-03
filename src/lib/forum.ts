@@ -11,6 +11,7 @@ export interface ThreadListItem {
   content_type: string;
   status: string;
   is_locked: boolean;
+  is_sticky: boolean;
   created_at: string;
   edited_at: string | null;
   category_id: string | null;
@@ -43,6 +44,7 @@ export interface ThreadView {
   edited_at: string | null;
   edited_by: string | null;
   is_locked: boolean;
+  is_sticky: boolean;
   category_id: string | null;
   linked_entity_type: string | null;
   linked_entity_id: string | null;

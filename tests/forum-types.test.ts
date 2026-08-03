@@ -31,6 +31,7 @@ describe("regenerated forum types", () => {
       linked_entity_id: null,
       status: "abierto",
       is_locked: false,
+      is_sticky: false,
       locked_by: null,
       locked_at: null,
       created_at: "2026-08-02T00:00:00Z",
