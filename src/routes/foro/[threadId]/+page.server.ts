@@ -5,6 +5,8 @@ import type { Json } from '$lib/supabase/database.types';
 import type { UserRole } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
 
+const PAGE_SIZE = 20;
+
 type SectionPermRow = { category_id: string; role: UserRole; can_view: boolean; can_post: boolean; can_edit: boolean; can_lock: boolean };
 type ThreadPermRow = { thread_id: string; role: UserRole; can_view: boolean; can_post: boolean; can_edit: boolean; can_lock: boolean };
 
@@ -12,7 +14,7 @@ function toFlags(p: { can_view: boolean; can_post: boolean; can_edit: boolean; c
   return { can_view: p.can_view, can_post: p.can_post, can_edit: p.can_edit, can_lock: p.can_lock };
 }
 
-export const load: PageServerLoad = async ({ params, locals: { supabase, user, profile } }) => {
+export const load: PageServerLoad = async ({ url, params, locals: { supabase, user, profile } }) => {
   const role: UserRole = profile?.role ?? 'pendiente';
   const isStaff = role === 'gm' || role === 'admin';
 
@@ -67,16 +69,29 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, user, p
   const body = (t.body as Json) ?? {};
   const threadBody = typeof body === 'string' ? body : '';
 
+  // Paginated posts (REQ-FORUM-02.3): ?page= defaults to 1, LIMIT 20, OFFSET (page-1)*20.
+  const { count } = await supabase.from('posts').select('*', { count: 'exact', head: true }).eq('thread_id', t.id);
+  const totalPosts = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalPosts / PAGE_SIZE));
+
+  const requestedPage = Number(url.searchParams.get('page') ?? 1);
+  // Page ≤ 0 or > max clamps to 1 (REQ-FORUM-02.3).
+  const currentPage = Number.isInteger(requestedPage) && requestedPage >= 1 && requestedPage <= totalPages ? requestedPage : 1;
+
   const { data: posts } = await supabase
     .from('posts')
     .select('*, author:author_id(id, display_name, username)')
     .eq('thread_id', t.id)
-    .order('post_number', { ascending: true });
+    .order('post_number', { ascending: true })
+    .range((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE - 1);
 
   return {
     thread: t,
     threadBody,
     posts: (posts ?? []) as unknown as PostView[],
+    totalPosts,
+    totalPages,
+    currentPage,
     entity,
     flags,
     isLocked: t.is_locked,
