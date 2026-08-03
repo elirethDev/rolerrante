@@ -1,0 +1,157 @@
+/* eslint-disable no-unused-vars -- mock helper types intentionally loose */
+import { describe, expect, it } from 'vitest';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from './supabase/database.types';
+import { banUser, reportPost, resolveReport, suspendUser } from './forum';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyFn = (...args: any[]) => any;
+
+interface RpcCall {
+  name: string;
+  args: Record<string, unknown>;
+}
+
+interface InsertCall {
+  table: string;
+  row: Record<string, unknown>;
+}
+
+interface Fixture {
+  insertError?: { message: string } | null;
+  insertedId?: string | null;
+  rpcError?: { message: string } | null;
+}
+
+function makeClient(f: Fixture) {
+  const rpcCalls: RpcCall[] = [];
+  const insertCalls: InsertCall[] = [];
+
+  const client = {
+    from: (table: string) => {
+      const builder: Record<string, AnyFn> = {
+        insert: (row: Record<string, unknown>) => {
+          insertCalls.push({ table, row });
+          return builder;
+        },
+        select: () => builder,
+        single: () =>
+          Promise.resolve({
+            data: { id: f.insertedId ?? 'rep-1' },
+            error: f.insertError ?? null,
+          }),
+      };
+      return builder;
+    },
+    rpc: (name: string, args: Record<string, unknown>) => {
+      rpcCalls.push({ name, args });
+      return Promise.resolve({ data: null, error: f.rpcError ?? null });
+    },
+  };
+
+  return {
+    client: client as unknown as SupabaseClient<Database>,
+    rpcCalls,
+    insertCalls,
+  };
+}
+
+describe('reportPost', () => {
+  it('inserts a report row and logs the reportar audit on success', async () => {
+    const { client, insertCalls, rpcCalls } = makeClient({});
+    const res = await reportPost(client, 'post-1', 'Spam', 'reporter-1', 'Contenido repetido');
+
+    expect(res).toEqual({ error: null });
+    const reportInsert = insertCalls.find((c) => c.table === 'reports' && c.row.post_id === 'post-1');
+    expect(reportInsert?.row).toMatchObject({
+      post_id: 'post-1',
+      reporter_id: 'reporter-1',
+      reason: 'Spam',
+      justification: 'Contenido repetido',
+    });
+    // Audit must carry the new report id as entity and the reason/justification.
+    expect(rpcCalls).toContainEqual({
+      name: 'log_audit',
+      args: {
+        p_action: 'reportar',
+        p_entity_type: 'report',
+        p_entity_id: 'rep-1',
+        p_details: { post_id: 'post-1', reason: 'Spam' },
+      },
+    });
+  });
+
+  it('returns the insert error and does not audit on failure', async () => {
+    const { client, rpcCalls } = makeClient({ insertError: { message: 'RLS bloqueado' } });
+    const res = await reportPost(client, 'post-1', 'Spam', 'reporter-1');
+
+    expect(res).toEqual({ error: 'RLS bloqueado' });
+    expect(rpcCalls).toHaveLength(0);
+  });
+});
+
+describe('suspendUser', () => {
+  it('calls suspend_user RPC with all arguments on success', async () => {
+    const { client, rpcCalls } = makeClient({});
+    const until = '2026-09-01T00:00:00.000Z';
+    const res = await suspendUser(client, 'user-1', until, 'Spam reiterado');
+
+    expect(res).toEqual({ error: null });
+    expect(rpcCalls).toContainEqual({
+      name: 'suspend_user',
+      args: {
+        p_user_id: 'user-1',
+        p_active_until: until,
+        p_justification: 'Spam reiterado',
+      },
+    });
+  });
+
+  it('returns the RPC error message on failure', async () => {
+    const { client } = makeClient({ rpcError: { message: 'La justificacion es obligatoria' } });
+    const res = await suspendUser(client, 'user-1', '2026-09-01T00:00:00.000Z', '');
+    expect(res).toEqual({ error: 'La justificacion es obligatoria' });
+  });
+});
+
+describe('banUser', () => {
+  it('calls ban_user RPC with justification on success', async () => {
+    const { client, rpcCalls } = makeClient({});
+    const res = await banUser(client, 'user-2', 'Cuenta comprometida');
+
+    expect(res).toEqual({ error: null });
+    expect(rpcCalls).toContainEqual({
+      name: 'ban_user',
+      args: { p_user_id: 'user-2', p_justification: 'Cuenta comprometida' },
+    });
+  });
+
+  it('returns the RPC error message on failure', async () => {
+    const { client } = makeClient({ rpcError: { message: 'No se puede sancionar a un GM o admin' } });
+    const res = await banUser(client, 'gm-1', 'X');
+    expect(res).toEqual({ error: 'No se puede sancionar a un GM o admin' });
+  });
+});
+
+describe('resolveReport', () => {
+  it('calls resolve_report RPC with status and justification on success', async () => {
+    const { client, rpcCalls } = makeClient({});
+    const res = await resolveReport(client, 'rep-9', 'resuelta', 'Se retiró el contenido');
+
+    expect(res).toEqual({ error: null });
+    expect(rpcCalls).toContainEqual({
+      name: 'resolve_report',
+      args: {
+        p_report_id: 'rep-9',
+        p_status: 'resuelta',
+        p_justification: 'Se retiró el contenido',
+      },
+    });
+  });
+
+  it('returns the RPC error message on failure', async () => {
+    const { client } = makeClient({ rpcError: { message: 'La justificacion es obligatoria' } });
+    const res = await resolveReport(client, 'rep-9', 'descartada', '');
+    expect(res).toEqual({ error: 'La justificacion es obligatoria' });
+  });
+});

@@ -156,3 +156,83 @@ export async function getOrCreateThread(
 
   return { thread: created, created: true };
 }
+
+export type RpcResult = { error: null } | { error: string };
+
+/**
+ * Report a post (REQ-MOD-REP-01): insert a report row as the authenticated
+ * reporter, then fire the reportar audit. Returns an error result on failure.
+ */
+export async function reportPost(
+  supabase: SupabaseClient<Database>,
+  postId: string,
+  reason: string,
+  reporterId: string,
+  justification?: string,
+): Promise<RpcResult> {
+  const { data, error } = await supabase
+    .from('reports')
+    .insert({
+      post_id: postId,
+      reporter_id: reporterId,
+      reason,
+      justification: justification ?? null,
+    })
+    .select('id')
+    .single();
+
+  if (error) return { error: error.message };
+  if (!data) return { error: 'No se pudo crear el reporte' };
+
+  await supabase.rpc('log_audit', {
+    p_action: 'reportar',
+    p_entity_type: 'report',
+    p_entity_id: data.id,
+    p_details: { post_id: postId, reason },
+  });
+
+  return { error: null };
+}
+
+/** Suspend a user's forum access until activeUntil (REQ-MOD-ENF-01). */
+export async function suspendUser(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  activeUntil: string,
+  justification: string,
+): Promise<RpcResult> {
+  const { error } = await supabase.rpc('suspend_user', {
+    p_user_id: userId,
+    p_active_until: activeUntil,
+    p_justification: justification,
+  });
+  return error ? { error: error.message } : { error: null };
+}
+
+/** Permanently ban a user from the forum (REQ-MOD-ENF-02). */
+export async function banUser(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  justification: string,
+): Promise<RpcResult> {
+  const { error } = await supabase.rpc('ban_user', {
+    p_user_id: userId,
+    p_justification: justification,
+  });
+  return error ? { error: error.message } : { error: null };
+}
+
+/** Resolve or discard an open report (REQ-MOD-REP-02). */
+export async function resolveReport(
+  supabase: SupabaseClient<Database>,
+  reportId: string,
+  status: 'resuelta' | 'descartada',
+  justification: string,
+): Promise<RpcResult> {
+  const { error } = await supabase.rpc('resolve_report', {
+    p_report_id: reportId,
+    p_status: status,
+    p_justification: justification,
+  });
+  return error ? { error: error.message } : { error: null };
+}
