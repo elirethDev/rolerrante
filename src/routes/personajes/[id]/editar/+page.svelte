@@ -1,7 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
-  import Field from '$lib/components/forms/Field.svelte';
+  import Field from '$lib/components/ui/Field.svelte';
   import AttributeInput from '$lib/components/forms/AttributeInput.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
   import CombatValues from '$lib/components/sheets/CombatValues.svelte';
