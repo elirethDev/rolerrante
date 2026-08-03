@@ -1,17 +1,54 @@
 <script lang="ts">
-  import { resolve } from '$app/paths';
+  import { goto } from '$app/navigation';
+  import { enhance } from '$app/forms';
+  import { Shield } from '@lucide/svelte';
   import type { PageData } from './$types';
-  import { formatDate } from '$lib/utils';
-  import { BookOpen, Scroll, Shield, Users } from '@lucide/svelte';
+  import type { WorklistItem } from '$lib/components/gm/types';
+  import GmAnalytics from '$lib/components/gm/GmAnalytics.svelte';
+  import FilterChips from '$lib/components/gm/FilterChips.svelte';
+  import WorklistCard from '$lib/components/gm/WorklistCard.svelte';
+  import AuditBanner from '$lib/components/admin/AuditBanner.svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
 
-  export let data: PageData;
+  let { data }: { data: PageData } = $props();
+  const queue = $derived(data.queue);
+  const kpi = $derived(data.kpi);
+  const lastAction = $derived(data.lastAction);
 
-  // Player embed helper — supabase type inference loses nested join types on multi-FK tables
-  const playerName = (p: unknown): string =>
-    (p as { display_name?: string | null; username?: string })?.display_name ??
-    (p as { display_name?: string | null; username?: string })?.username ??
-    '';
+  // Client-side filter state driven by FilterChips (spec gm-worklist R2).
+  let filtered: WorklistItem[] = $state([...queue]);
+  let selected: 'todas' | 'ficha' | 'evento' | 'cronica' = $state('todas');
+
+  function onFilter(list: WorklistItem[], sel: typeof selected) {
+    filtered = list;
+    selected = sel;
+  }
+
+  // Reject needs a required reason (spec R4). A single form is reused for every
+  // row; the hidden inputs are populated from the clicked item before submit, so
+  // the server-side actions disambiguate by entityType/entityId.
+  let form!: HTMLFormElement;
+
+  function submitApprove(item: WorklistItem) {
+    form.action = `?/${'approve'}`;
+    form.querySelector<HTMLInputElement>('input[name="entityType"]')!.value = item.type;
+    form.querySelector<HTMLInputElement>('input[name="entityId"]')!.value = item.entityId;
+    form.requestSubmit();
+  }
+
+  function submitReject(item: WorklistItem) {
+    const reason = window.prompt('Motivo del rechazo (obligatorio):', item.name);
+    if (!reason) return;
+    form.action = `?/${'reject'}`;
+    form.querySelector<HTMLInputElement>('input[name="entityType"]')!.value = item.type;
+    form.querySelector<HTMLInputElement>('input[name="entityId"]')!.value = item.entityId;
+    form.querySelector<HTMLInputElement>('input[name="notes"]')!.value = reason;
+    form.requestSubmit();
+  }
+
+  function review(item: WorklistItem) {
+    goto(item.detailHref);
+  }
 </script>
 
 <svelte:head>
@@ -20,58 +57,43 @@
 
 <h1 class="text-3xl font-cinzel text-azeroth-gold flex items-center gap-3 mb-6"><Shield /> Panel GM</h1>
 
-<div class="grid md:grid-cols-3 gap-6">
-  <div class="card bg-base-200 border border-azeroth-border">
-    <div class="card-body">
-      <h2 class="card-title font-cinzel text-azeroth-gold">Fichas pendientes ({data.characters.length})</h2>
-      {#if data.characters.length === 0}
-        <EmptyState icon={Users} title="Sin fichas pendientes" />
-      {:else}
-        <div class="space-y-2 max-h-80 overflow-y-auto">
-          {#each data.characters as c (c.id)}
-            <a href={resolve(`/personajes/${c.id}`)} class="block p-2 bg-base-100 rounded border border-azeroth-border hover:border-azeroth-gold">
-              <p class="font-semibold">{c.name}</p>
-              <p class="text-xs text-gray-400">{c.race?.name} · {playerName(c.player)} · {formatDate(c.created_at)}</p>
-            </a>
-          {/each}
-        </div>
-      {/if}
-    </div>
-  </div>
+{#if lastAction}
+  <!-- service_role audit last-action banner (design AD-1), reusing AuditBanner -->
+  <AuditBanner
+    actor={lastAction.actor}
+    action={lastAction.action}
+    entityType={lastAction.entityType}
+    entityId={lastAction.entityId}
+    createdAt={lastAction.createdAt}
+  />
+{/if}
 
-  <div class="card bg-base-200 border border-azeroth-border">
-    <div class="card-body">
-      <h2 class="card-title font-cinzel text-azeroth-gold">Historias pendientes ({data.stories.length})</h2>
-      {#if data.stories.length === 0}
-        <EmptyState icon={BookOpen} title="Sin historias pendientes" />
-      {:else}
-        <div class="space-y-2 max-h-80 overflow-y-auto">
-          {#each data.stories as s (s.id)}
-            <a href={resolve(`/historias/${s.id}`)} class="block p-2 bg-base-100 rounded border border-azeroth-border hover:border-azeroth-gold">
-              <p class="font-semibold">{s.title}</p>
-              <p class="text-xs text-gray-400">{s.character?.name} · {playerName(s.character?.player)} · {formatDate(s.created_at)}</p>
-            </a>
-          {/each}
-        </div>
-      {/if}
-    </div>
-  </div>
+<GmAnalytics kpi={kpi} />
 
-  <div class="card bg-base-200 border border-azeroth-border">
-    <div class="card-body">
-      <h2 class="card-title font-cinzel text-azeroth-gold">Solicitudes de habilidad ({data.skillRequests.length})</h2>
-      {#if data.skillRequests.length === 0}
-        <EmptyState icon={Scroll} title="Sin solicitudes pendientes" />
-      {:else}
-        <div class="space-y-2 max-h-80 overflow-y-auto">
-          {#each data.skillRequests as req (req.id)}
-            <a href={resolve(`/gm/solicitudes/${req.id}`)} class="block p-2 bg-base-100 rounded border border-azeroth-border hover:border-azeroth-gold">
-              <p class="font-semibold">{req.character?.name} · {req.total_xp_cost} XP</p>
-              <p class="text-xs text-gray-400">{playerName(req.character?.player)} · {formatDate(req.created_at)}</p>
-            </a>
-          {/each}
-        </div>
-      {/if}
-    </div>
-  </div>
+<div class="mt-6">
+  <FilterChips items={queue} onFilter={onFilter} />
 </div>
+
+<div class="mt-4" data-testid="gm-worklist">
+  {#if filtered.length === 0 && queue.length > 0}
+    <EmptyState title="Sin resultados para este filtro" />
+  {:else if filtered.length === 0}
+    <EmptyState title="Sin pendientes" icon={Shield} />
+  {:else}
+    {#each filtered as item (item.id)}
+      <WorklistCard
+        {item}
+        onApprove={() => submitApprove(item)}
+        onReject={() => submitReject(item)}
+        onReview={() => review(item)}
+      />
+    {/each}
+  {/if}
+</div>
+
+<!-- Hidden, reused form that posts to the gm page actions (design AD-2). -->
+<form method="POST" use:enhance bind:this={form} aria-hidden="true">
+  <input type="hidden" name="entityType" value="" />
+  <input type="hidden" name="entityId" value="" />
+  <input type="hidden" name="notes" value="" />
+</form>
