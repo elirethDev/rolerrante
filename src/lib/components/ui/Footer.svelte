@@ -8,15 +8,15 @@
   }
 
   const comunidad: NavItem[] = [
-    { label: 'Índice de foros', href: '/foro' },
-    { label: 'Últimas crónicas', href: '/historias' },
-    { label: 'Personajes', href: '/personajes' },
+    { label: 'Índice de foros', href: resolve('/foro') },
+    { label: 'Últimas crónicas', href: resolve('/historias') },
+    { label: 'Personajes', href: resolve('/personajes') },
     { label: 'Normativa del reino', href: '#' },
   ];
 
   const acceso: NavItem[] = [
-    { label: 'Iniciar sesión', href: '/login' },
-    { label: 'Crear cuenta', href: '/registro' },
+    { label: 'Iniciar sesión', href: resolve('/login') },
+    { label: 'Crear cuenta', href: resolve('/registro') },
     { label: 'Recuperar acceso', href: '#' },
   ];
 </script>
@@ -39,7 +39,7 @@
       <h4 class="mb-3.5 font-cinzel text-[0.95rem] tracking-wide text-azeroth-cream">Comunidad</h4>
       <ul class="flex list-none flex-col gap-2.5 text-sm">
         {#each comunidad as item (item.label)}
-          <li><a href={resolve(item.href)} class="text-azeroth-muted hover:text-azeroth-gold-bright">{item.label}</a></li>
+          <li><a href={item.href} class="text-azeroth-muted hover:text-azeroth-gold-bright">{item.label}</a></li>
         {/each}
       </ul>
     </div>
@@ -48,7 +48,7 @@
       <h4 class="mb-3.5 font-cinzel text-[0.95rem] tracking-wide text-azeroth-cream">Acceso</h4>
       <ul class="flex list-none flex-col gap-2.5 text-sm">
         {#each acceso as item (item.label)}
-          <li><a href={resolve(item.href)} class="text-azeroth-muted hover:text-azeroth-gold-bright">{item.label}</a></li>
+          <li><a href={item.href} class="text-azeroth-muted hover:text-azeroth-gold-bright">{item.label}</a></li>
         {/each}
       </ul>
     </div>
