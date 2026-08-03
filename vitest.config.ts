@@ -1,3 +1,4 @@
+import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { svelteTesting } from "@testing-library/svelte/vite";
@@ -25,5 +26,13 @@ export default defineConfig({
     include: ["tests/**/*.test.ts", "src/**/*.test.ts"],
     css: false,
     mockReset: true,
+  },
+  server: {
+    fs: {
+      // When node_modules is junction-linked (git worktrees), its resolved
+      // realpath lives outside the Vite root and setup-file serving is denied;
+      // allow that resolved dir explicitly so the suite loads in worktrees too.
+      allow: [".", realpathSync("./node_modules")],
+    },
   },
 });
