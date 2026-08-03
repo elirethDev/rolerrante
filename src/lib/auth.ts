@@ -78,3 +78,20 @@ export function validateForumImageUrls(html: string): { valid: boolean; rejected
   }
   return { valid: rejected.length === 0, rejected };
 }
+
+/**
+ * Server-side validation of anchor hrefs inside TipTap HTML (REQ-FORUM-03.5 /
+ * REQ-FC-03). Only http/https URLs are accepted; javascript:, data:, file:,
+ * relative paths and any unknown scheme are rejected. Mirrors
+ * validateForumImageUrls.
+ */
+export function validateForumHrefs(html: string): { valid: boolean; rejected: string[] } {
+  const rejected: string[] = [];
+  const aRe = /<a\b[^>]*\bhref\s*=\s*["']([^"']+)["'][^>]*>/gi;
+  let match: RegExpExecArray | null;
+  while ((match = aRe.exec(html)) !== null) {
+    const href = match[1].trim();
+    if (!/^https?:\/\//i.test(href)) rejected.push(href);
+  }
+  return { valid: rejected.length === 0, rejected };
+}

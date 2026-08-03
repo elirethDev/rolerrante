@@ -117,6 +117,15 @@ describe('foro/nuevo default action (create debate thread)', () => {
     expect((res as { data: { message: string } }).data.message).toContain('Imagen');
   });
 
+  it('rejects a body with a javascript: anchor href with 400 (REQ-FC-03)', async () => {
+    const supabase = makeSupabase({});
+    const res = await defaultFn(
+      makeEvent(makeLocals(supabase), formBody({ title: 'B', content: '<p>leer <a href="javascript:alert(1)">acá</a></p>', category_id: 'c1' })),
+    );
+    expect(res.status).toBe(400);
+    expect((res as { data: { message: string } }).data.message).toContain('Enlace');
+  });
+
   it('rejects missing title or content with 400', async () => {
     const supabase = makeSupabase({});
     const res = await defaultFn(makeEvent(makeLocals(supabase), formBody({ title: '', content: '', category_id: 'c1' })));

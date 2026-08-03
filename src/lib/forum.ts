@@ -42,6 +42,16 @@ export interface AuthorRef {
   username?: string;
 }
 
+/**
+ * Payload emitted by PostCard's Citar action and consumed by ReplyComposer to
+ * prefill a blockquote reply (REQ-FC-04 / REQ-FORUM-02.5).
+ */
+export interface QuotePayload {
+  author_display_name: string;
+  body_excerpt: string; // first 500 chars, plain-text stripped
+  post_id: string;
+}
+
 export interface ThreadView {
   id: string;
   title: string;

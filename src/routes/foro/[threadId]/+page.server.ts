@@ -1,5 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { resolveEffectivePermissions, validateForumImageUrls, requireAuth, type PermissionFlags } from '$lib/auth';
+import { resolveEffectivePermissions, validateForumImageUrls, validateForumHrefs, requireAuth, type PermissionFlags } from '$lib/auth';
+import { applyQuoteToBody, EXCERPT_MAX_LENGTH } from '$lib/forum-compose';
 import { getOrCreateThread, type ThreadView, type PostView } from '$lib/forum';
 import type { Json } from '$lib/supabase/database.types';
 import type { UserRole } from '$lib/types';
@@ -131,8 +132,39 @@ export const actions: Actions = {
     const content = String(form.get('content') ?? '');
     if (!content.trim()) return fail(400, { message: 'El mensaje no puede estar vacío' });
 
-    const imgCheck = validateForumImageUrls(content);
+    // Optional quote payload (REQ-FC-04 / REQ-FORUM-03.2). The composer sends
+    // quote_author, quote_excerpt (≤500) and quote_post_id. Validate all three
+    // and, on success, prepend an authoritative blockquote to the body.
+    let body = content;
+    const quoteAuthor = String(form.get('quote_author') ?? '').trim();
+    const quoteExcerpt = String(form.get('quote_excerpt') ?? '');
+    const quotePostId = String(form.get('quote_post_id') ?? '');
+
+    if (quotePostId) {
+      if (!quoteAuthor) return fail(400, { message: 'El autor de la cita es obligatorio' });
+      if (quoteExcerpt.length > EXCERPT_MAX_LENGTH) {
+        return fail(400, { message: `La cita excede los ${EXCERPT_MAX_LENGTH} caracteres` });
+      }
+      // The quoted post must live in this thread.
+      const { data: quotedRows } = await supabase
+        .from('posts')
+        .select('id')
+        .eq('id', quotePostId)
+        .eq('thread_id', t.id)
+        .maybeSingle();
+      if (!quotedRows) return fail(400, { message: 'El mensaje citado no pertenece a este hilo' });
+      body = applyQuoteToBody(content, {
+        author_display_name: quoteAuthor,
+        body_excerpt: quoteExcerpt,
+        post_id: quotePostId,
+      });
+    }
+
+    const imgCheck = validateForumImageUrls(body);
     if (!imgCheck.valid) return fail(400, { message: `Imagen no permitida: ${imgCheck.rejected.join(', ')}` });
+
+    const hrefCheck = validateForumHrefs(body);
+    if (!hrefCheck.valid) return fail(400, { message: `Enlace no permitido: ${hrefCheck.rejected.join(', ')}` });
 
     // next post_number = max + 1 (posts ordered ascending)
     const { data: existingPosts } = await supabase.from('posts').select('post_number').eq('thread_id', t.id);
@@ -142,7 +174,7 @@ export const actions: Actions = {
     const { error: insertError } = await supabase.from('posts').insert({
       thread_id: t.id,
       author_id: user!.id,
-      body: content,
+      body,
       post_number: nextNumber,
     });
 

@@ -2,13 +2,16 @@
   import { onMount, onDestroy } from 'svelte';
   import { Editor } from '@tiptap/core';
   import StarterKit from '@tiptap/starter-kit';
+  import Link from '@tiptap/extension-link';
+  import CharacterCount from '@tiptap/extension-character-count';
   import Image from '@tiptap/extension-image';
   import { TextStyle } from '@tiptap/extension-text-style';
   import Color from '@tiptap/extension-color';
-  import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, List, ListOrdered, Quote, Image as ImageIcon, Heading1, Heading2 } from '@lucide/svelte';
+  import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, List, ListOrdered, Quote, Image as ImageIcon, Heading1, Heading2, Link as LinkIcon } from '@lucide/svelte';
 
   export let content = '';
   export let onChange: (html: string) => void = () => {};
+  export let onCharCount: (n: number) => void = () => {};
   export let editable = true;
   // Optional server-validated image-insert guard (REQ-FORUM-03.5). When provided,
   // ad image is only inserted if validateImageUrl(url) returns true — mirroring the
@@ -18,14 +21,29 @@
   let element: HTMLDivElement;
   let editor: Editor | null = null;
 
+  // Client-side href protocol guard (REQ-FC-03). Mirrors the server-side
+  // validateForumHrefs() check: only http/https are accepted. Not a trust
+  // boundary — server still validates on submit.
+  function isValidHref(url: string): boolean {
+    return /^https?:\/\//i.test(url);
+  }
+
   onMount(() => {
     editor = new Editor({
       element,
       editable,
       content,
-      extensions: [StarterKit, Image, TextStyle, Color],
+      extensions: [
+        StarterKit,
+        Link.configure({ openOnClick: true, autolink: true }),
+        CharacterCount,
+        Image,
+        TextStyle,
+        Color,
+      ],
       onUpdate: ({ editor }) => {
         onChange(editor.getHTML());
+        onCharCount(editor.storage.characterCount.characters());
       },
       editorProps: {
         attributes: {
@@ -49,6 +67,16 @@
     editor.chain().focus().setImage({ src: url }).run();
   }
 
+  function addLink() {
+    const href = prompt('URL del enlace (http/https)');
+    if (!href || !editor) return;
+    if (!isValidHref(href)) {
+      window.alert('URL de enlace no permitida (solo http/https).');
+      return;
+    }
+    editor.chain().focus().extendMarkRange('link').setLink({ href }).run();
+  }
+
   $: if (editor && editor.getHTML() !== content && !editor.isFocused) {
     editor.commands.setContent(content, { emitUpdate: false });
   }
@@ -69,6 +97,9 @@
     <button type="button" class="btn btn-xs btn-ghost" on:click={() => editor?.chain().focus().toggleBlockquote().run()} class:btn-active={editor?.isActive('blockquote')}><Quote size={14} /></button>
     <div class="divider divider-horizontal mx-1"></div>
     <button type="button" class="btn btn-xs btn-ghost" on:click={addImage}><ImageIcon size={14} /></button>
+    <button type="button" class="btn btn-xs btn-ghost" on:click={addLink} class:btn-active={editor?.isActive('link')}><LinkIcon size={14} /></button>
+    <!-- Spoiler node is owned by forum-social (S3), out of scope: disabled placeholder (REQ-FC-05). -->
+    <button type="button" class="btn btn-xs btn-ghost" aria-disabled="true" title="Spoiler pronto" disabled>Spoiler</button>
   </div>
 {/if}
 <div bind:this={element} class="border border-azeroth-border {editable ? 'rounded-b-lg' : 'rounded-lg'} bg-base-100"></div>

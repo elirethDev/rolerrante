@@ -2,7 +2,7 @@
   import { Lock } from '@lucide/svelte';
   import TipTapViewer from '$lib/components/editor/TipTapViewer.svelte';
   import type { PermissionFlags } from '$lib/auth';
-  import type { PostView, ThreadView } from '$lib/forum';
+  import type { PostView, QuotePayload, ThreadView } from '$lib/forum';
   import { formatRelativeTime } from '$lib/utils';
   import Pager from '$lib/components/ui/Pager.svelte';
   import PostCard from './PostCard.svelte';
@@ -16,6 +16,7 @@
     isLocked,
     isOwner,
     isStaff,
+    onCitar = undefined,
     currentPage = 1,
     totalPages = 1,
   }: {
@@ -27,6 +28,7 @@
     isLocked: boolean;
     isOwner: boolean;
     isStaff: boolean;
+    onCitar?: ((payload: QuotePayload) => void) | undefined;
     currentPage?: number;
     totalPages?: number;
   } = $props();
@@ -78,7 +80,7 @@
 
   <div class="mt-6">
     {#each posts as post (post.id)}
-      <PostCard {post} editorName={post.author?.display_name ?? post.author?.username ?? null} />
+      <PostCard {post} {onCitar} editorName={post.author?.display_name ?? post.author?.username ?? null} />
     {/each}
   </div>
 
