@@ -78,3 +78,18 @@ export function validateForumImageUrls(html: string): { valid: boolean; rejected
   }
   return { valid: rejected.length === 0, rejected };
 }
+
+/**
+ * Single-URL variant of the forum image validator (REQ-CAV-01.2). Allows
+ * null/undefined/empty (avatar cleared) and any http: or https: URL; rejects
+ * every other scheme (javascript:, data:, file:, unknown, relative paths).
+ */
+export function validateImageUrl(url: string | null | undefined): { valid: boolean; rejected?: string } {
+  if (!url || url.trim() === "") {
+    return { valid: true };
+  }
+  if (!/^https?:\/\//i.test(url)) {
+    return { valid: false, rejected: url };
+  }
+  return { valid: true };
+}
