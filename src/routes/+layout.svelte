@@ -15,7 +15,7 @@
 </script>
 
 <div data-theme="azeroth" class="min-h-screen bg-base-100 text-base-content overscroll-none">
-  <Navbar user={page.data.user} profile={page.data.profile} />
+  <Navbar user={page.data.user} profile={page.data.profile} unreadCount={page.data.unreadCount} />
   <main class="container mx-auto px-4 py-6">
     <slot />
   </main>

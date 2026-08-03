@@ -42,6 +42,8 @@ interface Fixture {
   // pin/unpin update fixtures
   updateCalls?: Array<Record<string, unknown>>;
   updateError?: unknown;
+  // follow/watch fixtures
+  followState?: { notify_in_app: boolean } | null;
 }
 
 // Fluent supabase mock for the thread detail route. Supports:
@@ -75,6 +77,7 @@ function makeSupabase(f: Fixture) {
         return builder;
       },
       maybeSingle: () => {
+        if (table === 'thread_follows') return Promise.resolve({ data: f.followState ?? null, error: null });
         if (table === 'reactions') return Promise.resolve({ data: f.existingReaction ?? null, error: null });
         if (table === 'posts') {
           // like action selects the thread join -> serve postForLike
@@ -369,6 +372,31 @@ describe('thread detail pagination (REQ-FORUM-02.3)', () => {
     expect(result.totalPages).toBe(1);
     expect(result.currentPage).toBe(1);
     expect(result.posts).toHaveLength(15);
+  });
+});
+
+describe('thread detail load() follow state (Slice 2)', () => {
+  it('reports following=true with the stored in-app preference for an authenticated follow', async () => {
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      followState: { notify_in_app: false },
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'rolero', 'u1')));
+    expect(result.follow).toEqual({ following: true, notify_in_app: false });
+    expect(result.isAuthenticated).toBe(true);
+  });
+
+  it('reports following=true with default preference when the stored follow has it enabled', async () => {
+    const supabase = makeSupabase({ thread: makeThread(), followState: { notify_in_app: true } });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'rolero', 'u1')));
+    expect(result.follow).toEqual({ following: true, notify_in_app: true });
+  });
+
+  it('reports following=false for a guest without querying follows', async () => {
+    const supabase = makeSupabase({ thread: makeThread() });
+    const result = await loadFn(makeEvent({ supabase, user: null, profile: null } as never));
+    expect(result.follow).toEqual({ following: false, notify_in_app: true });
+    expect(result.isAuthenticated).toBe(false);
   });
 });
 
