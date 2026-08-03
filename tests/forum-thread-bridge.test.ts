@@ -44,6 +44,7 @@ function makeSupabase(entities: Record<ThreadEntityType, EntityMock>) {
             linked_entity_id: row.linked_entity_id ?? null,
             status: row.status ?? "pendiente",
             is_locked: row.is_locked ?? false,
+            is_sticky: row.is_sticky ?? false,
             locked_by: null,
             locked_at: null,
             created_at: "2026-08-02T00:00:00Z",

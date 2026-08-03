@@ -5,6 +5,7 @@
   import type { ThreadListItem } from '$lib/forum';
   import { formatDate } from '$lib/utils';
   import LockBadge from './LockBadge.svelte';
+  import PinBadge from './PinBadge.svelte';
 
   let { threads }: { threads: ThreadListItem[] } = $props();
 
@@ -27,6 +28,9 @@
             <FileText size={16} class="text-azeroth-gold shrink-0" />
           {/if}
           <span class="font-medium line-clamp-1">{t.title}</span>
+          {#if t.is_sticky}
+            <PinBadge />
+          {/if}
           {#if t.is_locked}
             <LockBadge />
           {/if}

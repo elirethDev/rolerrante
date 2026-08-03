@@ -821,6 +821,7 @@ export type Database = {
           edited_by: string | null
           id: string
           is_locked: boolean
+          is_sticky: boolean
           linked_entity_id: string | null
           linked_entity_type: string | null
           locked_at: string | null
@@ -839,6 +840,7 @@ export type Database = {
           edited_by?: string | null
           id?: string
           is_locked?: boolean
+          is_sticky?: boolean
           linked_entity_id?: string | null
           linked_entity_type?: string | null
           locked_at?: string | null
@@ -857,6 +859,7 @@ export type Database = {
           edited_by?: string | null
           id?: string
           is_locked?: boolean
+          is_sticky?: boolean
           linked_entity_id?: string | null
           linked_entity_type?: string | null
           locked_at?: string | null
@@ -1011,6 +1014,8 @@ export type Database = {
         | "bloquear_hilo"
         | "desbloquear_hilo"
         | "editar_permisos"
+        | "fijar_hilo"
+        | "desfijar_hilo"
       event_status:
         | "publicado"
         | "en_curso"
@@ -1164,6 +1169,8 @@ export const Constants = {
         "bloquear_hilo",
         "desbloquear_hilo",
         "editar_permisos",
+        "fijar_hilo",
+        "desfijar_hilo",
       ],
       event_status: [
         "publicado",

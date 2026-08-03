@@ -8,6 +8,7 @@ const thread = (p: Partial<Record<string, unknown>> = {}) => ({
   content_type: 'debate',
   status: 'abierto',
   is_locked: false,
+  is_sticky: false,
   created_at: '2026-08-02T00:00:00Z',
   edited_at: null,
   category_id: 'c1',
@@ -50,5 +51,16 @@ describe('ThreadList', () => {
     render(ThreadList, { threads: [thread({ posts_count: undefined })] });
     expect(screen.getByText('0 mensajes')).toBeInTheDocument();
     expect(screen.queryByText(/Último:/)).not.toBeInTheDocument();
+  });
+
+  it('shows a pin badge on sticky threads', () => {
+    render(ThreadList, { threads: [thread({ is_sticky: true })] });
+    expect(screen.getByTestId('pin-badge')).toBeInTheDocument();
+    expect(screen.getByText('Fijado')).toBeInTheDocument();
+  });
+
+  it('does not show pin badge on non-sticky threads', () => {
+    render(ThreadList, { threads: [thread({ is_sticky: false })] });
+    expect(screen.queryByTestId('pin-badge')).not.toBeInTheDocument();
   });
 });

@@ -8,6 +8,10 @@ const loadFn = load as unknown as (...args: unknown[]) => Promise<any>;
 const replyFn = actions.reply as unknown as (...args: unknown[]) => Promise<any>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const deleteFn = actions.delete as unknown as (...args: unknown[]) => Promise<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const pinFn = actions.pin as unknown as (...args: unknown[]) => Promise<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const unpinFn = actions.unpin as unknown as (...args: unknown[]) => Promise<any>;
 
 type Handler = (...args: unknown[]) => void;
 
@@ -35,6 +39,9 @@ interface Fixture {
   insertedReactions?: Array<Record<string, unknown>>;
   deletedReactionIds?: string[];
   reactionsInsertError?: unknown;
+  // pin/unpin update fixtures
+  updateCalls?: Array<Record<string, unknown>>;
+  updateError?: unknown;
 }
 
 // Fluent supabase mock for the thread detail route. Supports:
@@ -125,6 +132,10 @@ function makeSupabase(f: Fixture) {
         }
         return builder;
       },
+      update: (row: Record<string, unknown>) => {
+        (f.updateCalls ??= []).push({ table, ...row });
+        return builder;
+      },
     };
     return builder;
   };
@@ -149,6 +160,7 @@ const makeThread = (p: Partial<Record<string, unknown>> = {}) => ({
   linked_entity_id: null,
   status: 'abierto',
   is_locked: false,
+  is_sticky: false,
   locked_by: null,
   locked_at: null,
   created_at: '2026-08-02T00:00:00Z',
@@ -670,5 +682,57 @@ describe('thread detail like action', () => {
     expect(res.status).toBe(400);
     expect(inserted).toHaveLength(0);
     expect(supabase.fixtures.deletedReactionIds ?? []).toHaveLength(0);
+  });
+});
+
+describe('thread detail pin/unpin actions', () => {
+  const makePinEvent = (locals: ReturnType<typeof makeLocals>) =>
+    ({ locals, params: { threadId: 't1' }, url: new URL('http://localhost/foro/t1') }) as never;
+
+  it('gm pins a thread: sets is_sticky true and logs fijar_hilo', async () => {
+    const supabase = makeSupabase({ thread: makeThread({ is_sticky: false }) });
+    const res = await pinFn(makePinEvent(makeLocals(supabase, 'gm', 'staff1')));
+    expect(res.success).toBe(true);
+    const update = (supabase.fixtures.updateCalls ?? []).find((u) => u.is_sticky === true);
+    expect(update).toBeDefined();
+    const audit = supabase.fixtures.audit ?? [];
+    expect(audit.some((a) => a.args?.p_action === 'fijar_hilo')).toBe(true);
+  });
+
+  it('gm unpins a thread: sets is_sticky false and logs desfijar_hilo', async () => {
+    const supabase = makeSupabase({ thread: makeThread({ is_sticky: true }) });
+    const res = await unpinFn(makePinEvent(makeLocals(supabase, 'admin', 'staff1')));
+    expect(res.success).toBe(true);
+    const update = (supabase.fixtures.updateCalls ?? []).find((u) => u.is_sticky === false);
+    expect(update).toBeDefined();
+    const audit = supabase.fixtures.audit ?? [];
+    expect(audit.some((a) => a.args?.p_action === 'desfijar_hilo')).toBe(true);
+  });
+
+  it('blocks the author from pinning their own thread with 403', async () => {
+    const supabase = makeSupabase({ thread: makeThread({ is_sticky: false }) });
+    // author u1 is a gm but owns the thread -> must be rejected
+    const res = await pinFn(makePinEvent(makeLocals(supabase, 'gm', 'u1')));
+    expect(res.status).toBe(403);
+    expect(supabase.fixtures.updateCalls ?? []).toHaveLength(0);
+  });
+
+  it('blocks a guest (pendiente) from pinning with 403', async () => {
+    const supabase = makeSupabase({ thread: makeThread({ is_sticky: false }) });
+    const res = await pinFn(makePinEvent(makeLocals(supabase, 'pendiente', 'guest1')));
+    expect(res.status).toBe(403);
+    expect(supabase.fixtures.updateCalls ?? []).toHaveLength(0);
+  });
+
+  it('returns is_sticky false by default in load()', async () => {
+    const supabase = makeSupabase({ thread: makeThread() });
+    const result = await loadFn(makeEvent(makeLocals(supabase)));
+    expect(result.isSticky).toBe(false);
+  });
+
+  it('returns is_sticky true in load() for a sticky thread', async () => {
+    const supabase = makeSupabase({ thread: makeThread({ is_sticky: true }) });
+    const result = await loadFn(makeEvent(makeLocals(supabase)));
+    expect(result.isSticky).toBe(true);
   });
 });

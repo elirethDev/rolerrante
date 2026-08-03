@@ -23,6 +23,7 @@
     entity={data.entity}
     flags={data.flags}
     isLocked={data.isLocked}
+    isSticky={data.isSticky}
     isOwner={data.isOwner}
     isStaff={data.isStaff}
     currentPage={data.currentPage}
