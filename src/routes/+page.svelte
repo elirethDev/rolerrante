@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { resolve } from '$app/paths';
   import { Pin, Flame, Lock } from '@lucide/svelte';
   import Avatar from '$lib/components/ui/Avatar.svelte';
@@ -10,6 +11,24 @@
 
   let { data }: { data: PageData } = $props();
 
+  // Force background-video playback: `muted` as an attribute is not enough to
+  // satisfy autoplay policies in every browser, so set the property + play().
+  let heroVideo: HTMLVideoElement | undefined = $state();
+  let heroVideoFailed = $state(false);
+  onMount(() => {
+    const v = heroVideo;
+    if (!v) return;
+    v.muted = true;
+    const p = v.play();
+    if (p && typeof p.then === 'function') {
+      p.catch(() => {
+        // autoplay blocked (e.g. strict policy, or reduced-motion user agent) —
+        // the poster + CSS fallback already cover the background; nothing to do.
+        heroVideoFailed = true;
+      });
+    }
+  });
+
   // --- Discord widget: static demo numbers (no Discord presence API). Replace
   // with real values once a bot/API exposes them. DISCORD_INVITE is the real
   // invite the community configured.
@@ -19,7 +38,7 @@
 
   // --- "Conectados": static demo list (no presence backend). Placeholder only.
   const ONLINE_USERS = [
-    { name: 'Kareth', activity: 'escribiendo', place: 'en Crónicas', ring: true },
+    { name: 'Kareth', activity: 'escribiendo', place: 'en Crínicas', ring: true },
     { name: 'Mariela', activity: '', place: 'en Eventos', ring: false },
     { name: 'Raviel', activity: '', place: 'en Fichas', ring: false },
     { name: 'Torgal', activity: '', place: 'en La Taberna', ring: false },
@@ -42,6 +61,7 @@
     <div class="hero-bg" aria-hidden="true">
       <video
         class="hero-video"
+        bind:this={heroVideo}
         autoplay
         muted
         loop

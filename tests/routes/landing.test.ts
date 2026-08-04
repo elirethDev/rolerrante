@@ -156,7 +156,7 @@ describe("landing page (landing-community)", () => {
     expect(online).toHaveTextContent("Kareth");
     expect(online).toHaveTextContent("Mariela");
     expect(online).toHaveTextContent("escribiendo");
-    expect(online.textContent).toContain("en Crónicas");
+    expect(online.textContent).toContain("en Crínicas");
   });
 
   it("renders the data cards (crónicas, eventos, fichas) when present", () => {
