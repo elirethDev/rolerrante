@@ -1,7 +1,8 @@
 /* eslint-disable no-unused-vars, @typescript-eslint/no-explicit-any -- mock helper types intentionally loose */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
-import { load, actions, applyRememberMe } from './+page.server';
+import { load, actions } from './+page.server';
+import { applyRememberMe } from '$lib/auth/remember';
 import { verifyTurnstileToken } from '$lib/turnstile';
 
 vi.mock('$lib/turnstile', () => ({

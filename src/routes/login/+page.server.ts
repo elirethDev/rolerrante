@@ -1,16 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
-import type { Cookies } from '@sveltejs/kit';
 import { verifyTurnstileToken } from '$lib/turnstile';
+import { applyRememberMe } from '$lib/auth/remember';
 import type { Actions, PageServerLoad } from './$types';
-
-const AUTH_COOKIE_RE = /^sb-.*-auth-token(?:\.\d+)?$/;
-
-export const applyRememberMe = (cookies: Cookies): void => {
-  const authCookies = cookies.getAll().filter(({ name }) => AUTH_COOKIE_RE.test(name));
-  for (const { name, value } of authCookies) {
-    cookies.set(name, value, { maxAge: undefined, path: '/' });
-  }
-};
 
 export const load: PageServerLoad = async ({ locals: { session }, url }) => {
   if (session) redirect(303, '/');
