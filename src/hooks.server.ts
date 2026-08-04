@@ -9,6 +9,7 @@ const CSP = "default-src 'self'; script-src 'self' https://challenges.cloudflare
 const FORM_ROUTES = new Set([
   '/login',
   '/registro',
+  '/forgot-password',
   '/personajes/nuevo',
   '/historias/nueva',
   '/eventos/nuevo',

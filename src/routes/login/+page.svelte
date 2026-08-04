@@ -27,6 +27,9 @@
       {#if data.registrado}
         <div class="alert alert-success text-sm mt-2">Cuenta creada. Ahora puedes iniciar sesión.</div>
       {/if}
+      {#if data.reset}
+        <div class="alert alert-success text-sm mt-2">Contraseña actualizada. Ahora puedes iniciar sesión.</div>
+      {/if}
       {#if form?.message}
         <div class="alert alert-error text-sm mt-2">{form.message}</div>
       {/if}
@@ -57,7 +60,7 @@
 
         <div class="flex items-center justify-between gap-2 text-sm mt-1">
           <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="remember" class="checkbox checkbox-sm checkbox-primary" checked /> Recordarme</label>
-          <a href="#" class="link link-hover link-primary">¿Olvidaste tu contraseña?</a>
+          <a href={resolve('/forgot-password')} class="link link-hover link-primary">¿Olvidaste tu contraseña?</a>
         </div>
         <div class="flex justify-center">
           <Turnstile bind:this={turnstileRef} bind:token={turnstileToken} theme="dark" />

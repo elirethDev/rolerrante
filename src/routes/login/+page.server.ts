@@ -18,6 +18,7 @@ export const load: PageServerLoad = async ({ locals: { session }, url }) => {
     registrado:
       url.searchParams.get('registrado') === '1' ||
       url.searchParams.get('confirmed') === '1',
+    reset: url.searchParams.get('reset') === '1',
   };
 };
 
