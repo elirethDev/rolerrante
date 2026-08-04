@@ -238,7 +238,7 @@ CREATE POLICY "Personajes visibles si aprobados" ON public.characters
 DROP POLICY IF EXISTS "Jugadores gestionan sus personajes" ON public.characters;
 
 REVOKE UPDATE ON public.characters FROM anon, authenticated;
-GRANT UPDATE (name, age, sex, physical_description, avatar_url, mana_source,
+GRANT UPDATE (name, age, sex, physical_description, mana_source,
   attr_fis, attr_des, attr_int, attr_per, attr_esp, status, race_id,
   reviewed_by, reviewed_at, updated_at) ON public.characters TO authenticated;
 
