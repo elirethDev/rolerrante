@@ -76,7 +76,10 @@ function makeSupabase(fixture: {
 
 type Handler = (...args: unknown[]) => void;
 
-const row = (p: Partial<Row> & { id: string }): Row => ({ created_at: '2026-08-03T10:00:00.000Z', ...p });
+const row = (p: Partial<Row> & { id: string }): Row => ({
+  created_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+  ...p,
+});
 
 const makeLocals = (supabase: ReturnType<typeof makeSupabase>, role: string = 'gm') =>
   ({ supabase, profile: { id: 'u1', role } }) as never;
@@ -129,16 +132,20 @@ describe('gm/+page.server.ts', () => {
     });
 
     it('computes approved-today and avg review time from approved rows', async () => {
+      // Dates are relative to run-time so "aprobadas hoy" stays deterministic
+      // regardless of when the suite executes (reviewed_at lands on today).
+      const now = Date.now();
+      const approvedRow = (createdHoursAgo: number) => ({
+        created_at: new Date(now - createdHoursAgo * 60 * 60 * 1000).toISOString(),
+        reviewed_at: new Date(now).toISOString(),
+      });
       const supabase = makeSupabase({
         characters: [row({ id: 'c1', name: 'A', player: { display_name: 'Syl' } })],
         stories: [],
         events: [],
         skill_requests: [],
         approved: {
-          characters: [
-            { created_at: '2026-08-01T00:00:00.000Z', reviewed_at: '2026-08-03T09:00:00.000Z' },
-            { created_at: '2026-08-01T08:00:00.000Z', reviewed_at: '2026-08-03T09:00:00.000Z' },
-          ],
+          characters: [approvedRow(57), approvedRow(49)],
         },
       });
       const result = await loadFn(makeEvent(makeLocals(supabase, 'gm')));
