@@ -96,6 +96,22 @@ describe("characters self-approval / rp_points mint guard (C2)", () => {
     );
   });
 
+  it("removes the legacy owner policy idempotently (clean-DB reset safe)", () => {
+    // The 20260731000000_init_schema.sql must be applyable on a FRESH database
+    // (db reset --linked): since the legacy FOR ALL policy is no longer created
+    // in this migration, dropping it must be guarded with IF EXISTS, otherwise
+    // the drop fails on a clean rebuild (regression guard).
+    expect(sql).toMatch(
+      /DROP POLICY IF EXISTS "Jugadores gestionan sus personajes" ON public\.characters;/,
+    );
+  });
+
+  it("drops the legacy owner policy idempotently for clean rebuilds", () => {
+    expect(sql).toContain(
+      'DROP POLICY IF EXISTS "Jugadores gestionan sus personajes" ON public.characters;',
+    );
+  });
+
   it("trigger blocks non-staff status promotion and rp_points changes", () => {
     expect(sql).toMatch(
       /CREATE TRIGGER trg_protect_character_review\s+BEFORE UPDATE OF status, rp_points ON public\.characters/,
