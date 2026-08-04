@@ -106,9 +106,16 @@
 </section>
 
 <style>
+  .hero {
+    position: relative;
+    min-height: calc(100vh - var(--topbar-h, 64px));
+    display: flex;
+    align-items: stretch;
+  }
   .hero-stage {
     position: relative;
-    min-height: 78vh;
+    flex: 1;
+    width: 100%;
     display: flex;
     align-items: center;
     border-bottom: 1px solid var(--color-azeroth-border);
