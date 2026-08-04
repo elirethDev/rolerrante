@@ -14,6 +14,9 @@ function cat(partial: Partial<CategoryNode> & Pick<CategoryNode, 'id' | 'name'>)
     flags: partial.flags ?? flags,
     children: partial.children ?? [],
     threads: partial.threads ?? [],
+    threads_count: partial.threads_count ?? 0,
+    posts_count: partial.posts_count ?? 0,
+    lastPost: partial.lastPost ?? null,
   };
 }
 
@@ -54,5 +57,54 @@ describe('CategoryTree', () => {
     });
     expect(screen.getByText('VisibleChild')).toBeInTheDocument();
     expect(screen.queryByText('HiddenChild')).not.toBeInTheDocument();
+  });
+
+  it('renders Temas/Mensajes counts and last-post avatar+author (REQ-FORUM-02.1)', () => {
+    render(CategoryTree, {
+      categories: [
+        cat({
+          id: 'r1',
+          name: 'General',
+          children: [
+            {
+              ...cat({ id: 'sub1', name: 'Debates' }),
+              threads_count: 3,
+              posts_count: 12,
+              lastPost: { avatar_url: 'https://x/avatar.png', author_display_name: 'Nyx' },
+            },
+          ],
+        }),
+      ],
+    });
+    expect(screen.getByText('Debates')).toBeInTheDocument();
+    expect(screen.getByText('Temas 3')).toBeInTheDocument();
+    expect(screen.getByText('Mensajes 12')).toBeInTheDocument();
+    // Last post shows both an author name (behavioral) — avatar is present via image alt.
+    expect(screen.getByText('Nyx')).toBeInTheDocument();
+    const avatar = document.querySelector('img[alt="Último mensaje de Nyx"]');
+    expect(avatar).not.toBeNull();
+    expect(avatar).toHaveAttribute('src', 'https://x/avatar.png');
+  });
+
+  it('shows Temas 0 / Mensajes 0 with no last-post for an empty category', () => {
+    render(CategoryTree, {
+      categories: [
+        cat({
+          id: 'r1',
+          name: 'General',
+          children: [
+            {
+              ...cat({ id: 'sub1', name: 'Vacía' }),
+              threads_count: 0,
+              posts_count: 0,
+              lastPost: null,
+            },
+          ],
+        }),
+      ],
+    });
+    expect(screen.getByText('Temas 0')).toBeInTheDocument();
+    expect(screen.getByText('Mensajes 0')).toBeInTheDocument();
+    expect(screen.queryByAltText(/Último mensaje de/)).not.toBeInTheDocument();
   });
 });

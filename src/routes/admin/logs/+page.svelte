@@ -1,5 +1,6 @@
 <script lang="ts">
-  import Field from '$lib/components/forms/Field.svelte';
+  import Field from '$lib/components/ui/Field.svelte';
+  import AuditActionBadge from '$lib/components/admin/AuditActionBadge.svelte';
   import { formatDate } from '$lib/utils';
   import type { PageData } from './$types';
 
@@ -52,7 +53,7 @@
             <tr>
               <td>{formatDate(log.created_at)}</td>
               <td>{log.actor?.display_name ?? log.actor?.username ?? 'Sistema'}</td>
-              <td>{log.action}</td>
+              <td><AuditActionBadge action={log.action} /></td>
               <td>{log.entity_type}{#if log.entity_id} · {log.entity_id.slice(0, 8)}{/if}</td>
               <td class="text-xs">{JSON.stringify(log.details)}</td>
             </tr>

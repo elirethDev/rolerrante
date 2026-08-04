@@ -1,7 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import PermissionPanel from '$lib/components/forum/PermissionPanel.svelte';
-  import Field from '$lib/components/forms/Field.svelte';
+  import Field from '$lib/components/ui/Field.svelte';
   import type { ActionData, PageData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData | null } = $props();

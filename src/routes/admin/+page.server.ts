@@ -20,5 +20,13 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile } }) =>
         .limit(5),
     ]);
 
-  return { users: users ?? 0, nonAdmin: nonAdmin ?? 0, logs: logs ?? 0, recentLogs: recentLogs ?? [] };
+  const lastAction = recentLogs?.[0] ?? null;
+
+  return {
+    users: users ?? 0,
+    nonAdmin: nonAdmin ?? 0,
+    logs: logs ?? 0,
+    recentLogs: recentLogs ?? [],
+    lastAction,
+  };
 };

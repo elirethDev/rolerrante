@@ -5,8 +5,13 @@
   import type { User as SupabaseUser } from '@supabase/supabase-js';
   import type { Profile } from '$lib/types';
   import { isGMOrAdmin, isAdmin } from '$lib/auth';
+  import NotificationBell from '$lib/components/notifications/NotificationBell.svelte';
 
-  let { user, profile }: { user: SupabaseUser | null; profile: Profile | null } = $props();
+  let {
+    user,
+    profile,
+    unreadCount = 0,
+  }: { user: SupabaseUser | null; profile: Profile | null; unreadCount?: number } = $props();
 
   let menuOpen = $state(false);
 </script>
@@ -62,6 +67,7 @@
   </div>
   <div class="navbar-end gap-2">
     {#if user}
+      <NotificationBell unreadCount={unreadCount} guest={false} />
       <a href={resolve('/perfil')} class="btn btn-ghost btn-sm gap-2">
         <User size={18} />
         <span class="hidden sm:inline">{profile?.display_name ?? profile?.username ?? 'Perfil'}</span>

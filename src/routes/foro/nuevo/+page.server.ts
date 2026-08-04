@@ -1,9 +1,13 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { requireAuth, validateForumImageUrls } from '$lib/auth';
+import { requireAuth, validateForumImageUrls, validateForumHrefs, forumAccessAllowed } from '$lib/auth';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals: { supabase, user, profile } }) => {
   requireAuth({ user, profile });
+  // Suspended/banned users are denied forum access (REQ-MOD-ENF-03.2).
+  if (profile && !(await forumAccessAllowed(supabase, profile))) {
+    throw redirect(303, '/');
+  }
   const { data: categories } = await supabase.from('categories').select('*').order('sort_order', { ascending: true });
   return { categories: categories ?? [] };
 };
@@ -11,6 +15,9 @@ export const load: PageServerLoad = async ({ locals: { supabase, user, profile }
 export const actions: Actions = {
   default: async ({ request, locals: { supabase, user, profile } }) => {
     requireAuth({ user, profile });
+    if (profile && !(await forumAccessAllowed(supabase, profile))) {
+      throw redirect(303, '/');
+    }
     const form = await request.formData();
     const title = String(form.get('title') ?? '').trim();
     const content = String(form.get('content') ?? '').trim();
@@ -23,6 +30,11 @@ export const actions: Actions = {
     const imgCheck = validateForumImageUrls(content);
     if (!imgCheck.valid) {
       return fail(400, { message: `Imagen no permitida: ${imgCheck.rejected.join(', ')}` });
+    }
+
+    const hrefCheck = validateForumHrefs(content);
+    if (!hrefCheck.valid) {
+      return fail(400, { message: `Enlace no permitido: ${hrefCheck.rejected.join(', ')}` });
     }
 
     const { data: category } = await supabase

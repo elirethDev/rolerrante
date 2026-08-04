@@ -3,9 +3,14 @@
   import { resolve } from '$app/paths';
   import ReplyComposer from '$lib/components/forum/ReplyComposer.svelte';
   import ThreadDetail from '$lib/components/forum/ThreadDetail.svelte';
+  import type { QuotePayload } from '$lib/forum';
+  import WatchModal from '$lib/components/forum/WatchModal.svelte';
   import type { PageData } from './$types';
 
-  export let data: PageData;
+  let { data }: { data: PageData } = $props();
+
+  let replyTo: QuotePayload | null = $state(null);
+  let watchOpen = $state(false);
 </script>
 
 <svelte:head>
@@ -13,23 +18,41 @@
 </svelte:head>
 
 <section class="max-w-3xl mx-auto">
-  <ThreadDetail
-    thread={data.thread}
-    threadBody={data.threadBody}
-    posts={data.posts}
-    entity={data.entity}
-    flags={data.flags}
-    isLocked={data.isLocked}
-    isOwner={data.isOwner}
-    isStaff={data.isStaff}
-  />
+  <div class="flex items-start justify-between gap-4">
+    <ThreadDetail
+      thread={data.thread}
+      threadBody={data.threadBody}
+      posts={data.posts}
+      entity={data.entity}
+      flags={data.flags}
+      isLocked={data.isLocked}
+      isSticky={data.isSticky}
+      isOwner={data.isOwner}
+      isStaff={data.isStaff}
+      currentPage={data.currentPage}
+      totalPages={data.totalPages}
+      onCitar={(payload) => (replyTo = payload)}
+    />
+
+    <div class="shrink-0">
+      {#if data.isAuthenticated}
+        <button type="button" class="btn btn-outline btn-sm" onclick={() => (watchOpen = true)}>
+          {data.follow.following ? 'Siguiendo' : 'Seguir'}
+        </button>
+      {/if}
+    </div>
+  </div>
 
   <div class="mt-6 flex gap-3">
     {#if data.flags.can_post && !data.isLocked}
       <div class="w-full card bg-base-200 border border-azeroth-border">
         <div class="card-body">
           <h2 class="card-title font-cinzel text-lg mb-2">Responder</h2>
-          <ReplyComposer />
+          <ReplyComposer
+            draftKey={`forum:draft:${data.thread.id}`}
+            quotePayload={replyTo}
+            onClearQuote={() => (replyTo = null)}
+          />
         </div>
       </div>
     {/if}
@@ -41,3 +64,11 @@
     {/if}
   </div>
 </section>
+
+<WatchModal
+  open={watchOpen}
+  following={data.follow.following}
+  notifyInApp={data.follow.notify_in_app}
+  guest={!data.isAuthenticated}
+  onClose={() => (watchOpen = false)}
+/>

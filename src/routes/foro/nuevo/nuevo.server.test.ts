@@ -14,6 +14,7 @@ interface Fixture {
   insertError?: unknown;
   inserted?: Array<Record<string, unknown>>;
   audit?: { name: string; args: Record<string, unknown> }[];
+  sanction?: { kind: string; active_until: string | null } | null;
 }
 
 function makeSupabase(f: Fixture) {
@@ -22,6 +23,11 @@ function makeSupabase(f: Fixture) {
       select: () => builder,
       order: () => builder,
       eq: () => builder,
+      or: () => builder,
+      maybeSingle: () =>
+        table === 'user_sanctions'
+          ? Promise.resolve({ data: f.sanction ?? null, error: null })
+          : Promise.resolve({ data: null, error: null }),
       then: (res: Handler, rej: Handler) => {
         const data = table === 'categories' ? (f.categories ?? []) : [];
         return Promise.resolve({ data, error: null }).then(res, rej);
@@ -76,6 +82,18 @@ describe('foro/nuevo load()', () => {
     expect(result.categories).toHaveLength(1);
     expect(result.categories[0].name).toBe('General');
   });
+
+  it('denies a suspended user before loading the create form (ENF-03.2)', async () => {
+    const future = new Date(Date.now() + 86_400_000).toISOString();
+    const supabase = makeSupabase({ sanction: { kind: 'suspension', active_until: future } });
+    let caught: { status?: number } | null = null;
+    try {
+      await loadFn(makeEvent(makeLocals(supabase, 'rolero')));
+    } catch (e) {
+      caught = e as { status?: number };
+    }
+    expect(caught?.status).toBe(303);
+  });
 });
 
 describe('foro/nuevo default action (create debate thread)', () => {
@@ -115,6 +133,15 @@ describe('foro/nuevo default action (create debate thread)', () => {
     );
     expect(res.status).toBe(400);
     expect((res as { data: { message: string } }).data.message).toContain('Imagen');
+  });
+
+  it('rejects a body with a javascript: anchor href with 400 (REQ-FC-03)', async () => {
+    const supabase = makeSupabase({});
+    const res = await defaultFn(
+      makeEvent(makeLocals(supabase), formBody({ title: 'B', content: '<p>leer <a href="javascript:alert(1)">acá</a></p>', category_id: 'c1' })),
+    );
+    expect(res.status).toBe(400);
+    expect((res as { data: { message: string } }).data.message).toContain('Enlace');
   });
 
   it('rejects missing title or content with 400', async () => {

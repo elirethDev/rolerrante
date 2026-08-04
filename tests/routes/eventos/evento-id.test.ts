@@ -1,7 +1,10 @@
 import { render } from "@testing-library/svelte";
 import { describe, expect, it } from "vitest";
 import Page from "../../../src/routes/eventos/[id]/+page.svelte";
-import { readPageSource, expectNoInlineFieldsetMarkup } from "../../../src/test/page-vision";
+import {
+  readPageSource,
+  expectNoInlineFieldsetMarkup,
+} from "../../../src/test/page-vision";
 
 const event = {
   id: "evt-1",
@@ -64,7 +67,9 @@ describe("eventos/[id] page (forms-visual-pass / S-2)", () => {
     );
     expect(legend).toBeInTheDocument();
 
-    const input = document.querySelector('input#xp[name="xp"]') as HTMLInputElement;
+    const input = document.querySelector(
+      'input#xp[name="xp"]',
+    ) as HTMLInputElement;
     expect(input).toBeInTheDocument();
     expect(input).toHaveClass("input");
     expect(input).toHaveClass("w-32");

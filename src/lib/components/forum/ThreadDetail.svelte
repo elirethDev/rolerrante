@@ -2,8 +2,10 @@
   import { Lock } from '@lucide/svelte';
   import TipTapViewer from '$lib/components/editor/TipTapViewer.svelte';
   import type { PermissionFlags } from '$lib/auth';
-  import type { PostView, ThreadView } from '$lib/forum';
+  import type { PostView, QuotePayload, ThreadView } from '$lib/forum';
   import { formatRelativeTime } from '$lib/utils';
+  import Pager from '$lib/components/ui/Pager.svelte';
+  import PinBadge from './PinBadge.svelte';
   import PostCard from './PostCard.svelte';
 
   let {
@@ -13,8 +15,12 @@
     entity,
     flags,
     isLocked,
+    isSticky,
     isOwner,
     isStaff,
+    onCitar = undefined,
+    currentPage = 1,
+    totalPages = 1,
   }: {
     thread: ThreadView;
     threadBody: string;
@@ -22,8 +28,12 @@
     entity: { name: string; status: string } | null;
     flags: PermissionFlags;
     isLocked: boolean;
+    isSticky: boolean;
     isOwner: boolean;
     isStaff: boolean;
+    onCitar?: ((payload: QuotePayload) => void) | undefined;
+    currentPage?: number;
+    totalPages?: number;
   } = $props();
 
   const authorName = $derived(thread.author?.display_name ?? thread.author?.username ?? 'Anónimo');
@@ -45,11 +55,22 @@
   <header class="mb-6">
     <div class="flex flex-wrap items-center gap-3">
       <h1 class="text-2xl font-cinzel text-azeroth-gold">{thread.title}</h1>
+      {#if isSticky}<PinBadge />{/if}
       {#if isLocked}<Lock size={18} class="text-error" />{/if}
       {#if thread.status === 'pendiente'}
         <span class="badge badge-warning">Pendiente</span>
       {/if}
     </div>
+
+    {#if isStaff}
+      <div class="mt-2">
+        <form method="POST" action={isSticky ? '?/unpin' : '?/pin'}>
+          <button type="submit" class="btn btn-outline btn-xs">
+            {isSticky ? 'Desfijar hilo' : 'Fijar hilo'}
+          </button>
+        </form>
+      </div>
+    {/if}
 
     {#if entity}
       <p class="text-sm text-gray-400 mt-2">
@@ -73,7 +94,20 @@
 
   <div class="mt-6">
     {#each posts as post (post.id)}
-      <PostCard {post} editorName={post.author?.display_name ?? post.author?.username ?? null} />
+      <PostCard {post} threadId={thread.id} {onCitar} editorName={post.author?.display_name ?? post.author?.username ?? null} />
     {/each}
   </div>
+
+  {#if totalPages > 1}
+    <div class="mt-6 flex justify-center">
+      <Pager
+        total={totalPages}
+        current={currentPage}
+        onChange={(page) => {
+          if (page === currentPage) return;
+          window.location.href = `?page=${page}`;
+        }}
+      />
+    </div>
+  {/if}
 </article>

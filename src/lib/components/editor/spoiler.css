@@ -1,0 +1,32 @@
+/* Spoiler reveal (REQ-SPOIL-01.2 / 01.3)
+ *
+ * Spoiler content is hidden by default (transparent text). It becomes
+ * visible on hover and on keyboard focus (:focus-visible), so mouse and
+ * keyboard users both reveal cards. A faint background marks the hidden
+ * spoiler region so readers know content exists there.
+ */
+.spoiler {
+  color: transparent;
+  background: rgba(148, 163, 184, 0.18);
+  border-radius: 0.25em;
+  padding: 0 0.15em;
+  cursor: help;
+  user-select: none;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+
+.spoiler:hover {
+  color: inherit !important;
+  background: transparent;
+  cursor: default;
+  user-select: text;
+}
+
+.spoiler:focus-visible {
+  color: inherit !important;
+  background: transparent;
+  cursor: default;
+  user-select: text;
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}

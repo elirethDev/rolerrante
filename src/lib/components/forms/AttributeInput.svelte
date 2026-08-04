@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Minus, Plus } from '@lucide/svelte';
   import { ATTR_BASE_VALUE, ATTR_MIN, ATTR_MAX } from '$lib/rules';
-  import Field from './Field.svelte';
+  import Field from '$lib/components/ui/Field.svelte';
 
   interface Props {
     label: string;

@@ -47,8 +47,9 @@ function habilidadBadge(container: HTMLElement): HTMLElement {
   return badge as HTMLElement;
 }
 
-// The wizard renders 6 basic Fields plus 5 AttributeInput Fields (one per attribute).
-const EXPECTED_FIELDSETS = 11;
+// The wizard renders 7 basic Fields (incl. avatar_url, REQ-CFD-03.2) plus 5
+// AttributeInput Fields (one per attribute).
+const EXPECTED_FIELDSETS = 12;
 
 describe("personajes/nuevo page (forms-visual-pass / PR 2)", () => {
   it("uses the Field primitive — no inline fieldset/legend markup (REQ-PF-01/FS-02)", () => {
@@ -70,7 +71,7 @@ describe("personajes/nuevo page (forms-visual-pass / PR 2)", () => {
     );
   });
 
-  it("renders all Field groups (6 basic + 5 attributes) at md density inside max-w-4xl", () => {
+  it("renders all Field groups (7 basic + 5 attributes) at md density inside max-w-4xl", () => {
     const { container } = render(Page, {
       data: data as unknown as PageData,
       form: {} as unknown as ActionData,

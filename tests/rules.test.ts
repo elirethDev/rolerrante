@@ -25,6 +25,7 @@ function makeCharacter(overrides: Partial<Character> = {}): Character {
     attr_esp: 1,
     rp_points: 0,
     status: "borrador",
+    avatar_url: null,
     review_notes: null,
     reviewed_by: null,
     reviewed_at: null,

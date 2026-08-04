@@ -1,5 +1,5 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { requireAuth } from '$lib/auth';
+import { requireAuth, validateImageUrl } from '$lib/auth';
 import { skillCreationCost } from '$lib/rules';
 import { verifyTurnstileToken } from '$lib/turnstile';
 import type { Actions, PageServerLoad } from './$types';
@@ -31,6 +31,7 @@ export const actions: Actions = {
     const sex = String(form.get('sex') ?? '');
     const physicalDescription = String(form.get('physical_description') ?? '');
     const manaSource = String(form.get('mana_source') ?? 'I') as 'I' | 'E';
+    const avatarUrl = String(form.get('avatar_url') ?? '').trim();
 
     const attrs = {
       attr_fis: Number(form.get('attr_fis') ?? 0),
@@ -43,6 +44,9 @@ export const actions: Actions = {
     const errors: Record<string, string> = {};
     if (!name) errors.name = 'El nombre es obligatorio';
     if (!raceId) errors.race = 'Selecciona una raza';
+
+    const avatarCheck = validateImageUrl(avatarUrl);
+    if (avatarUrl && !avatarCheck.valid) errors.avatar_url = 'URL de avatar no válida';
 
     const attrLabels: Record<string, string> = { attr_fis: 'Físico', attr_des: 'Destreza', attr_int: 'Inteligencia', attr_per: 'Percepción', attr_esp: 'Espíritu' };
     for (const [key, value] of Object.entries(attrs)) {
@@ -89,6 +93,7 @@ export const actions: Actions = {
         physical_description: physicalDescription,
         mana_source: manaSource,
         ...attrs,
+        avatar_url: avatarUrl || null,
         rp_points: creationPoints - spentPoints,
         status: 'pendiente',
       })

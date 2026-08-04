@@ -146,6 +146,7 @@ export type Database = {
           attr_fis: number
           attr_int: number
           attr_per: number
+          avatar_url: string | null
           created_at: string
           id: string
           mana_source: string
@@ -168,6 +169,7 @@ export type Database = {
           attr_fis?: number
           attr_int?: number
           attr_per?: number
+          avatar_url?: string | null
           created_at?: string
           id?: string
           mana_source?: string
@@ -190,6 +192,7 @@ export type Database = {
           attr_fis?: number
           attr_int?: number
           attr_per?: number
+          avatar_url?: string | null
           created_at?: string
           id?: string
           mana_source?: string
@@ -362,6 +365,68 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          actor_id: string
+          created_at: string
+          id: string
+          post_id: string
+          read_at: string | null
+          thread_id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          id?: string
+          post_id: string
+          read_at?: string | null
+          thread_id: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          read_at?: string | null
+          thread_id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           author_id: string
@@ -485,6 +550,39 @@ export type Database = {
           size?: string
         }
         Relationships: []
+      }
+      reactions: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       section_permissions: {
         Row: {
@@ -777,6 +875,45 @@ export type Database = {
           },
         ]
       }
+      thread_follows: {
+        Row: {
+          created_at: string
+          id: string
+          notify_in_app: boolean
+          thread_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notify_in_app?: boolean
+          thread_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notify_in_app?: boolean
+          thread_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thread_follows_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thread_follows_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       threads: {
         Row: {
           author_id: string
@@ -788,6 +925,7 @@ export type Database = {
           edited_by: string | null
           id: string
           is_locked: boolean
+          is_sticky: boolean
           linked_entity_id: string | null
           linked_entity_type: string | null
           locked_at: string | null
@@ -806,6 +944,7 @@ export type Database = {
           edited_by?: string | null
           id?: string
           is_locked?: boolean
+          is_sticky?: boolean
           linked_entity_id?: string | null
           linked_entity_type?: string | null
           locked_at?: string | null
@@ -824,6 +963,7 @@ export type Database = {
           edited_by?: string | null
           id?: string
           is_locked?: boolean
+          is_sticky?: boolean
           linked_entity_id?: string | null
           linked_entity_type?: string | null
           locked_at?: string | null
@@ -911,6 +1051,109 @@ export type Database = {
           },
         ]
       }
+      reports: {
+        Row: {
+          created_at: string
+          id: string
+          justification: string | null
+          post_id: string
+          reason: string
+          reporter_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          justification?: string | null
+          post_id: string
+          reason: string
+          reporter_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          justification?: string | null
+          post_id?: string
+          reason?: string
+          reporter_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_sanctions: {
+        Row: {
+          active_until: string | null
+          created_at: string
+          id: string
+          issued_by: string | null
+          justification: string
+          kind: string
+          user_id: string
+        }
+        Insert: {
+          active_until?: string | null
+          created_at?: string
+          id?: string
+          issued_by?: string | null
+          justification: string
+          kind: string
+          user_id: string
+        }
+        Update: {
+          active_until?: string | null
+          created_at?: string
+          id?: string
+          issued_by?: string | null
+          justification?: string
+          kind?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_sanctions_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_sanctions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       // eslint-disable-next-line no-unused-vars
@@ -927,6 +1170,10 @@ export type Database = {
       }
       approve_story: {
         Args: { p_notes?: string; p_story_id: string }
+        Returns: undefined
+      }
+      ban_user: {
+        Args: { p_justification: string; p_user_id: string }
         Returns: undefined
       }
       confirm_event_completion: {
@@ -960,6 +1207,14 @@ export type Database = {
         Args: { p_notes: string; p_story_id: string }
         Returns: undefined
       }
+      resolve_report: {
+        Args: { p_justification: string; p_report_id: string; p_status: string }
+        Returns: undefined
+      }
+      suspend_user: {
+        Args: { p_active_until: string; p_justification: string; p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       approval_status: "borrador" | "pendiente" | "aprobado" | "rechazado"
@@ -978,6 +1233,13 @@ export type Database = {
         | "bloquear_hilo"
         | "desbloquear_hilo"
         | "editar_permisos"
+        | "fijar_hilo"
+        | "desfijar_hilo"
+        | "reportar"
+        | "suspender"
+        | "banear"
+        | "reportar_resuelto"
+        | "reportar_descartado"
       event_status:
         | "publicado"
         | "en_curso"
@@ -1131,6 +1393,13 @@ export const Constants = {
         "bloquear_hilo",
         "desbloquear_hilo",
         "editar_permisos",
+        "fijar_hilo",
+        "desfijar_hilo",
+        "reportar",
+        "suspender",
+        "banear",
+        "reportar_resuelto",
+        "reportar_descartado",
       ],
       event_status: [
         "publicado",
