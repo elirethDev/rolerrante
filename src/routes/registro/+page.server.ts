@@ -37,7 +37,10 @@ export const actions: Actions = {
     const { data, error: authError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { username, display_name: displayName } },
+      options: {
+        data: { username, display_name: displayName },
+        emailRedirectTo: 'https://rolerrante.pages.dev/login?confirmed=1',
+      },
     });
 
     if (authError) {

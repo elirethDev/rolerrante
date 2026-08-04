@@ -4,7 +4,11 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals: { session }, url }) => {
   if (session) redirect(303, '/');
-  return { registrado: url.searchParams.get('registrado') === '1' };
+  return {
+    registrado:
+      url.searchParams.get('registrado') === '1' ||
+      url.searchParams.get('confirmed') === '1',
+  };
 };
 
 export const actions: Actions = {
