@@ -27,6 +27,31 @@ const selfSelectPath = resolve(
   "supabase/migrations/20260803000001_reports_self_select_policy.sql",
 );
 
+const dedupePath = resolve(
+  process.cwd(),
+  "supabase/migrations/20260803000003_reports_reporter_dedupe.sql",
+);
+const dedupeSql = readFileSync(dedupePath, "utf8");
+
+describe("reporter dedupe backstop (20260803000003_reports_reporter_dedupe.sql)", () => {
+  it("deletes exact duplicate rows keeping the lowest id before creating the unique index", () => {
+    // DELETE FROM reports r USING reports dup WHERE r.id > dup.id AND same
+    // post_id/reporter_id — removes all but the earliest report per reporter+post.
+    expect(dedupeSql).toMatch(
+      /DELETE\s+FROM\s+public\.reports\s+r\s+USING\s+public\.reports\s+dup/i,
+    );
+    expect(dedupeSql).toMatch(/r\.id\s*>\s*dup\.id/i);
+    expect(dedupeSql).toMatch(/r\.post_id\s*=\s*dup\.post_id/i);
+    expect(dedupeSql).toMatch(/r\.reporter_id\s*=\s*dup\.reporter_id/i);
+  });
+
+  it("creates a UNIQUE(post_id, reporter_id) index as the DB backstop", () => {
+    expect(dedupeSql).toMatch(
+      /CREATE\s+UNIQUE\s+INDEX\s+reports_post_reporter_unique\s+ON\s+public\.reports\s*\(\s*post_id\s*,\s*reporter_id\s*\)/i,
+    );
+  });
+});
+
 describe("reporter self-SELECT policy (20260803000001_reports_self_select_policy.sql)", () => {
   const sql = readFileSync(selfSelectPath, "utf8");
 

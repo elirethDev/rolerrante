@@ -16,11 +16,13 @@
     onReject,
     onReview,
     onApprove,
+    busy = false,
   }: {
     item: WorklistItem;
     onReject?: (item: WorklistItem) => void;
     onReview?: (item: WorklistItem) => void;
     onApprove?: (item: WorklistItem) => void;
+    busy?: boolean;
   } = $props();
 
   const age = $derived(formatRelativeTime(item.createdAt));
@@ -45,14 +47,17 @@
       <span data-testid="wl-stale" class="badge badge-warning badge-outline">Antigua</span>
     {/if}
     <div class="flex flex-row gap-1 shrink-0">
-      <button
-        type="button"
-        class="btn btn-xs btn-error"
-        data-testid="wl-reject"
-        onclick={() => onReject?.(item)}
-      >
-        Rechazar
-      </button>
+      {#if item.type !== 'evento'}
+        <button
+          type="button"
+          class="btn btn-xs btn-error"
+          data-testid="wl-reject"
+          disabled={busy}
+          onclick={() => onReject?.(item)}
+        >
+          Rechazar
+        </button>
+      {/if}
       <button
         type="button"
         class="btn btn-xs btn-ghost"
@@ -65,6 +70,7 @@
         type="button"
         class="btn btn-xs btn-success"
         data-testid="wl-approve"
+        disabled={busy}
         onclick={() => onApprove?.(item)}
       >
         Aprobar

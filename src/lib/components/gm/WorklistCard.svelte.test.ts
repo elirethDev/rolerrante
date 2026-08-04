@@ -44,6 +44,27 @@ describe('WorklistCard', () => {
     expect(screen.queryByTestId('wl-stale')).not.toBeInTheDocument();
   });
 
+  it('does not render the reject button for events (reject is unsupported for events)', () => {
+    render(WorklistCard, { item: item({ type: 'evento' }) });
+    expect(screen.queryByRole('button', { name: 'Rechazar' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Aprobar' })).toBeInTheDocument();
+  });
+
+  it('renders the reject button for ficha/cronica/solicitud', () => {
+    for (const type of ['ficha', 'cronica', 'solicitud'] as const) {
+      const { unmount } = render(WorklistCard, { item: item({ type }) });
+      expect(screen.getByRole('button', { name: 'Rechazar' })).toBeInTheDocument();
+      unmount();
+    }
+  });
+
+  it('disables approve/reject while busy and keeps review enabled', () => {
+    render(WorklistCard, { item: item(), busy: true });
+    expect(screen.getByRole('button', { name: 'Rechazar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Aprobar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Revisar' })).not.toBeDisabled();
+  });
+
   it('emits reject/review/approve callbacks with the item', async () => {
     const onReject = vi.fn();
     const onReview = vi.fn();
