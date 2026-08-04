@@ -9,17 +9,20 @@ describe('Footer', () => {
     expect(screen.getByText('Comunidad')).toBeInTheDocument();
     expect(screen.getByText('Acceso')).toBeInTheDocument();
     expect(screen.getByText('Contacto y redes')).toBeInTheDocument();
-    expect(screen.getByText(/© 2026 Rol Errante · Identidad original/i)).toBeInTheDocument();
+    expect(screen.getByText('© 2026 Rol Errante')).toBeInTheDocument();
   });
 
-  it('renders the social contact note email and mailto link', () => {
+  it('renders the Prometheus note and mailto link', () => {
     render(Footer);
-    expect(screen.getByText('consejo@rolerrante.com')).toBeInTheDocument();
+    expect(screen.getByText('Hecho con amor por Prometheus ❤️')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Correo' })).toHaveAttribute(
       'href',
       'mailto:consejo@rolerrante.com',
     );
-    expect(screen.getByRole('link', { name: 'Discord' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Discord' })).toHaveAttribute(
+      'href',
+      'https://discord.gg/xDJTmZAxPU',
+    );
     expect(screen.getByRole('link', { name: 'Twitch' })).toBeInTheDocument();
   });
 

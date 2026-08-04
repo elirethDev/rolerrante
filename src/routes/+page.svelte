@@ -6,7 +6,7 @@
   <title>Rol Errante — Comunidad de rol</title>
   <meta
     name="description"
-    content="Foros, crónicas y personajes para una comunidad de juego de rol en World of Warcraft."
+    content="Foros, crónicas y personajes de rol en World of Warcraft. Un reino pequeño hecho por errantes, con un asiento esperándote."
   />
 </svelte:head>
 
@@ -23,10 +23,10 @@
     </div>
     <div class="hero-inner">
       <div class="hero-copy">
-        <h1 class="hero-title">Leyendas que se<br />forjan <em>en la palabra</em></h1>
+        <h1 class="hero-title">Construimos esta casa<br />para que en ella escribas tu <em>leyenda</em></h1>
         <p class="hero-sub">
-          Foros, crónicas y personajes para una comunidad de juego de rol en World of Warcraft.
-          Escribe tu historia, presenta tu ficha y deja que el reino la recuerde.
+          Somos una comunidad de rol en World of Warcraft: foros, crónicas y personajes para escribir
+          historias juntos. Acércate y toma asiento: que tus días sean largos y tus contratiempos, escasos.
         </p>
         <div class="hero-cta">
           <a href={resolve('/foro')} class="btn btn-primary btn-lg">Explorar los foros</a>
@@ -57,15 +57,15 @@
 <section class="split" aria-labelledby="split-foros-title">
   <div class="copy">
     <span class="kicker">Foros vivos</span>
-    <h2 class="landing-h2" id="split-foros-title">Del silencio al salón</h2>
+    <h2 class="landing-h2" id="split-foros-title">Del silencio a la sobremesa</h2>
     <p class="lead">
-      Una arquitectura clásica de foro —categorías, subforos, hilos y respuestas— con la sensación de
-      una taberna cálida. La lectura larga se respira, la moderación es un clic.
+      Un foro clásico —categorías, hilos y respuestas— con el calor de una taberna al atardecer.
+      Toma asiento, lee sin prisa y deja que el salón se llene.
     </p>
     <ul class="feat-list">
-      <li><span class="n">01</span><div><b>Crónicas abiertas</b><span>Cada historia es un hilo donde la comunidad construye canon.</span></div></li>
-      <li><span class="n">02</span><div><b>Revisión de personajes</b><span>Tu ficha entra al reino cuando el consejo la aprueba.</span></div></li>
-      <li><span class="n">03</span><div><b>Eventos en vivo</b><span>Convocatorias, batallas de plaza y juicios en el Salón del Consejo.</span></div></li>
+      <li><span class="n">01</span><div><b>Crónicas abiertas</b><span>Cada historia es un hilo que la comunidad escribe en común.</span></div></li>
+      <li><span class="n">02</span><div><b>Revisión de personajes</b><span>Presenta tu ficha al consejo y, con su aprobación, entra al reino.</span></div></li>
+      <li><span class="n">03</span><div><b>Eventos en vivo</b><span>Convocatorias, batallas de plaza y veladas en el Salón del Consejo.</span></div></li>
     </ul>
     <div class="hero-cta band-cta"><a href={resolve('/foro')} class="btn btn-primary">Entrar a los foros</a></div>
   </div>
@@ -75,14 +75,14 @@
 <section class="split rev" aria-labelledby="split-fichas-title">
   <div class="copy">
     <span class="kicker">Personajes</span>
-    <h2 class="landing-h2" id="split-fichas-title">Un rostro para cada historia</h2>
+    <h2 class="landing-h2" id="split-fichas-title">Detrás de cada ficha, una historia con rostro</h2>
     <p class="lead">
-      Fichas narrativas: apariencia, personalidad, trasfondo y vínculos. Cada personaje tiene su historia,
-      editable y rastreable en el tiempo.
+      Fichas narrativas que crecen contigo: apariencia, personalidad, trasfondo y vínculos.
+      Escribe tu historia poco a poco y déjala evolucionar.
     </p>
     <ul class="feat-list">
-      <li><span class="n">&#10022;</span><div><b>Aprobación del consejo</b><span>Los GMs revisan y aprueban sin pasos de más.</span></div></li>
-      <li><span class="n">&#10022;</span><div><b>Vínculos visibles</b><span>Quién conoce a quién, trazado en el mismo hilo.</span></div></li>
+      <li><span class="n">&#10022;</span><div><b>Aprobación del consejo</b><span>Tu ficha cruza el umbral cuando el consejo la acoge.</span></div></li>
+      <li><span class="n">&#10022;</span><div><b>Vínculos visibles</b><span>Los lazos se dibujan para que la historia se vea completa.</span></div></li>
     </ul>
     <div class="hero-cta band-cta"><a href={resolve('/personajes')} class="btn btn-secondary">Ver personajes</a></div>
   </div>
@@ -92,10 +92,10 @@
 <section class="split" aria-labelledby="split-gm-title">
   <div class="copy">
     <span class="kicker">Para tu consejo de GMs</span>
-    <h2 class="landing-h2" id="split-gm-title">Menos clics, más aventura</h2>
+    <h2 class="landing-h2" id="split-gm-title">Menos trámites, más aventura</h2>
     <p class="lead">
-      Un panel de trabajo con una sola meta: reducir fricción. Aprobar una ficha, cerrar un hilo o corregir
-      una crónica — todo en una acción, sin perder el registro de auditoría.
+      Un panel pensado para acortar el trecho: aprueba fichas, cierra hilos y corrige crónicas
+      en una sola acción, con cada paso registrado.
     </p>
     <div class="hero-cta band-cta">
       <a href={resolve('/gm')} class="btn btn-secondary">Ver el panel de GM</a>

@@ -31,7 +31,7 @@
         <span class="text-azeroth-gold-bright">Rol</span> Errante
       </a>
       <p class="mt-3 max-w-xs text-sm text-azeroth-muted">
-        Una comunidad independiente de rol aficionado. Sin afiliación con Blizzard Entertainment.
+        Comunidad de rol en World of Warcraft. Fan page sin afiliación a Blizzard Entertainment.
       </p>
     </div>
 
@@ -56,7 +56,7 @@
     <div>
       <h4 class="mb-3.5 font-cinzel text-[0.95rem] tracking-wide text-azeroth-cream">Contacto y redes</h4>
       <div class="flex gap-2.5">
-        <a class="soc-btn" href="#" aria-label="Discord">
+        <a class="soc-btn" href="https://discord.gg/xDJTmZAxPU" aria-label="Discord">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path
               d="M20.3 4.4A19.8 19.8 0 0015.4 3l-.4.9c1.7.5 2.6 1.2 3.5 2a16.6 16.6 0 00-13.2 0c.9-.8 1.9-1.5 3.6-2L8.6 3a19.5 19.5 0 00-4.9 1.4A20.3 20.3 0 00.6 17.4a19.6 19.6 0 005.9 3l.8-1.3c-1.1-.4-2.1-1-3.1-1.7l.8-.6a13.9 13.9 0 0013 0l.8.6c-1 .7-2 1.3-3.1 1.7l.8 1.3a19.5 19.5 0 005.9-3A20 20 0 0020.3 4.4zM8.7 14.9c-.9 0-1.7-.9-1.7-2s.8-2 1.7-2 1.7.9 1.7 2-.8 2-1.7 2zm6.6 0c-.9 0-1.7-.9-1.7-2s.8-2 1.7-2 1.7.9 1.7 2-.8 2-1.7 2z"
@@ -72,12 +72,12 @@
           <Mail size={18} aria-hidden="true" />
         </a>
       </div>
-      <p class="contact-note mt-3 text-[0.84rem] text-azeroth-faint">consejo@rolerrante.com</p>
+      <p class="contact-note mt-3 text-[0.84rem] text-azeroth-faint">Hecho con amor por Prometheus ❤️</p>
     </div>
   </div>
 
   <div class="border-t border-azeroth-border px-4 py-4 text-center text-[0.78rem] text-azeroth-faint">
-    © 2026 Rol Errante · Identidad original · <b class="font-semibold text-azeroth-muted">Contenido de demostración</b>
+    © 2026 Rol Errante
   </div>
 </footer>
 

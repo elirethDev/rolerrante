@@ -6,11 +6,11 @@ describe("landing page", () => {
   it("renders the cinema hero title with gold-gradient em and subtitle", () => {
     render(Page);
     const title = screen.getByRole("heading", { level: 1 });
-    expect(title).toHaveTextContent("Leyendas");
-    expect(title).toHaveTextContent("forjan en la palabra");
+    expect(title).toHaveTextContent("Construimos esta casa");
+    expect(title).toHaveTextContent("escribas tu leyenda");
     expect(title.querySelector("em")).toBeInTheDocument();
     expect(
-      screen.getByText(/comunidad de juego de rol en World of Warcraft/),
+      screen.getByText(/comunidad de rol en World of Warcraft/),
     ).toBeInTheDocument();
   });
 
@@ -36,13 +36,15 @@ describe("landing page", () => {
   it("renders the split feature sections with feat-list items", () => {
     render(Page);
     expect(
-      screen.getByRole("heading", { name: "Del silencio al salón" }),
+      screen.getByRole("heading", { name: "Del silencio a la sobremesa" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Un rostro para cada historia" }),
+      screen.getByRole("heading", {
+        name: "Detrás de cada ficha, una historia con rostro",
+      }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Menos clics, más aventura" }),
+      screen.getByRole("heading", { name: "Menos trámites, más aventura" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Crónicas abiertas")).toBeInTheDocument();
     expect(screen.getByText("Vínculos visibles")).toBeInTheDocument();
