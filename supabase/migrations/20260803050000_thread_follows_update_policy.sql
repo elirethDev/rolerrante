@@ -1,5 +1,5 @@
 -- Additive UPDATE RLS policy for thread_follows (Slice 2 correction).
--- Slice 1 (20260803000000) enabled RLS with SELECT/INSERT/DELETE policies only;
+-- Slice 1 (20260803030000) enabled RLS with SELECT/INSERT/DELETE policies only;
 -- the Slice 2 ?/preference action (setFollowPreference -> .update({notify_in_app}))
 -- was denied by RLS deny-by-default (42501). This migration adds the missing
 -- owner-scoped UPDATE policy so a user can change only their own follow rows.
