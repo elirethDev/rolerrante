@@ -35,7 +35,7 @@
             <LockBadge />
           {/if}
         </div>
-        <div class="text-xs text-gray-400 mt-1 pl-6 flex flex-wrap items-center gap-x-2 gap-y-1">
+        <div class="text-xs text-azeroth-muted mt-1 pl-6 flex flex-wrap items-center gap-x-2 gap-y-1">
           <span>{contentTypeLabel[t.content_type] ?? t.content_type}</span>
           {#if t.status === 'pendiente'}· <span class="badge badge-warning badge-xs">Pendiente</span>{/if}
           <span>· {formatDate(t.created_at)}</span>
@@ -46,7 +46,7 @@
           {#if t.lastPost?.author_display_name}
             <span class="inline-flex items-center gap-1">
               <span>Último:</span>
-              <span class="text-gray-300 font-medium">{t.lastPost.author_display_name}</span>
+              <span class="text-azeroth-text-soft font-medium">{t.lastPost.author_display_name}</span>
             </span>
           {/if}
         </div>

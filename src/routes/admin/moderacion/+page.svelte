@@ -63,7 +63,7 @@
   <div class="card-body">
     <h2 class="card-title font-cinzel text-azeroth-gold">Hilos vinculados pendientes</h2>
     {#if data.pendingThreads.length === 0}
-      <p class="text-gray-400">No hay hilos pendientes de aprobación.</p>
+      <p class="text-azeroth-muted">No hay hilos pendientes de aprobación.</p>
     {:else}
       <div class="overflow-x-auto">
         <table class="table table-sm">
@@ -104,7 +104,7 @@
   <div class="card-body">
     <h2 class="card-title font-cinzel text-azeroth-gold">Eventos (revisión al finalizar)</h2>
     {#if data.eventThreads.length === 0}
-      <p class="text-gray-400">No hay hilos de evento.</p>
+      <p class="text-azeroth-muted">No hay hilos de evento.</p>
     {:else}
       <div class="overflow-x-auto">
         <table class="table table-sm">
@@ -137,7 +137,7 @@
   <div class="card-body">
     <h2 class="card-title font-cinzel text-azeroth-gold">Reportes de mensajes</h2>
     {#if data.reports.length === 0}
-      <p class="text-gray-400">No hay reportes abiertos.</p>
+      <p class="text-azeroth-muted">No hay reportes abiertos.</p>
     {:else}
       <div class="overflow-x-auto">
         <table class="table table-sm">
@@ -174,7 +174,7 @@
                 <td>
                   {(report as ReportRow).reason}
                   {#if (report as ReportRow).justification}
-                    <span class="text-xs text-gray-400 block">
+                    <span class="text-xs text-azeroth-muted block">
                       {(report as ReportRow).justification}
                     </span>
                   {/if}
@@ -189,7 +189,7 @@
                     </a>
                   {/if}
                 </td>
-                <td class="text-xs text-gray-400">
+                <td class="text-xs text-azeroth-muted">
                   {formatDateTime((report as ReportRow).created_at)}
                 </td>
                 {#if data.isAdmin}

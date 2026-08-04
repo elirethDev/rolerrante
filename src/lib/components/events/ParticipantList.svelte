@@ -22,7 +22,7 @@
       Participantes ({participants.length}{#if maxPlayers}/{maxPlayers}{/if})
     </h2>
     {#if participants.length === 0}
-      <p class="text-gray-400">Nadie se ha inscrito todavía.</p>
+      <p class="text-azeroth-muted">Nadie se ha inscrito todavía.</p>
     {:else}
       <ul class="divide-y divide-azeroth-border">
         {#each participants as p (p.character?.id ?? '')}

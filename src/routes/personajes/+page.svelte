@@ -30,7 +30,7 @@
             <h2 class="card-title font-cinzel text-lg">{char.name}</h2>
             <span class="badge {statusColor(char.status)}">{statusLabel(char.status)}</span>
           </div>
-          <p class="text-sm text-gray-400">{char.race?.name ?? ''} · {char.age ?? '?'} años</p>
+          <p class="text-sm text-azeroth-muted">{char.race?.name ?? ''} · {char.age ?? '?'} años</p>
         </div>
       </a>
     {/each}

@@ -126,7 +126,7 @@
       {/snippet}
     </Field>
 
-    <p class="text-xs text-gray-400" data-testid="draft-indicator" role="status">
+    <p class="text-xs text-azeroth-muted" data-testid="draft-indicator" role="status">
       {savedIndicator ? 'Borrador guardado' : ''}
     </p>
 

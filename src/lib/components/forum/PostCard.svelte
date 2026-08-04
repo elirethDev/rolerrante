@@ -115,7 +115,7 @@
       </div>
       <div>
         <p class="font-semibold">{authorName}</p>
-        <p class="text-xs text-gray-400">
+        <p class="text-xs text-azeroth-muted">
           #{post.post_number} · {formatDateTime(post.created_at)}
         </p>
       </div>
@@ -126,7 +126,7 @@
     </div>
 
     {#if editMarker}
-      <p class="text-xs text-gray-500 mt-3" data-testid="edit-marker">{editMarker}</p>
+      <p class="text-xs text-azeroth-faint mt-3" data-testid="edit-marker">{editMarker}</p>
     {/if}
 
     <div class="mt-3 flex justify-end gap-3">

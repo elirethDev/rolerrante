@@ -27,7 +27,7 @@
         {isLocked ? 'Bloqueado' : 'Abierto'}
       </span>
     </div>
-    <p class="text-sm text-gray-400">
+    <p class="text-sm text-azeroth-muted">
       El autor nunca puede bloquear su propio hilo; solo GM/admin (REQ-FORUM-04.3).
     </p>
     <div class="flex gap-2">

@@ -73,7 +73,7 @@
         </tbody>
       </table>
       {#if filtered.length === 0}
-        <p class="text-gray-500 text-center py-4">No se encontraron registros.</p>
+        <p class="text-azeroth-faint text-center py-4">No se encontraron registros.</p>
       {/if}
     </div>
   </div>

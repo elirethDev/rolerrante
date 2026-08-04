@@ -116,7 +116,7 @@
       {#each kpis as kpi (kpi.key)}
         <div class="bg-base-100 rounded-lg p-3 text-center border border-azeroth-border">
           <p class="font-cinzel text-lg text-azeroth-gold truncate" title={kpi.value}>{kpi.value}</p>
-          <p class="text-xs text-gray-400 uppercase tracking-wide">{kpi.label}</p>
+          <p class="text-xs text-azeroth-muted uppercase tracking-wide">{kpi.label}</p>
         </div>
       {/each}
     </div>
@@ -124,13 +124,13 @@
     <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
       {#each attrKeys as attr (attr.key)}
         <div class="bg-base-100 rounded-lg p-3 text-center border border-azeroth-border">
-          <p class="text-xs text-gray-400 uppercase tracking-wide">{attr.label}</p>
+          <p class="text-xs text-azeroth-muted uppercase tracking-wide">{attr.label}</p>
           <p class="text-2xl font-cinzel text-azeroth-gold">{character[attr.key]}</p>
         </div>
       {/each}
     </div>
 
-    <div class="flex flex-wrap gap-4 mt-4 text-sm text-gray-400">
+    <div class="flex flex-wrap gap-4 mt-4 text-sm text-azeroth-muted">
       <span>Fuente de maná: {manaLabel}</span>
       {#if character.rp_points != null}
         <span>Puntos de rol: {character.rp_points}</span>

@@ -52,23 +52,23 @@
         <article class="card bg-base-200 border border-azeroth-border" data-testid="narrative-pasado">
           <div class="card-body">
             <h2 class="card-title font-cinzel text-azeroth-gold">Pasado</h2>
-            <p class="text-gray-400 whitespace-pre-wrap">—</p>
+            <p class="text-azeroth-muted whitespace-pre-wrap">—</p>
           </div>
         </article>
         <article class="card bg-base-200 border border-azeroth-border" data-testid="narrative-presente">
           <div class="card-body">
             <h2 class="card-title font-cinzel text-azeroth-gold">Presente</h2>
             {#if narrativePresent}
-              <p class="text-gray-400 whitespace-pre-wrap">{narrativePresent}</p>
+              <p class="text-azeroth-muted whitespace-pre-wrap">{narrativePresent}</p>
             {:else}
-              <p class="text-gray-500 italic">—</p>
+              <p class="text-azeroth-faint italic">—</p>
             {/if}
           </div>
         </article>
         <article class="card bg-base-200 border border-azeroth-border" data-testid="narrative-objetivos">
           <div class="card-body">
             <h2 class="card-title font-cinzel text-azeroth-gold">Objetivos</h2>
-            <p class="text-gray-400 whitespace-pre-wrap">—</p>
+            <p class="text-azeroth-muted whitespace-pre-wrap">—</p>
           </div>
         </article>
       </section>
@@ -77,7 +77,7 @@
         <div class="card-body">
           <h2 class="card-title font-cinzel text-azeroth-gold">Habilidades</h2>
           {#if skills.length === 0}
-            <p class="text-gray-400">Sin habilidades destacadas.</p>
+            <p class="text-azeroth-muted">Sin habilidades destacadas.</p>
           {:else}
             <div class="grid md:grid-cols-2 gap-3">
               {#each skills as s (s.id ?? s.skill?.name ?? '')}
@@ -100,7 +100,7 @@
             {#if primaryStory}
               <div class="vinc flex items-center gap-2 py-2 border-b border-azeroth-border">
                 <FileText size={16} class="text-azeroth-gold shrink-0" />
-                <span class="text-sm text-gray-400">Crónica activa:</span>
+                <span class="text-sm text-azeroth-muted">Crónica activa:</span>
                 <a href={resolve(`/historias/${primaryStory.id}`)} class="link text-sm font-medium">
                   {primaryStory.title}
                 </a>
@@ -119,7 +119,7 @@
                 </div>
               {/each}
             {:else}
-              <p class="vinc text-sm text-gray-400 py-2">
+              <p class="vinc text-sm text-azeroth-muted py-2">
                 Sin vínculos registrados.
                 {#if canCreateStory}
                   <a href={resolve('/historias/nueva')} class="link">Escribe una crónica</a>.
@@ -131,7 +131,7 @@
                 class="vinc flex items-center gap-2 py-2 border-b border-azeroth-border last:border-b-0"
               >
                 <MessagesSquare size={16} class="text-azeroth-gold shrink-0" />
-                <span class="text-sm text-gray-400">Historia de aprobación: aprobada el</span>
+                <span class="text-sm text-azeroth-muted">Historia de aprobación: aprobada el</span>
                 <span class="text-sm">{formatDate(character.reviewed_at)}</span>
               </div>
             {/if}
@@ -166,7 +166,7 @@
               >
                 <div class="min-w-0">
                   <p class="font-medium line-clamp-2">{story.title}</p>
-                  <p class="text-xs text-gray-400 mt-1">Historia</p>
+                  <p class="text-xs text-azeroth-muted mt-1">Historia</p>
                 </div>
                 <span class="badge {statusColor(story.status)} shrink-0">
                   {statusLabel(story.status)}
@@ -177,7 +177,7 @@
         {:else}
           <div class="card bg-base-200 border border-azeroth-border">
             <div class="card-body">
-              <p class="text-gray-400">
+              <p class="text-azeroth-muted">
                 Esta ficha todavía no tiene historia publicada. La historia vive como un hilo del
                 foro y queda enlazada a la ficha.
               </p>
@@ -228,8 +228,8 @@
       <div class="card bg-base-200 border border-azeroth-border">
         <div class="card-body">
           <h2 class="card-title font-cinzel text-azeroth-gold">Información</h2>
-          <p class="text-sm text-gray-400">Creado: {formatDate(character.created_at)}</p>
-          <p class="text-sm text-gray-400">
+          <p class="text-sm text-azeroth-muted">Creado: {formatDate(character.created_at)}</p>
+          <p class="text-sm text-azeroth-muted">
             Puntos restantes:
             <span class="text-azeroth-gold font-bold">{character.rp_points}</span>
           </p>

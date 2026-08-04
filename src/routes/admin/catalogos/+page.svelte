@@ -208,7 +208,7 @@
           </tbody>
         </table>
         {#if data.races.length === 0}
-          <p class="text-gray-500 text-center py-4">No hay razas registradas.</p>
+          <p class="text-azeroth-faint text-center py-4">No hay razas registradas.</p>
         {/if}
       </div>
     </div>
@@ -298,7 +298,7 @@
                   {#if skill.requires_specialization}
                     <span class="badge badge-sm">{skill.specializations?.length ?? 0} opciones</span>
                   {:else}
-                    <span class="text-gray-500 text-xs">—</span>
+                    <span class="text-azeroth-faint text-xs">—</span>
                   {/if}
                 </td>
                 <td>
@@ -317,7 +317,7 @@
           </tbody>
         </table>
         {#if data.skills.length === 0}
-          <p class="text-gray-500 text-center py-4">No hay habilidades registradas.</p>
+          <p class="text-azeroth-faint text-center py-4">No hay habilidades registradas.</p>
         {/if}
       </div>
     </div>

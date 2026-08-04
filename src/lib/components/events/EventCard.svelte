@@ -30,11 +30,11 @@
         <span class="badge {statusColor(event.status)}">{statusLabel(event.status)}</span>
       {/if}
     </div>
-    <p class="text-sm text-gray-400">
+    <p class="text-sm text-azeroth-muted">
       {formatDateTime(event.starts_at)}{#if event.type} · {event.type}{/if}{#if event.location} · {event.location}{/if}
     </p>
     {#if event.creator}
-      <p class="text-sm text-gray-400">Organiza: {event.creator.display_name ?? event.creator.username}</p>
+      <p class="text-sm text-azeroth-muted">Organiza: {event.creator.display_name ?? event.creator.username}</p>
     {/if}
   </div>
 </a>

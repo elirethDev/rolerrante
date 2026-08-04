@@ -22,7 +22,7 @@
 
 <section class="max-w-3xl mx-auto">
   <h1 class="text-3xl font-cinzel text-azeroth-gold mb-2">Solicitud de habilidad</h1>
-  <p class="text-gray-400 mb-6">{req.character?.name} · {req.total_xp_cost} XP · {playerName(req.character?.player)}</p>
+  <p class="text-azeroth-muted mb-6">{req.character?.name} · {req.total_xp_cost} XP · {playerName(req.character?.player)}</p>
 
   <div class="card bg-base-200 border border-azeroth-border mb-6">
     <div class="card-body">

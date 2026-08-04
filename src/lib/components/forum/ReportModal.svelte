@@ -14,7 +14,7 @@
   }
 </script>
 
-<button type="button" class="btn btn-ghost btn-xs text-gray-400" onclick={openModal}>
+<button type="button" class="btn btn-ghost btn-xs text-azeroth-muted" onclick={openModal}>
   Reportar
 </button>
 

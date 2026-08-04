@@ -165,7 +165,7 @@
       {savedIndicator ? 'Borrador guardado' : ''}
     </span>
     <span
-      class={isOverLimit(charCount, maxLength) ? 'text-error' : 'text-gray-400'}
+      class={isOverLimit(charCount, maxLength) ? 'text-error' : 'text-azeroth-muted'}
       data-testid="char-counter"
     >
       {charCount}/{maxLength}

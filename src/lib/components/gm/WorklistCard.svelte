@@ -38,7 +38,7 @@
       <a data-testid="wl-detail" href={item.detailHref} class="font-semibold hover:underline">
         {item.name}
       </a>
-      <div class="text-xs text-gray-400">
+      <div class="text-xs text-azeroth-muted">
         {item.author}
         <span data-testid="wl-age" class="ml-1">· {age}</span>
       </div>

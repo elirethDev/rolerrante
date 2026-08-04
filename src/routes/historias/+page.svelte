@@ -36,7 +36,7 @@
             <h2 class="card-title font-cinzel text-lg">{story.title}</h2>
             <span class="badge {statusColor(story.status)}">{statusLabel(story.status)}</span>
           </div>
-          <p class="text-sm text-gray-400">
+          <p class="text-sm text-azeroth-muted">
             Por <span class="text-azeroth-gold">{playerName(story.character?.player)}</span>
             · {formatDate(story.created_at)}
           </p>

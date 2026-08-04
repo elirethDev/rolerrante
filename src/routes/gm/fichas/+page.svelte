@@ -19,14 +19,14 @@
 {#if form?.message}<div class="alert alert-error mb-4">{form.message}</div>{/if}
 
 {#if data.characters.length === 0}
-  <p class="text-gray-400">No hay fichas pendientes.</p>
+  <p class="text-azeroth-muted">No hay fichas pendientes.</p>
 {:else}
   <div class="space-y-4">
     {#each data.characters as c (c.id)}
       <div class="card bg-base-200 border border-azeroth-border">
         <div class="card-body">
           <h3 class="font-cinzel text-lg text-azeroth-gold">{c.name}</h3>
-          <p class="text-sm text-gray-400">Raza: {Array.isArray(c.race) ? c.race[0]?.name : c.race?.name ?? ''} · Jugador: {playerName(c.player)}</p>
+          <p class="text-sm text-azeroth-muted">Raza: {Array.isArray(c.race) ? c.race[0]?.name : c.race?.name ?? ''} · Jugador: {playerName(c.player)}</p>
           <div class="card-actions justify-end mt-4 gap-2">
             <form method="POST" action="?/reject" use:enhance>
               <input type="hidden" name="charId" value={c.id} />

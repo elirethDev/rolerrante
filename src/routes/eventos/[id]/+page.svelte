@@ -28,7 +28,7 @@
   <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
     <div>
       <h1 class="text-3xl md:text-4xl font-cinzel text-azeroth-gold">{event.title}</h1>
-      <p class="text-sm text-gray-400 mt-1">
+      <p class="text-sm text-azeroth-muted mt-1">
         {formatDateTime(event.starts_at)}{#if event.ends_at} — {formatDateTime(event.ends_at)}{/if}
         · {event.type} · {event.location ?? 'Sin ubicación'}
       </p>

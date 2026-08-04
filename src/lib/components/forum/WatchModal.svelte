@@ -39,7 +39,7 @@
     <button class="absolute inset-0 bg-black/60" aria-label="Cerrar" onclick={onClose}></button>
     <div class="relative card w-full max-w-sm bg-base-100 border border-azeroth-border p-6 shadow-xl">
       <h2 class="card-title font-cinzel text-lg mb-2">Seguir hilo</h2>
-      <p class="text-sm text-gray-400 mb-4">
+      <p class="text-sm text-azeroth-muted mb-4">
         Recibí una notificación dentro de la app cuando haya respuestas nuevas a este hilo.
       </p>
 

@@ -40,7 +40,7 @@
   </legend>
   {@render ctrl()}
   {#if hint && !error}
-    <span id={hintId} class="fieldset-label text-gray-400">{hint}</span>
+    <span id={hintId} class="fieldset-label text-azeroth-muted">{hint}</span>
   {/if}
   {#if error}
     <span id={errorId} class="fieldset-label text-error" role="alert">{error}</span>

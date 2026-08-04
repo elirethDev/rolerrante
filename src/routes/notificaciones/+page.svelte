@@ -32,7 +32,7 @@
   ></form>
 
   {#if data.notifications.length === 0}
-    <p class="text-gray-400">No tenés notificaciones por ahora.</p>
+    <p class="text-azeroth-muted">No tenés notificaciones por ahora.</p>
   {:else}
     <ul class="flex flex-col gap-2">
       {#each data.notifications as n (n.id)}
@@ -49,7 +49,7 @@
                 <span class="badge badge-error badge-sm shrink-0">Nuevo</span>
               {/if}
             </div>
-            <p class="text-xs text-gray-400 mt-1">{formatDateTime(n.created_at)}</p>
+            <p class="text-xs text-azeroth-muted mt-1">{formatDateTime(n.created_at)}</p>
           </a>
         </li>
       {/each}

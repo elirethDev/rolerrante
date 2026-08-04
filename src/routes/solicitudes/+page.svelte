@@ -21,7 +21,7 @@
   <div class="card-body">
     <h2 class="card-title font-cinzel text-azeroth-gold">Historial</h2>
     {#if data.requests.length === 0}
-      <p class="text-gray-400">No has enviado solicitudes.</p>
+      <p class="text-azeroth-muted">No has enviado solicitudes.</p>
     {:else}
       <div class="space-y-3">
         {#each data.requests as req (req.id)}
@@ -29,7 +29,7 @@
             <div class="flex justify-between items-start">
               <div>
                 <p class="font-semibold">{req.character?.name} · {req.total_xp_cost} XP</p>
-                <p class="text-xs text-gray-400">{formatDate(req.created_at)}</p>
+                <p class="text-xs text-azeroth-muted">{formatDate(req.created_at)}</p>
               </div>
               <span class="badge {statusColor(req.status)}">{statusLabel(req.status)}</span>
             </div>

@@ -29,7 +29,7 @@
               {cat.name}
             </h3>
             {#if cat.description}
-              <p class="text-sm text-gray-400 mt-1">{cat.description}</p>
+              <p class="text-sm text-azeroth-muted mt-1">{cat.description}</p>
             {/if}
           </div>
         </div>
@@ -40,15 +40,15 @@
               {@const last = lastPostBlock(child.lastPost)}
               <li>
                 <span class="flex items-center gap-2 w-full">
-                  <ChevronRight size={14} class="text-gray-500 shrink-0" />
+                  <ChevronRight size={14} class="text-azeroth-faint shrink-0" />
                   <span class="font-medium">{child.name}</span>
-                  <span class="ml-auto text-xs text-gray-400">
+                  <span class="ml-auto text-xs text-azeroth-muted">
                     Temas {child.threads_count ?? 0}
                   </span>
-                  <span class="text-xs text-gray-400">Mensajes {child.posts_count ?? 0}</span>
+                  <span class="text-xs text-azeroth-muted">Mensajes {child.posts_count ?? 0}</span>
                   {#if last}
                     <span
-                      class="flex items-center gap-1 text-xs text-gray-300"
+                      class="flex items-center gap-1 text-xs text-azeroth-text-soft"
                       title={`Último mensaje: ${last.author}`}
                     >
                       <img

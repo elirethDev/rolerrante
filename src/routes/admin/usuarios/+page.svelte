@@ -30,7 +30,7 @@
           <input type="hidden" name="user_id" value={u.id} />
           <div class="flex-1">
             <p class="font-semibold">@{u.username}</p>
-            <p class="text-xs text-gray-400">{u.display_name ?? ''}</p>
+            <p class="text-xs text-azeroth-muted">{u.display_name ?? ''}</p>
           </div>
           <select name="role" class="select select-sm">
             <option value="pendiente" selected={u.role === 'pendiente'}>{roleLabel('pendiente')}</option>

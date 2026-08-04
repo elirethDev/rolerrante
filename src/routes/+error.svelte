@@ -13,7 +13,7 @@
     <Shield size={64} class="text-azeroth-gold" />
   </div>
   <h1 class="text-6xl font-cinzel text-azeroth-gold mb-4">{page.status}</h1>
-  <p class="text-xl text-gray-300 mb-2">
+  <p class="text-xl text-azeroth-text-soft mb-2">
     {#if page.status === 404}
       Página no encontrada
     {:else if page.status === 403}
@@ -24,6 +24,6 @@
       Error del servidor
     {/if}
   </p>
-  <p class="text-gray-400 mb-8">{page.error?.message ?? 'Algo salió mal.'}</p>
+  <p class="text-azeroth-muted mb-8">{page.error?.message ?? 'Algo salió mal.'}</p>
   <a href={resolve('/')} class="btn btn-primary font-cinzel">Volver al inicio</a>
 </section>

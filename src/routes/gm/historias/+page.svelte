@@ -14,7 +14,7 @@
 {#if form?.message}<div class="alert alert-error mb-4">{form.message}</div>{/if}
 
 {#if data.stories.length === 0}
-  <p class="text-gray-400">No hay historias pendientes.</p>
+  <p class="text-azeroth-muted">No hay historias pendientes.</p>
 {:else}
   <div class="space-y-4">
     {#each data.stories as s (s.id)}
@@ -22,7 +22,7 @@
       <div class="card bg-base-200 border border-azeroth-border">
         <div class="card-body">
           <h3 class="font-cinzel text-lg text-azeroth-gold">{char?.name ?? 'Sin personaje'}</h3>
-          <p class="text-sm text-gray-400">por {char?.player?.display_name ?? char?.player?.username ?? ''}</p>
+          <p class="text-sm text-azeroth-muted">por {char?.player?.display_name ?? char?.player?.username ?? ''}</p>
           <p class="mt-2 line-clamp-3">{s.content ?? ''}</p>
           <div class="card-actions justify-end mt-4 gap-2">
             <form method="POST" action="?/reject" use:enhance>

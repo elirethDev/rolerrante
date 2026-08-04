@@ -29,7 +29,7 @@
   <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
     <div>
       <h1 class="text-3xl md:text-4xl font-cinzel text-azeroth-gold">{story.title}</h1>
-      <p class="text-sm text-gray-400 mt-1">
+      <p class="text-sm text-azeroth-muted mt-1">
         Por <span class="text-azeroth-gold">{playerName(story.character?.player)}</span>
         · {formatDate(story.created_at)}
         {#if story.character}

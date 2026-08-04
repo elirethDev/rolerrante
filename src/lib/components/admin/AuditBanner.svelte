@@ -24,7 +24,7 @@
       <span class="font-semibold">{actor}</span>
       <span> · {entityType}</span>
       {#if entityId}<span> · {entityId.slice(0, 8)}</span>{/if}
-      <span class="text-gray-400"> · {formatRelativeTime(createdAt)}</span>
+      <span class="text-azeroth-muted"> · {formatRelativeTime(createdAt)}</span>
     </div>
   </div>
 </div>

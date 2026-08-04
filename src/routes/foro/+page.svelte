@@ -18,7 +18,7 @@
   <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
     <div>
       <h1 class="text-3xl font-cinzel text-azeroth-gold">Foro</h1>
-      <p class="text-sm text-gray-400 mt-1">Discusión, historias y crónicas de la comunidad.</p>
+      <p class="text-sm text-azeroth-muted mt-1">Discusión, historias y crónicas de la comunidad.</p>
     </div>
     {#if data.roleLabel !== 'pendiente' && data.categories.some((c) => c.flags.can_post)}
       <a href={resolve('/foro/nuevo' as any)} class="btn btn-primary">
@@ -29,7 +29,7 @@
 
   <form method="get" action={resolve('/foro' as any)} class="mb-6">
     <label class="input input-bordered flex items-center gap-2 w-full md:w-96">
-      <Search size={18} class="text-gray-400 shrink-0" />
+      <Search size={18} class="text-azeroth-muted shrink-0" />
       <input
         type="search"
         name="q"
@@ -39,7 +39,7 @@
       />
       {#if data.isSearch}
         <a href={resolve('/foro' as any)} aria-label="Limpiar búsqueda">
-          <X size={18} class="text-gray-400" />
+          <X size={18} class="text-azeroth-muted" />
         </a>
       {/if}
     </label>
@@ -50,7 +50,7 @@
       <h2 class="text-lg font-cinzel text-azeroth-gold">
         Resultados para «{data.query}»
       </h2>
-      <p class="text-sm text-gray-400 mt-1">
+      <p class="text-sm text-azeroth-muted mt-1">
         {data.searchResults.length > 0
           ? `${data.searchResults.length} ${data.searchResults.length === 1 ? 'hilo' : 'hilos'} encontrado${data.searchResults.length === 1 ? '' : 's'}`
           : 'No se encontraron hilos.'}

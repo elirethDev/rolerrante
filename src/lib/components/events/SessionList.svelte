@@ -26,7 +26,7 @@
     <div class="overflow-x-auto">
       <table class="table w-full">
         <thead>
-          <tr class="text-gray-400 text-sm">
+          <tr class="text-azeroth-muted text-sm">
             <th>Fecha</th>
             <th>Título</th>
             <th>Resumen</th>
@@ -38,7 +38,7 @@
             <tr class="border-t border-azeroth-border">
               <td class="whitespace-nowrap">{formatDate(s.session_date)}</td>
               <td>{s.title ?? '-'}</td>
-              <td class="text-sm text-gray-400 max-w-xs truncate">{s.summary ?? '-'}</td>
+              <td class="text-sm text-azeroth-muted max-w-xs truncate">{s.summary ?? '-'}</td>
               <td>
                 {#if s.counts_as_masteo}
                   <span class="badge badge-success">Sí</span>

@@ -96,7 +96,7 @@
             <div class="flex-1">
               <p class="font-semibold">{skillName(s)}</p>
               {#if (s.description ?? s.skill?.description) != null}
-                <p class="text-xs text-gray-400">{s.description ?? s.skill?.description}</p>
+                <p class="text-xs text-azeroth-muted">{s.description ?? s.skill?.description}</p>
               {/if}
             </div>
             <fieldset class="fieldset {sizeClass}">
@@ -134,7 +134,7 @@
     <div class="flex flex-col md:flex-row md:items-center gap-2 p-2 bg-base-100 rounded border border-azeroth-border">
       <div class="flex-1">
         <p class="font-semibold">{skillName(s)}</p>
-        <p class="text-xs text-gray-400">Actual: {currentLevel(s)} · {s.attribute ?? s.skill?.attribute ?? ''}</p>
+        <p class="text-xs text-azeroth-muted">Actual: {currentLevel(s)} · {s.attribute ?? s.skill?.attribute ?? ''}</p>
       </div>
       <fieldset class="fieldset {sizeClass}">
         <legend class="fieldset-legend {legendClass}">Subir a</legend>

@@ -83,7 +83,7 @@
               {#if !root.is_visible}
                 <span class="badge badge-warning badge-sm ml-2">oculta</span>
               {/if}
-              <span class="text-xs text-gray-500 ml-2">orden {root.sort_order}</span>
+              <span class="text-xs text-azeroth-faint ml-2">orden {root.sort_order}</span>
             </div>
             <div class="flex gap-1">
               <form method="POST" action="?/toggleVisibility" use:enhance>

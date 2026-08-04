@@ -25,17 +25,17 @@
 
 <div class="grid md:grid-cols-3 gap-4 mb-8">
   <div class="stat bg-base-200 border border-azeroth-border rounded-box p-4">
-    <div class="stat-title text-gray-400">Usuarios</div>
+    <div class="stat-title text-azeroth-muted">Usuarios</div>
     <div class="stat-value text-azeroth-gold text-2xl">{data.users}</div>
   </div>
 
   <div class="stat bg-base-200 border border-azeroth-border rounded-box p-4">
-    <div class="stat-title text-gray-400">No administradores</div>
+    <div class="stat-title text-azeroth-muted">No administradores</div>
     <div class="stat-value text-azeroth-gold text-2xl">{data.nonAdmin}</div>
   </div>
 
   <div class="stat bg-base-200 border border-azeroth-border rounded-box p-4">
-    <div class="stat-title text-gray-400">Eventos de auditoría</div>
+    <div class="stat-title text-azeroth-muted">Eventos de auditoría</div>
     <div class="stat-value text-azeroth-gold text-2xl">{data.logs}</div>
   </div>
 </div>
@@ -67,7 +67,7 @@
         </tbody>
       </table>
       {#if data.recentLogs.length === 0}
-        <p class="text-gray-500 text-center py-4">No hay actividad reciente.</p>
+        <p class="text-azeroth-faint text-center py-4">No hay actividad reciente.</p>
       {/if}
     </div>
   </div>

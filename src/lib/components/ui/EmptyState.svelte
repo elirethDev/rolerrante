@@ -19,7 +19,7 @@
     {/if}
     <h3 class="card-title font-cinzel text-azeroth-gold text-xl">{title}</h3>
     {#if description}
-      <p class="text-gray-400 max-w-md">{description}</p>
+      <p class="text-azeroth-muted max-w-md">{description}</p>
     {/if}
     {#if children}
       <div class="mt-2">

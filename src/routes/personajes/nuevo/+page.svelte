@@ -158,7 +158,7 @@
           <span class="badge {attrRemaining < 0 ? 'badge-error' : attrRemaining <= 3 ? 'badge-warning' : 'badge-success'} badge-lg">
             {attrRemaining} restantes
           </span>
-          <span class="text-xs text-gray-400">(gastados: {attrSpent} / {ATTR_POINTS_BUDGET})</span>
+          <span class="text-xs text-azeroth-muted">(gastados: {attrSpent} / {ATTR_POINTS_BUDGET})</span>
         </div>
 
         {#if attrErrors.length > 0}
@@ -195,7 +195,7 @@
           <span class="badge {skillRemaining < 0 ? 'badge-error' : skillRemaining <= 5 ? 'badge-warning' : 'badge-success'} badge-lg">
             {skillRemaining} restantes
           </span>
-          <span class="text-xs text-gray-400">(gastados: {skillSpent} / {SKILL_POINTS})</span>
+          <span class="text-xs text-azeroth-muted">(gastados: {skillSpent} / {SKILL_POINTS})</span>
         </div>
 
         {#each Object.entries(grouped) as [attr, skills] (attr)}
@@ -206,7 +206,7 @@
                 <div class="flex flex-col md:flex-row md:items-center gap-2 p-2 bg-base-100 rounded border border-azeroth-border">
                   <div class="flex-1">
                     <p class="font-semibold">{skill.name}</p>
-                    <p class="text-xs text-gray-400">{skill.description ?? ''}</p>
+                    <p class="text-xs text-azeroth-muted">{skill.description ?? ''}</p>
                   </div>
                   <div class="flex items-center gap-2">
                     <label class="text-sm" for="skill_level_{skill.id}">Nivel</label>
