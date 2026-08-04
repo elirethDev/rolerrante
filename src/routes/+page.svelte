@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { resolve } from '$app/paths';
   import { Pin, Flame, Lock } from '@lucide/svelte';
   import Avatar from '$lib/components/ui/Avatar.svelte';
@@ -11,22 +10,31 @@
 
   let { data }: { data: PageData } = $props();
 
-  // Force background-video playback: `muted` as an attribute is not enough to
-  // satisfy autoplay policies in every browser, so set the property + play().
+  // Background-video playback: `muted` as an HTML attribute is not enough to
+  // satisfy autoplay policies, so set the property and call play() explicitly.
+  // $effect reacts to bind:this becoming available (more reliable than onMount
+  // timing) and fires again on the first user gesture as a final resort.
   let heroVideo: HTMLVideoElement | undefined = $state();
-  let heroVideoFailed = $state(false);
-  onMount(() => {
-    const v = heroVideo;
+  function tryPlay(v: HTMLVideoElement | undefined) {
     if (!v) return;
     v.muted = true;
+    v.defaultMuted = true;
     const p = v.play();
-    if (p && typeof p.then === 'function') {
-      p.catch(() => {
-        // autoplay blocked (e.g. strict policy, or reduced-motion user agent) —
-        // the poster + CSS fallback already cover the background; nothing to do.
-        heroVideoFailed = true;
-      });
-    }
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  }
+  $effect(() => {
+    tryPlay(heroVideo);
+    const onFirstGesture = () => {
+      tryPlay(heroVideo);
+      window.removeEventListener('pointerdown', onFirstGesture);
+      window.removeEventListener('keydown', onFirstGesture);
+    };
+    window.addEventListener('pointerdown', onFirstGesture);
+    window.addEventListener('keydown', onFirstGesture);
+    return () => {
+      window.removeEventListener('pointerdown', onFirstGesture);
+      window.removeEventListener('keydown', onFirstGesture);
+    };
   });
 
   // --- Discord widget: static demo numbers (no Discord presence API). Replace
@@ -416,9 +424,6 @@
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .hero-bg .hero-video {
-      display: none;
-    }
     .embers i,
     .hero-zoom {
       animation: none;
