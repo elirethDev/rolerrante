@@ -1,5 +1,32 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import { Pin, Flame, Lock } from '@lucide/svelte';
+  import Avatar from '$lib/components/ui/Avatar.svelte';
+  import EmptyState from '$lib/components/ui/EmptyState.svelte';
+  import Tag from '$lib/components/ui/Tag.svelte';
+  import SectionHead from '$lib/components/landing/SectionHead.svelte';
+  import { formatRelativeTime } from '$lib/utils';
+  import type { PageData } from './$types';
+
+  let { data }: { data: PageData } = $props();
+
+  // --- Discord widget: static demo numbers (no Discord presence API). Replace
+  // with real values once a bot/API exposes them. DISCORD_INVITE is the real
+  // invite the community configured.
+  const DISCORD_INVITE = 'https://discord.gg/xDJTmZAxPU';
+  const MEMBERS = 312;
+  const ONLINE = 128;
+
+  // --- "Conectados": static demo list (no presence backend). Placeholder only.
+  const ONLINE_USERS = [
+    { name: 'Kareth', activity: 'escribiendo', place: 'en Crónicas', ring: true },
+    { name: 'Mariela', activity: '', place: 'en Eventos', ring: false },
+    { name: 'Raviel', activity: '', place: 'en Fichas', ring: false },
+    { name: 'Torgal', activity: '', place: 'en La Taberna', ring: false },
+  ];
+
+  const characterHref = (id: string) => resolve(`/personajes/${id}` as any) as string;
+  const threadHref = (id: string) => resolve(`/foro/${id}` as any) as string;
 </script>
 
 <svelte:head>
@@ -12,14 +39,30 @@
 
 <section class="hero">
   <div class="hero-stage">
-    <div class="cinema hero-zoom" aria-hidden="true"><div class="horizon"></div></div>
-    <div class="embers" aria-hidden="true">
-      <i style="left:8%; --d:8s"></i>
-      <i style="left:20%; --d:11s; animation-delay:1s"></i>
-      <i style="left:35%; --d:9s; animation-delay:.5s"></i>
-      <i style="left:58%; --d:12s; animation-delay:2s"></i>
-      <i style="left:72%; --d:8.5s; animation-delay:1.5s"></i>
-      <i style="left:88%; --d:10s; animation-delay:.3s"></i>
+    <div class="hero-bg" aria-hidden="true">
+      <video
+        class="hero-video"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="auto"
+        poster="/hero-poster.jpg"
+        data-testid="hero-video"
+      >
+        <source src="/hero-loop.mp4" type="video/mp4" />
+        <source src="/hero-loop.webm" type="video/webm" />
+      </video>
+      <div class="cinema hero-zoom"><div class="horizon"></div></div>
+      <div class="veil"></div>
+      <div class="embers">
+        <i style="left:8%; --d:8s"></i>
+        <i style="left:20%; --d:11s; animation-delay:1s"></i>
+        <i style="left:35%; --d:9s; animation-delay:.5s"></i>
+        <i style="left:58%; --d:12s; animation-delay:2s"></i>
+        <i style="left:72%; --d:8.5s; animation-delay:1.5s"></i>
+        <i style="left:88%; --d:10s; animation-delay:.3s"></i>
+      </div>
     </div>
     <div class="hero-inner">
       <div class="hero-copy">
@@ -33,82 +76,204 @@
           <a href={resolve('/personajes/nuevo')} class="btn btn-secondary btn-lg">Crear mi ficha</a>
         </div>
       </div>
-      <div class="stage-art" aria-hidden="true">
-        <div class="pane">
-          <div class="art"></div>
-          <div class="ridge"></div>
-          <div class="cap"><span class="k">El Sexto Reino · Crónicas vivas</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="info-wrap">
+  <section class="feed" aria-labelledby="feed-heading">
+    <SectionHead
+      kicker="El salón ahora"
+      title="Actividad reciente"
+      linkLabel="Ver todo el foro"
+      linkHref={resolve('/foro')}
+      headingId="feed-heading"
+    />
+    {#if data.feed.length > 0}
+      <div class="forum-panel">
+        {#each data.feed as row (row.id)}
+          <div class="thread-row">
+            <div class="thread-flags" aria-hidden="true">
+              {#if row.isSticky}
+                <span class="marker marker-pin" title="Fijado"><Pin size={16} /></span>
+              {/if}
+              {#if row.isHot}
+                <span class="marker marker-hot" title="Tendencia"><Flame size={16} /></span>
+              {/if}
+              {#if row.isLocked}
+                <span class="marker marker-lock" title="Bloqueado"><Lock size={16} /></span>
+              {/if}
+            </div>
+            <div class="thread-main">
+              <a class="thread-title" href={threadHref(row.id)}>{row.title}</a>
+              <div class="thread-meta">
+                <span class="who">
+                  <Avatar name={row.authorName} size="sm" alt={row.authorName} />
+                  <b>{row.authorName}</b>
+                </span>
+                <span>{formatRelativeTime(row.updatedAt)}</span>
+                <span class="tag-wrap"><Tag>{row.contentTypeLabel}</Tag></span>
+              </div>
+            </div>
+          </div>
+        {/each}
+      </div>
+    {:else}
+      <EmptyState
+        title="Sin actividad todavía"
+        description="Cuando alguien escriba en el salón, la actividad de la comunidad aparecerá aquí."
+      />
+    {/if}
+  </section>
+
+  <aside class="l-side" aria-label="Comunidad">
+    <div class="ds-card">
+      <div class="ds-head">
+        <span class="ds-avatar" aria-hidden="true">RE</span>
+        <div>
+          <div class="ds-name">Rol Errante · Discord</div>
+          <div class="ds-online">{ONLINE} en línea</div>
         </div>
       </div>
+      <div class="ds-body">
+        <p>
+          El canal de la taberna: coordinación de eventos, dudas de tu personaje y charla fuera de juego.
+          Las normas del foro se aplican también aquí.
+        </p>
+        <div class="ds-stats" data-testid="discord-stats">
+          <span><b>{MEMBERS}</b> miembros</span>
+          <span><b>{ONLINE}</b> en línea</span>
+        </div>
+        <a class="ds-btn" href={DISCORD_INVITE} target="_blank" rel="noopener noreferrer">
+          Unirse a Discord
+        </a>
+      </div>
     </div>
-  </div>
-</section>
 
-<section class="num-band" aria-label="Cifras de la comunidad">
-  <div class="num-grid">
-    <div class="kpi band-kpi"><span class="kpi-num">2.4k</span><span class="kpi-label">Roleros</span></div>
-    <div class="kpi band-kpi"><span class="kpi-num">1.2M</span><span class="kpi-label">Mensajes</span></div>
-    <div class="kpi band-kpi"><span class="kpi-num">340</span><span class="kpi-label">Crónicas completas</span></div>
-    <div class="kpi band-kpi"><span class="kpi-num">4.6&#9733;</span><span class="kpi-label">Valoración de la mesa</span></div>
-  </div>
-  <p class="num-note">Cifras de demostración — datos ilustrativos.</p>
-</section>
-
-<section class="split" aria-labelledby="split-foros-title">
-  <div class="copy">
-    <span class="kicker">Foros vivos</span>
-    <h2 class="landing-h2" id="split-foros-title">Del silencio a la sobremesa</h2>
-    <p class="lead">
-      Un foro clásico —categorías, hilos y respuestas— con el calor de una taberna al atardecer.
-      Toma asiento, lee sin prisa y deja que el salón se llene.
-    </p>
-    <ul class="feat-list">
-      <li><span class="n">01</span><div><b>Crónicas abiertas</b><span>Cada historia es un hilo que la comunidad escribe en común.</span></div></li>
-      <li><span class="n">02</span><div><b>Revisión de personajes</b><span>Presenta tu ficha al consejo y, con su aprobación, entra al reino.</span></div></li>
-      <li><span class="n">03</span><div><b>Eventos en vivo</b><span>Convocatorias, batallas de plaza y veladas en el Salón del Consejo.</span></div></li>
-    </ul>
-    <div class="hero-cta band-cta"><a href={resolve('/foro')} class="btn btn-primary">Entrar a los foros</a></div>
-  </div>
-  <div class="artpane" aria-hidden="true"><div class="art"></div><div class="inlay"></div></div>
-</section>
-
-<section class="split rev" aria-labelledby="split-fichas-title">
-  <div class="copy">
-    <span class="kicker">Personajes</span>
-    <h2 class="landing-h2" id="split-fichas-title">Detrás de cada ficha, una historia con rostro</h2>
-    <p class="lead">
-      Fichas narrativas que crecen contigo: apariencia, personalidad, trasfondo y vínculos.
-      Escribe tu historia poco a poco y déjala evolucionar.
-    </p>
-    <ul class="feat-list">
-      <li><span class="n">&#10022;</span><div><b>Aprobación del consejo</b><span>Tu ficha cruza el umbral cuando el consejo la acoge.</span></div></li>
-      <li><span class="n">&#10022;</span><div><b>Vínculos visibles</b><span>Los lazos se dibujan para que la historia se vea completa.</span></div></li>
-    </ul>
-    <div class="hero-cta band-cta"><a href={resolve('/personajes')} class="btn btn-secondary">Ver personajes</a></div>
-  </div>
-  <div class="artpane" aria-hidden="true"><div class="art"></div><div class="inlay"></div></div>
-</section>
-
-<section class="split" aria-labelledby="split-gm-title">
-  <div class="copy">
-    <span class="kicker">Para tu consejo de GMs</span>
-    <h2 class="landing-h2" id="split-gm-title">Menos trámites, más aventura</h2>
-    <p class="lead">
-      Un panel pensado para acortar el trecho: aprueba fichas, cierra hilos y corrige crónicas
-      en una sola acción, con cada paso registrado.
-    </p>
-    <div class="hero-cta band-cta">
-      <a href={resolve('/gm')} class="btn btn-secondary">Ver el panel de GM</a>
-      <a href={resolve('/admin')} class="btn btn-ghost">Panel de administración</a>
+    <div class="users-online" aria-label="Quién está conectado">
+      <span class="kicker">Conectados</span>
+      {#each ONLINE_USERS as u (u.name)}
+        <div class="uo-row">
+          <Avatar name={u.name} size="sm" ring={u.ring} alt={u.name} />
+          <span class="who">{u.name}</span>
+          {#if u.activity}
+            <span class="badge badge-success badge-xs">{u.activity}</span>
+          {/if}
+          <span class="uo-tag">{u.place}</span>
+        </div>
+      {/each}
+      <a class="uo-more" href={resolve('/foro')}>Ver toda la lista ({ONLINE_USERS.length}) →</a>
     </div>
-  </div>
-  <div class="artpane" aria-hidden="true"><div class="art"></div><div class="inlay"></div></div>
+  </aside>
+</div>
+
+<section class="landing-section" aria-labelledby="cronicas-heading">
+  <SectionHead
+    kicker="Historias del reino"
+    title="Crónicas en curso"
+    linkLabel="Ver todas"
+    linkHref={resolve('/foro')}
+    headingId="cronicas-heading"
+  />
+  {#if data.cronicas.length > 0}
+    <div class="media-grid">
+      {#each data.cronicas as c (c.id)}
+        <a class="media-card" href={threadHref(c.id)}>
+          <div class="media-title">{c.title}</div>
+          <p class="media-excerpt">{c.excerpt}</p>
+          <div class="media-foot">
+            <span class="who">
+              <Avatar name={c.authorName} size="sm" alt={c.authorName} />
+              {c.authorName}
+            </span>
+            <Tag>{c.tag}</Tag>
+          </div>
+        </a>
+      {/each}
+    </div>
+  {:else}
+    <EmptyState
+      title="Sin crónicas todavía"
+      description="Las historias que el consejo abra en el reino aparecerán aquí."
+    />
+    {/if}
+</section>
+
+<section class="landing-section" aria-labelledby="eventos-heading">
+  <SectionHead
+    kicker="Agenda del reino"
+    title="Eventos activos"
+    linkLabel="Ver agenda"
+    linkHref={resolve('/foro')}
+    headingId="eventos-heading"
+  />
+  {#if data.eventos.length > 0}
+    <div class="media-grid">
+      {#each data.eventos as ev (ev.id)}
+        <a class="media-card" href={resolve(`/eventos/${ev.id}` as any) as string}>
+          <div class="event-media">
+            <div class="event-date" aria-hidden="true">
+              <b>{ev.day}</b>
+              <span>{ev.month}</span>
+            </div>
+            <div class="event-body">
+              <div class="media-title">{ev.title}</div>
+              <p class="media-excerpt">{ev.excerpt}</p>
+              <div class="media-foot">
+                <span class="who">por {ev.authorName}</span>
+                <Tag>Evento</Tag>
+              </div>
+            </div>
+          </div>
+        </a>
+      {/each}
+    </div>
+  {:else}
+    <EmptyState
+      title="Sin eventos activos todavía"
+      description="Cuando haya una convocatoria en la agenda del reino, aparecerá aquí."
+    />
+  {/if}
+</section>
+
+<section class="landing-section" aria-labelledby="fichas-heading">
+  <SectionHead
+    kicker="Censo del reino"
+    title="Fichas de personaje"
+    linkLabel="Ver todas"
+    linkHref={resolve('/foro')}
+    headingId="fichas-heading"
+  />
+  {#if data.fichas.length > 0}
+    <div class="char-grid">
+      {#each data.fichas as ch (ch.id)}
+        <a class="char-card" href={characterHref(ch.id)}>
+          <div class="char-top">
+            <Avatar src={ch.avatarUrl} name={ch.name} size="lg" ring={ch.tagKind === 'success'} alt={ch.name} />
+            <div class="char-info">
+              <span class="char-name">{ch.name}</span>
+              <span class="char-meta">{ch.meta}</span>
+            </div>
+          </div>
+          <div class="char-tags">
+            <span class="badge {ch.tagKind === 'success' ? 'badge-success' : 'badge-info'} badge-sm">{ch.tag}</span>
+          </div>
+          <div class="char-owner">por {ch.ownerName} · {formatRelativeTime(ch.updatedAt)}</div>
+        </a>
+      {/each}
+    </div>
+  {:else}
+    <EmptyState
+      title="Sin fichas todavía"
+      description="Presenta tu personaje al consejo y ocupa tu lugar en el censo del reino."
+    />
+  {/if}
 </section>
 
 <style>
   .hero {
     position: relative;
-    min-height: calc(100vh - var(--topbar-h, 64px));
+    min-height: calc(100vh - 64px);
     display: flex;
     align-items: stretch;
   }
@@ -121,9 +286,35 @@
     border-bottom: 1px solid var(--color-azeroth-border);
     overflow: hidden;
   }
-  .hero-stage .cinema {
+
+  .hero-bg {
     position: absolute;
     inset: 0;
+    overflow: hidden;
+    z-index: 0;
+    background: var(--color-azeroth-bg-deep);
+  }
+  .hero-bg .cinema {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+  .hero-bg .hero-video {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .hero-bg .veil {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: linear-gradient(90deg, rgba(7, 9, 16, 0.78) 0%, rgba(7, 9, 16, 0.55) 45%, rgba(7, 9, 16, 0.25) 75%, rgba(7, 9, 16, 0.5) 100%);
+  }
+  .hero-bg .embers {
+    z-index: 3;
   }
 
   .cinema {
@@ -176,7 +367,6 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
-    z-index: 1;
     opacity: 0.7;
   }
   .embers i {
@@ -206,6 +396,9 @@
     }
   }
   @media (prefers-reduced-motion: reduce) {
+    .hero-bg .hero-video {
+      display: none;
+    }
     .embers i,
     .hero-zoom {
       animation: none;
@@ -218,24 +411,13 @@
     width: 100%;
     max-width: 1180px;
     margin-inline: auto;
-    display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-    gap: clamp(24px, 5vw, 72px);
+    display: flex;
     align-items: center;
-    padding: clamp(44px, 6vw, 88px) clamp(16px, 3vw, 32px);
+    padding: clamp(48px, 7vw, 96px) clamp(16px, 3vw, 32px);
   }
-  @media (max-width: 980px) {
-    .hero-inner {
-      grid-template-columns: 1fr;
-      padding-top: clamp(32px, 5vw, 56px);
-    }
-    .stage-art .pane {
-      width: min(84vw, 420px);
-      aspect-ratio: 4 / 3;
-      opacity: 0.95;
-    }
+  .hero-copy {
+    max-width: 640px;
   }
-
   .hero-title {
     font-family: var(--font-cinzel);
     font-size: clamp(2.4rem, 5vw + 1rem, 4.15rem);
@@ -278,173 +460,16 @@
     }
   }
 
-  .stage-art {
-    position: relative;
-    min-width: 0;
+  /* ---- shared section typography (used by SectionHead + inline kickers) ---- */
+  :global(.section-head) {
     display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .stage-art .pane {
-    width: min(100%, 520px);
-    aspect-ratio: 4 / 5;
-    border: 1px solid rgba(200, 148, 26, 0.35);
-    border-radius: var(--radius-xl);
-    overflow: hidden;
-    position: relative;
-    box-shadow: 0 40px 90px -40px rgba(0, 0, 0, 0.9);
-  }
-  .stage-art .pane .art {
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(70% 40% at 30% 20%, rgba(248, 183, 0, 0.28), transparent 60%),
-      radial-gradient(60% 50% at 78% 72%, rgba(14, 134, 202, 0.22), transparent 60%),
-      radial-gradient(140% 90% at 50% 120%, #12203a, #070910 70%);
-  }
-  .stage-art .pane .art::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(120% 80% at 50% 120%, rgba(0, 0, 0, 0.9), transparent 60%);
-  }
-  .stage-art .pane .ridge {
-    position: absolute;
-    left: -8%;
-    right: -8%;
-    bottom: -2%;
-    height: 46%;
-    background: radial-gradient(120% 100% at 50% 0%, #0d1a30, rgba(7, 10, 18, 0) 70%);
-    clip-path: polygon(0 62%, 12% 40%, 26% 60%, 40% 30%, 54% 55%, 68% 24%, 82% 52%, 100% 34%, 100% 100%, 0 100%);
-  }
-  .stage-art .pane .cap {
-    position: absolute;
-    left: 14px;
-    right: 14px;
-    bottom: 14px;
-    z-index: 3;
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-  .stage-art .pane .cap .k {
-    font-size: 0.66rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--color-azeroth-gold-soft);
-    font-weight: 700;
-  }
-
-  .num-band {
-    border-top: 1px solid rgba(53, 65, 95, 0.45);
-    border-bottom: 1px solid rgba(53, 65, 95, 0.45);
-    background: linear-gradient(180deg, rgba(7, 9, 16, 0.6), var(--color-azeroth-bg));
-  }
-  .num-grid {
-    max-width: 1180px;
-    margin-inline: auto;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    align-items: flex-end;
+    justify-content: space-between;
     gap: 16px;
-    padding: 32px clamp(16px, 3vw, 32px);
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
   }
-  .band-kpi {
-    background: none;
-    border: 0;
-    box-shadow: none;
-    align-items: center;
-    text-align: center;
-  }
-  @media (max-width: 760px) {
-    .num-grid {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-  .kpi {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 18px 20px;
-    border: 1px solid var(--color-azeroth-border);
-    border-radius: var(--radius-lg);
-    background: linear-gradient(180deg, var(--color-azeroth-surface-2), var(--color-azeroth-surface));
-    box-shadow: var(--shadow-1);
-  }
-  .kpi-num {
-    font-family: var(--font-cinzel);
-    font-size: 1.9rem;
-    font-weight: 700;
-    color: var(--color-azeroth-gold-bright);
-    line-height: 1;
-  }
-  .kpi-label {
-    font-size: 0.76rem;
-    color: var(--color-azeroth-muted);
-    letter-spacing: 0.04em;
-  }
-  .num-note {
-    text-align: center;
-    margin: 0;
-    padding: 0 20px 14px;
-    font-size: 0.72rem;
-    color: var(--color-azeroth-faint);
-  }
-
-  .split {
-    display: grid;
-    grid-template-columns: 1.1fr 1fr;
-    gap: 48px;
-    align-items: center;
-    padding: 64px clamp(16px, 3vw, 32px);
-    max-width: 1180px;
-    margin-inline: auto;
-  }
-  .split.rev .copy {
-    order: 2;
-  }
-  .split.rev .artpane {
-    order: 1;
-  }
-  .split.rev {
-    background: linear-gradient(180deg, transparent, rgba(7, 9, 16, 0.6), transparent);
-  }
-  @media (max-width: 900px) {
-    .split {
-      grid-template-columns: 1fr;
-      gap: 24px;
-    }
-    .split.rev .copy {
-      order: 1;
-    }
-    .split.rev .artpane {
-      order: 2;
-    }
-  }
-
-  .artpane {
-    position: relative;
-    border: 1px solid var(--color-azeroth-border-strong);
-    border-radius: var(--radius-xl);
-    overflow: hidden;
-    aspect-ratio: 16 / 10;
-    box-shadow: var(--shadow-2);
-    min-height: 200px;
-  }
-  .artpane .art {
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(60% 50% at 30% 30%, rgba(248, 183, 0, 0.2), transparent 62%),
-      linear-gradient(180deg, #13203a, var(--color-azeroth-bg-deep));
-  }
-  .artpane .inlay {
-    position: absolute;
-    inset: 12px;
-    border: 1px solid rgba(200, 148, 26, 0.28);
-    border-radius: var(--radius-lg);
-  }
-
-  .kicker {
+  :global(.kicker) {
     display: inline-flex;
     align-items: center;
     gap: 10px;
@@ -454,13 +479,13 @@
     text-transform: uppercase;
     color: var(--color-azeroth-gold);
   }
-  .kicker::before {
+  :global(.kicker)::before {
     content: '';
     width: 26px;
     height: 1px;
     background: linear-gradient(90deg, transparent, var(--color-azeroth-gold-dim));
   }
-  .landing-h2 {
+  :global(.landing-h2) {
     font-family: var(--font-cinzel);
     font-size: clamp(1.9rem, 3.2vw + 0.45rem, 2.85rem);
     line-height: 1.1;
@@ -468,51 +493,424 @@
     color: var(--color-azeroth-text-high);
     margin: 12px 0 0;
   }
-  .lead {
-    font-size: 1.15rem;
-    color: var(--color-azeroth-text-soft);
-    line-height: 1.6;
-    margin: 18px 0 0;
+
+  .landing-section {
+    max-width: 1180px;
+    margin-inline: auto;
+    padding: 2.5rem clamp(16px, 3vw, 32px);
   }
-  .feat-list {
-    list-style: none;
-    margin: 20px 0 0;
-    padding: 0;
+
+  /* ---- info-wrap: feed + sidebar ---- */
+  .info-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 2rem;
+    align-items: start;
+    max-width: 1180px;
+    margin-inline: auto;
+    padding: 3rem clamp(16px, 3vw, 32px) 2rem;
+  }
+  @media (max-width: 1080px) {
+    .info-wrap {
+      grid-template-columns: 1fr;
+    }
+  }
+  .feed {
+    align-self: stretch;
     display: flex;
     flex-direction: column;
-    gap: 16px;
   }
-  .feat-list li {
+  .forum-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-azeroth-border);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, var(--color-azeroth-surface-2), var(--color-azeroth-surface));
+    box-shadow: var(--shadow-1);
+    overflow: hidden;
+  }
+  .l-side {
+    position: sticky;
+    top: calc(64px + 16px);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  @media (max-width: 1080px) {
+    .l-side {
+      position: static;
+    }
+  }
+
+  /* feed rows */
+  .thread-row {
     display: flex;
     gap: 14px;
     align-items: flex-start;
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--color-azeroth-border);
   }
-  .feat-list .n {
+  .thread-row:last-child {
+    border-bottom: 0;
+  }
+  .thread-flags {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     flex: none;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    border: 1px solid var(--color-azeroth-gold-dim);
-    color: var(--color-azeroth-gold-bright);
+    padding-top: 2px;
+  }
+  .marker {
+    display: inline-flex;
+    color: var(--color-azeroth-muted);
+  }
+  .marker-pin {
+    color: var(--color-azeroth-gold);
+  }
+  .marker-hot {
+    color: var(--color-azeroth-danger-fg);
+  }
+  .marker-lock {
+    color: var(--color-azeroth-muted);
+  }
+  .thread-main {
+    min-width: 0;
+    flex: 1 1 0;
+  }
+  .thread-title {
+    display: block;
+    font-weight: 600;
+    color: var(--color-azeroth-text-soft);
+    text-decoration: none;
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .thread-title:hover {
+    color: var(--color-azeroth-gold-soft);
+  }
+  .thread-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+    font-size: 0.78rem;
+    color: var(--color-azeroth-muted);
+  }
+  .thread-meta .who {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .thread-meta .who b {
+    font-weight: 600;
+    color: var(--color-azeroth-text-soft);
+  }
+  .tag-wrap {
+    display: inline-flex;
+  }
+
+  /* discord widget */
+  .ds-card {
+    border: 1px solid var(--color-azeroth-border);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, var(--color-azeroth-surface-2), var(--color-azeroth-surface));
+    box-shadow: var(--shadow-1);
+    overflow: hidden;
+    position: relative;
+  }
+  .ds-card::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 2px;
+    background: var(--gold-hairline);
+  }
+  .ds-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--color-azeroth-border);
+    background: linear-gradient(90deg, rgba(248, 183, 0, 0.07), rgba(248, 183, 0, 0) 70%);
+  }
+  .ds-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(160deg, #5865f2, #3a45c5);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
-    background: rgba(248, 183, 0, 0.07);
+    font-family: var(--font-cinzel);
+    font-weight: 800;
+    color: #fff;
+    font-size: 1.05rem;
+    flex: none;
   }
-  .feat-list b {
-    display: block;
+  .ds-name {
+    font-family: var(--font-cinzel);
+    font-weight: 700;
     color: var(--color-azeroth-text-high);
+    font-size: 1.05rem;
+    line-height: 1.2;
+  }
+  .ds-online {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.74rem;
+    color: var(--color-azeroth-success-fg);
     font-weight: 600;
-    margin-bottom: 2px;
-    font-family: var(--font-sans);
+    margin-top: 2px;
   }
-  .feat-list span {
-    color: var(--color-azeroth-muted);
+  .ds-online::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-azeroth-success);
+    box-shadow: 0 0 8px var(--color-azeroth-success);
+  }
+  .ds-body {
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
     font-size: 0.9rem;
+    color: var(--color-azeroth-text-soft);
+    line-height: 1.6;
   }
-  .band-cta {
-    margin-top: 24px;
+  .ds-body p {
+    margin: 0;
+  }
+  .ds-stats {
+    display: flex;
+    gap: 12px;
+    font-size: 0.8rem;
+    color: var(--color-azeroth-muted);
+  }
+  .ds-stats b {
+    color: var(--color-azeroth-text-high);
+    font-family: var(--font-mono);
+  }
+  .ds-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 11px 12px;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(180deg, var(--color-azeroth-gold-bright), var(--color-azeroth-gold));
+    color: #1a1508;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 8px 22px -10px rgba(248, 183, 0, 0.5);
+    transition: filter 0.15s, transform 0.12s;
+  }
+  .ds-btn:hover {
+    filter: brightness(1.05);
+    transform: translateY(-1px);
+    color: #1a1508;
+  }
+
+  /* conectados */
+  .users-online {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px;
+    border: 1px solid var(--color-azeroth-border);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, var(--color-azeroth-surface-2), var(--color-azeroth-surface));
+  }
+  .users-online .kicker {
+    margin-bottom: 2px;
+  }
+  .uo-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.88rem;
+    color: var(--color-azeroth-text-soft);
+  }
+  .uo-row .who {
+    font-weight: 600;
+    color: var(--color-azeroth-text-high);
+  }
+  .uo-tag {
+    margin-left: auto;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-azeroth-faint);
+  }
+  .uo-more {
+    font-size: 0.78rem;
+    color: var(--color-azeroth-link);
+    font-weight: 500;
+    margin-top: 2px;
+    text-decoration: none;
+  }
+  .uo-more:hover {
+    text-decoration: underline;
+  }
+
+  /* media cards (crónicas / eventos) */
+  .media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+  .media-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px 18px;
+    border: 1px solid var(--color-azeroth-border);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, var(--color-azeroth-surface-2), var(--color-azeroth-surface));
+    transition: border-color 0.15s, translate 0.15s, background-color 0.15s;
+    text-decoration: none;
+  }
+  .media-card:hover {
+    border-color: var(--color-azeroth-gold-dim);
+    translate: 0 -2px;
+  }
+  .media-title {
+    font-family: var(--font-cinzel);
+    font-weight: 700;
+    color: var(--color-azeroth-text-high);
+    font-size: 1.05rem;
+    line-height: 1.25;
+  }
+  .media-excerpt {
+    font-size: 0.86rem;
+    color: var(--color-azeroth-muted);
+    line-height: 1.55;
+    margin: 0;
+    display: -webkit-box;
+    line-clamp: 3;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .media-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 0.78rem;
+    color: var(--color-azeroth-faint);
+    margin-top: auto;
+  }
+  .media-foot .who {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+  }
+  .event-media {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+  .event-date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: var(--font-mono);
+    line-height: 1.1;
+    color: var(--color-azeroth-gold-bright);
+    flex: none;
+  }
+  .event-date b {
+    font-size: 1.2rem;
+    color: var(--color-azeroth-gold);
+  }
+  .event-date span {
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-azeroth-faint);
+  }
+  .event-body {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* fichas del reino */
+  .char-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  .char-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    min-width: 0;
+    border: 1px solid var(--color-azeroth-border);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, var(--color-azeroth-surface-2), var(--color-azeroth-surface));
+    transition: border-color 0.15s, translate 0.15s;
+    text-decoration: none;
+  }
+  .char-card:hover {
+    border-color: var(--color-azeroth-gold-dim);
+    translate: 0 -2px;
+  }
+  .char-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .char-info {
+    min-width: 0;
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .char-name {
+    font-family: var(--font-cinzel);
+    font-weight: 700;
+    color: var(--color-azeroth-text-high);
+    font-size: 0.98rem;
+    line-height: 1.2;
+    display: -webkit-box;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .char-meta {
+    font-size: 0.78rem;
+    color: var(--color-azeroth-muted);
+  }
+  .char-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: auto;
+  }
+  .char-owner {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    font-size: 0.78rem;
+    color: var(--color-azeroth-faint);
+    margin-top: 2px;
   }
 </style>
