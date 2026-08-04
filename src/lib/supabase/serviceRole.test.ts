@@ -8,10 +8,12 @@ vi.mock('@supabase/supabase-js', () => ({
 }));
 
 // Override the dynamic env namespace with a getter that reads process.env at
-// call time, mirroring SvelteKit's runtime behaviour.
+// call time, mirroring SvelteKit's runtime behaviour (the module exports an
+// `env` Proxy over process.env, not direct named exports).
 vi.mock('$env/dynamic/private', () => ({
-  get SUPABASE_SERVICE_ROLE_KEY(): string | undefined {
-    return process.env.SUPABASE_SERVICE_ROLE_KEY;
+  get env() {
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    return { SUPABASE_SERVICE_ROLE_KEY: key };
   },
 }));
 
