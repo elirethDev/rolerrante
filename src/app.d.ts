@@ -45,6 +45,8 @@ declare global {
       render: (_container: HTMLElement, _options: Record<string, unknown>) => string;
       // eslint-disable-next-line no-unused-vars
       remove: (_widgetId: string) => void;
+      // eslint-disable-next-line no-unused-vars
+      reset: (_widgetId: string) => void;
     };
   }
 }

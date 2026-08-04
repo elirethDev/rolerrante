@@ -5,6 +5,13 @@
   export let token = '';
   export let theme: 'light' | 'dark' | 'auto' = 'auto';
 
+  export function reset(): void {
+    token = '';
+    if (widgetId && window.turnstile) {
+      window.turnstile.reset(widgetId);
+    }
+  }
+
   let container: HTMLDivElement;
   let widgetId: string | undefined;
 

@@ -10,6 +10,7 @@
 
   let pending = false;
   let turnstileToken = '';
+  let turnstileRef: Turnstile | undefined;
 </script>
 
 <svelte:head>
@@ -30,8 +31,9 @@
         use:enhance={() => {
           pending = true;
           return async ({ result, update }) => {
-            pending = false;
             await update();
+            pending = false;
+            turnstileRef?.reset();
           };
         }}
         class="space-y-4 mt-4"
@@ -61,7 +63,7 @@
         </Field>
 
         <div class="flex justify-center">
-          <Turnstile bind:token={turnstileToken} theme="dark" />
+          <Turnstile bind:this={turnstileRef} bind:token={turnstileToken} theme="dark" />
         </div>
         <input type="hidden" name="cf-turnstile-response" value={turnstileToken} />
 
