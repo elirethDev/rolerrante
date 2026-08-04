@@ -23,6 +23,28 @@ CREATE POLICY "Perfiles publicamente visibles" ON public.profiles
 CREATE POLICY "Usuarios editan su propio perfil" ON public.profiles
   FOR UPDATE USING (auth.uid() = id);
 
+-- C1: el rol NO es editable por el propio usuario. Revocamos UPDATE general y
+-- concedemos solo las columnas editables; ademas, un trigger bloquea cualquier
+-- intento de auto-cambio de rol que no venga de un admin.
+REVOKE UPDATE ON public.profiles FROM anon, authenticated;
+GRANT UPDATE (username, display_name, avatar_url, updated_at) ON public.profiles TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.protect_profile_role()
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  IF NEW.role IS DISTINCT FROM OLD.role AND NOT public.is_admin() THEN
+    RAISE EXCEPTION 'No puedes cambiar tu propio rol';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_protect_profile_role
+  BEFORE UPDATE OF role ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.protect_profile_role();
+
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -35,7 +57,7 @@ BEGIN
   );
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
@@ -67,7 +89,7 @@ BEGIN
     WHERE id = auth.uid() AND role IN ('gm', 'admin')
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN AS $$
@@ -76,7 +98,7 @@ BEGIN
     SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 INSERT INTO public.races (name, group_name, description, magic_access, size) VALUES
 ('Humanos', 'Reinos Aliados', 'Raza más extendida y versátil de Azeroth.', ARRAY['Luz','Magia Arcana','Vacío','Magia Vil','Druidismo','Chamanismo'], 'Medio'),
@@ -207,9 +229,51 @@ ALTER TABLE public.characters ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Personajes visibles si aprobados" ON public.characters
   FOR SELECT USING (status = 'aprobado' OR player_id = auth.uid() OR is_gm_or_admin());
 
-CREATE POLICY "Jugadores gestionan sus personajes" ON public.characters
-  FOR ALL USING (player_id = auth.uid())
+-- C2: el jugador NO puede auto-aprobar ni acuñar rp_points. Revocamos UPDATE
+-- general y concedemos solo columnas de contenido + estado auto-gestionable
+-- (borrador/pendiente). rp_points, review_notes y player_id quedan fuera del
+-- grant; el INSERT exige borrador/pendiente sin revision previa y con rp_points
+-- acotado (la app siembra los puntos iniciales, por eso no es 0), y el trigger
+-- impide pasar a aprobado/rechazado o tocar rp_points sin ser staff.
+DROP POLICY "Jugadores gestionan sus personajes" ON public.characters;
+
+REVOKE UPDATE ON public.characters FROM anon, authenticated;
+GRANT UPDATE (name, age, sex, physical_description, avatar_url, mana_source,
+  attr_fis, attr_des, attr_int, attr_per, attr_esp, status, race_id,
+  reviewed_by, reviewed_at, updated_at) ON public.characters TO authenticated;
+
+CREATE POLICY "Jugadores crean personajes en borrador" ON public.characters
+  FOR INSERT WITH CHECK (
+    player_id = auth.uid()
+    AND status IN ('borrador', 'pendiente')
+    AND rp_points BETWEEN 0 AND 1000
+    AND reviewed_by IS NULL AND reviewed_at IS NULL
+  );
+
+CREATE POLICY "Jugadores editan sus personajes" ON public.characters
+  FOR UPDATE USING (player_id = auth.uid())
   WITH CHECK (player_id = auth.uid());
+
+CREATE OR REPLACE FUNCTION public.protect_character_review()
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  IF NOT public.is_gm_or_admin() THEN
+    IF NEW.status NOT IN ('borrador', 'pendiente') THEN
+      RAISE EXCEPTION 'No puedes cambiar el estado de aprobación de tu personaje';
+    END IF;
+    IF NEW.rp_points IS DISTINCT FROM OLD.rp_points THEN
+      RAISE EXCEPTION 'No puedes modificar tus puntos de rol';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_protect_character_review
+  BEFORE UPDATE OF status, rp_points ON public.characters
+  FOR EACH ROW EXECUTE FUNCTION public.protect_character_review();
 
 CREATE POLICY "GM/Admin gestionan personajes" ON public.characters
   FOR ALL USING (is_gm_or_admin());
@@ -425,7 +489,7 @@ BEGIN
     WHERE id = auth.uid() AND role IN ('gm', 'admin')
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN AS $$
@@ -434,7 +498,7 @@ BEGIN
     SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 CREATE OR REPLACE FUNCTION public.log_audit(
   p_action audit_action,
@@ -444,10 +508,18 @@ CREATE OR REPLACE FUNCTION public.log_audit(
 )
 RETURNS void AS $$
 BEGIN
+  -- W2: sesión obligatoria. El rol es autenticado (REVOKE/GRANT abajo); anon y
+  -- cualquiera sin sesión no pueden forjar ni inundar el log de auditoría.
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
   INSERT INTO public.audit_logs (actor_id, action, entity_type, entity_id, details)
   VALUES (auth.uid(), p_action, p_entity_type, p_entity_id, p_details);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+REVOKE EXECUTE ON FUNCTION public.log_audit(audit_action, text, uuid, jsonb) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.log_audit(audit_action, text, uuid, jsonb) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.approve_story(p_story_id uuid, p_notes text DEFAULT NULL)
 RETURNS void AS $$
@@ -455,6 +527,9 @@ DECLARE
   v_character_id uuid;
   v_player_id uuid;
 BEGIN
+  IF NOT public.is_gm_or_admin() THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
   SELECT character_id INTO v_character_id FROM public.stories WHERE id = p_story_id;
   SELECT player_id INTO v_player_id FROM public.characters WHERE id = v_character_id;
 
@@ -472,38 +547,59 @@ BEGIN
 
   PERFORM public.log_audit('aprobar', 'story', p_story_id, jsonb_build_object('notes', p_notes));
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+REVOKE EXECUTE ON FUNCTION public.approve_story(uuid, text) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.approve_story(uuid, text) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.approve_character(p_character_id uuid, p_notes text DEFAULT NULL)
 RETURNS void AS $$
 BEGIN
+  IF NOT public.is_gm_or_admin() THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
   UPDATE public.characters
   SET status = 'aprobado', review_notes = p_notes, reviewed_by = auth.uid(), reviewed_at = now()
   WHERE id = p_character_id;
 
   PERFORM public.log_audit('aprobar', 'character', p_character_id, jsonb_build_object('notes', p_notes));
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+REVOKE EXECUTE ON FUNCTION public.approve_character(uuid, text) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.approve_character(uuid, text) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.reject_story(p_story_id uuid, p_notes text)
 RETURNS void AS $$
 BEGIN
+  IF NOT public.is_gm_or_admin() THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
   UPDATE public.stories
   SET status = 'rechazado', review_notes = p_notes, reviewed_by = auth.uid(), reviewed_at = now()
   WHERE id = p_story_id;
   PERFORM public.log_audit('rechazar', 'story', p_story_id, jsonb_build_object('notes', p_notes));
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+REVOKE EXECUTE ON FUNCTION public.reject_story(uuid, text) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.reject_story(uuid, text) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.reject_character(p_character_id uuid, p_notes text)
 RETURNS void AS $$
 BEGIN
+  IF NOT public.is_gm_or_admin() THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
   UPDATE public.characters
   SET status = 'rechazado', review_notes = p_notes, reviewed_by = auth.uid(), reviewed_at = now()
   WHERE id = p_character_id;
   PERFORM public.log_audit('rechazar', 'character', p_character_id, jsonb_build_object('notes', p_notes));
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+REVOKE EXECUTE ON FUNCTION public.reject_character(uuid, text) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.reject_character(uuid, text) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.approve_skill_request(p_request_id uuid, p_notes text DEFAULT NULL)
 RETURNS void AS $$
@@ -512,6 +608,9 @@ DECLARE
   v_total_cost int;
   v_balance int;
 BEGIN
+  IF NOT public.is_gm_or_admin() THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
   SELECT character_id, total_xp_cost INTO v_character_id, v_total_cost
   FROM public.skill_requests WHERE id = p_request_id;
 
@@ -538,12 +637,16 @@ BEGIN
 
   PERFORM public.log_audit('aprobar', 'skill_request', p_request_id, jsonb_build_object('notes', p_notes, 'xp_cost', v_total_cost));
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+REVOKE EXECUTE ON FUNCTION public.approve_skill_request(uuid, text) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.approve_skill_request(uuid, text) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.confirm_event_completion(p_event_id uuid, p_notes text DEFAULT NULL)
 RETURNS void AS $$
 DECLARE
   v_type event_type;
+  v_status event_status;
   v_start timestamptz;
   v_end timestamptz;
   v_xp_participation int;
@@ -552,9 +655,18 @@ DECLARE
   v_days_threshold int;
   v_creator uuid;
 BEGIN
-  SELECT type, starts_at, ends_at, creator_id
-  INTO v_type, v_start, v_end, v_creator
+  IF NOT public.is_gm_or_admin() THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
+  SELECT type, status, starts_at, ends_at, creator_id
+  INTO v_type, v_status, v_start, v_end, v_creator
   FROM public.events WHERE id = p_event_id;
+
+  -- W5: solo eventos publicados o en curso pueden finalizarse y repartir XP;
+  -- evita backdating (volver a 'publicado' un evento viejo para cobrar XP).
+  IF v_status NOT IN ('publicado', 'en_curso') THEN
+    RAISE EXCEPTION 'El evento debe estar publicado o en curso para finalizarse';
+  END IF;
 
   v_xp_participation := (SELECT (value->>'participacion')::int FROM public.settings WHERE key = 'xp_rewards');
   v_xp_creator := (SELECT (value->>'crear_evento')::int FROM public.settings WHERE key = 'xp_rewards');
@@ -598,7 +710,10 @@ BEGIN
 
   PERFORM public.log_audit('finalizar_evento', 'event', p_event_id, jsonb_build_object('notes', p_notes));
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+REVOKE EXECUTE ON FUNCTION public.confirm_event_completion(uuid, text) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.confirm_event_completion(uuid, text) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.validate_character_attributes()
 RETURNS TRIGGER AS $$
