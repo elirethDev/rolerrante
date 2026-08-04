@@ -30,6 +30,16 @@
   let form!: HTMLFormElement;
 
   function submitApprove(item: WorklistItem) {
+    if (item.type === 'evento') {
+      // finalize_event requires XP per participant; the server defaults to 0
+      // when the field is absent, so the GM must opt in explicitly. Cancel or
+      // an invalid (non non-negative integer) input aborts the submit.
+      const raw = window.prompt('XP por participante (número):', '100');
+      if (raw === null) return;
+      const xp = Number.parseInt(raw, 10);
+      if (Number.isNaN(xp) || xp < 0) return;
+      form.querySelector<HTMLInputElement>('input[name="xp"]')!.value = String(xp);
+    }
     form.action = `?/${'approve'}`;
     form.querySelector<HTMLInputElement>('input[name="entityType"]')!.value = item.type;
     form.querySelector<HTMLInputElement>('input[name="entityId"]')!.value = item.entityId;
@@ -96,4 +106,5 @@
   <input type="hidden" name="entityType" value="" />
   <input type="hidden" name="entityId" value="" />
   <input type="hidden" name="notes" value="" />
+  <input type="hidden" name="xp" value="" />
 </form>

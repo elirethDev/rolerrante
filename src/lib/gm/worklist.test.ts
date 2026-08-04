@@ -135,10 +135,15 @@ describe('worklist pure logic', () => {
       });
     });
 
-    it('maps event approve to finalize_event with xp param', () => {
+    it('maps event approve to finalize_event passing through xp', () => {
       expect(resolveActionRpc('evento', 'approve', 'e1', { xp: 5 })).toEqual({
         rpc: 'finalize_event',
         params: { p_event_id: 'e1', p_xp_per_participant: 5 },
+      });
+      // xp omitted -> default 0 (server contract: event approve never omits it)
+      expect(resolveActionRpc('evento', 'approve', 'e1')).toEqual({
+        rpc: 'finalize_event',
+        params: { p_event_id: 'e1', p_xp_per_participant: 0 },
       });
     });
 
