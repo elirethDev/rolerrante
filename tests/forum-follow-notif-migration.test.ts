@@ -8,19 +8,19 @@ import { resolve } from "node:path";
 // forum-follow-notif (tables + RLS + trigger, no UI).
 const migrationPath = resolve(
   process.cwd(),
-  "supabase/migrations/20260803000000_thread_follows_notifications.sql",
+  "supabase/migrations/20260803030000_thread_follows_notifications.sql",
 );
 const sql = readFileSync(migrationPath, "utf8");
 
 const updatePolicyPath = resolve(
   process.cwd(),
-  "supabase/migrations/20260803000001_thread_follows_update_policy.sql",
+  "supabase/migrations/20260803050000_thread_follows_update_policy.sql",
 );
 const updatePolicySql = readFileSync(updatePolicyPath, "utf8");
 
 const notificationsUpdatePolicyPath = resolve(
   process.cwd(),
-  "supabase/migrations/20260803000002_notifications_update_policy.sql",
+  "supabase/migrations/20260803060000_notifications_update_policy.sql",
 );
 const notificationsUpdatePolicySql = readFileSync(
   notificationsUpdatePolicyPath,
@@ -87,6 +87,10 @@ describe("thread_follows_notifications migration", () => {
       );
     expect(insertPolicy).not.toBeNull();
     expect(insertPolicy![1]).toMatch(/user_id = auth\.uid\(\)/);
+    // ...and only within a thread the user can see (W6: no following hidden threads).
+    expect(insertPolicy![1]).toMatch(/EXISTS/);
+    expect(insertPolicy![1]).toMatch(/threads/);
+    expect(insertPolicy![1]).toMatch(/status IN \('aprobado',\s*'abierto'\)/);
 
     // DELETE policy restricted to the owner.
     const deletePolicy =

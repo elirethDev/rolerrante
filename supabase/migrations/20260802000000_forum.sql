@@ -57,9 +57,51 @@ CREATE POLICY "Threads visibles si abiertos o aprobados" ON public.threads
   FOR SELECT USING (
     status IN ('aprobado', 'abierto') OR author_id = auth.uid() OR is_gm_or_admin()
   );
-CREATE POLICY "Autor o GM/Admin gestionan hilos" ON public.threads
-  FOR ALL USING (author_id = auth.uid() OR is_gm_or_admin())
-  WITH CHECK (author_id = auth.uid() OR is_gm_or_admin());
+-- W3: la antigua policy FOR ALL le daba al autor UPDATE sobre status, bloqueo y
+-- vinculación. Se separa por comando y la autorización fina se apoya en column
+-- grants (solo columnas de contenido + campos de staff) + trigger que rechaza
+-- cambios de campos de staff a quien no sea GM/admin (mismo patrón que
+-- protect_profile_role / protect_character_review en init_schema).
+CREATE POLICY "Autor o GM/Admin insertan hilos" ON public.threads
+  FOR INSERT WITH CHECK (author_id = auth.uid() OR is_gm_or_admin());
+CREATE POLICY "Autores editan el contenido de sus hilos" ON public.threads
+  FOR UPDATE USING (author_id = auth.uid())
+  WITH CHECK (author_id = auth.uid());
+CREATE POLICY "GM/Admin gestionan hilos" ON public.threads
+  FOR UPDATE USING (is_gm_or_admin())
+  WITH CHECK (is_gm_or_admin());
+CREATE POLICY "Autor o GM/Admin borran hilos" ON public.threads
+  FOR DELETE USING (author_id = auth.uid() OR is_gm_or_admin());
+
+REVOKE UPDATE ON public.threads FROM anon, authenticated;
+GRANT UPDATE (title, body, updated_at, edited_by, edited_at, status, is_locked,
+  locked_by, locked_at, linked_entity_type, linked_entity_id)
+  ON public.threads TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.protect_thread_staff_fields()
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  IF NOT public.is_gm_or_admin() AND (
+    NEW.status IS DISTINCT FROM OLD.status
+    OR NEW.is_locked IS DISTINCT FROM OLD.is_locked
+    OR NEW.locked_by IS DISTINCT FROM OLD.locked_by
+    OR NEW.locked_at IS DISTINCT FROM OLD.locked_at
+    OR NEW.linked_entity_type IS DISTINCT FROM OLD.linked_entity_type
+    OR NEW.linked_entity_id IS DISTINCT FROM OLD.linked_entity_id
+  ) THEN
+    RAISE EXCEPTION 'Solo GM/Admin pueden modificar estado, bloqueo o vinculación de hilos';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_protect_thread_staff_fields
+  BEFORE UPDATE OF status, is_locked, locked_by, locked_at,
+    linked_entity_type, linked_entity_id
+  ON public.threads
+  FOR EACH ROW EXECUTE FUNCTION public.protect_thread_staff_fields();
 
 -- Posts por hilo, numerados (post_number) para mantener orden estable en ediciones
 -- y borrados sin renumerar.
@@ -84,7 +126,14 @@ CREATE POLICY "Posts visibles según hilo" ON public.posts
   ));
 CREATE POLICY "Autor o GM/Admin gestionan posts" ON public.posts
   FOR ALL USING (author_id = auth.uid() OR is_gm_or_admin())
-  WITH CHECK (author_id = auth.uid() OR is_gm_or_admin());
+  WITH CHECK (
+    (author_id = auth.uid() OR is_gm_or_admin())
+    AND EXISTS (
+      SELECT 1 FROM public.threads t
+      WHERE t.id = posts.thread_id
+        AND (t.status IN ('aprobado', 'abierto') OR t.author_id = auth.uid() OR is_gm_or_admin())
+    )
+  );
 
 -- Permisos por sección (categoría) y por hilo, por rol. Los flags de hilo
 -- sobrescriben los de la sección.
@@ -121,6 +170,12 @@ ALTER TABLE public.thread_permissions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Permisos de hilo legibles" ON public.thread_permissions FOR SELECT USING (true);
 CREATE POLICY "Solo admin gestiona permisos de hilo" ON public.thread_permissions
   FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+
+-- W4: la visibilidad por permisos (section_permissions / thread_permissions) se
+-- aplica en la capa de app (server actions + filtros de categorías visibles para
+-- el rol); RLS no la replica aquí para no romper las rutas de lectura actuales.
+-- La ESCRITURA de posts sí exige un hilo visible vía WITH CHECK (ver policy
+-- "Autor o GM/Admin gestionan posts"), replicando el patrón de reactions.
 
 -- Índices de acceso frecuente (REQ-FORUM-01.4).
 CREATE INDEX idx_threads_category_status ON public.threads(category_id, status);

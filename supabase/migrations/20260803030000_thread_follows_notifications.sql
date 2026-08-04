@@ -19,7 +19,14 @@ ALTER TABLE public.thread_follows ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Seguidores ven sus propios follows" ON public.thread_follows
   FOR SELECT USING (user_id = auth.uid());
 CREATE POLICY "Seguidores insertan sus propios follows" ON public.thread_follows
-  FOR INSERT WITH CHECK (user_id = auth.uid());
+  FOR INSERT WITH CHECK (
+    user_id = auth.uid()
+    AND EXISTS (
+      SELECT 1 FROM public.threads t
+      WHERE t.id = thread_follows.thread_id
+        AND (t.status IN ('aprobado', 'abierto') OR t.author_id = auth.uid() OR is_gm_or_admin())
+    )
+  );
 CREATE POLICY "Seguidores borran sus propios follows" ON public.thread_follows
   FOR DELETE USING (user_id = auth.uid());
 
@@ -44,7 +51,7 @@ CREATE POLICY "Destinatario ve sus notificaciones" ON public.notifications
 -- Fan-out no-interceptable (SECURITY DEFINER), espejo de log_audit: para cada post
 -- insertado, una notificación por seguidor (del hilo, in-app) con self-exclusion.
 CREATE OR REPLACE FUNCTION public.notify_thread_followers()
-RETURNS trigger SECURITY DEFINER AS $$
+RETURNS trigger SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   INSERT INTO public.notifications (user_id, type, thread_id, post_id, actor_id)
   SELECT tf.user_id, 'new_reply', NEW.thread_id, NEW.id, NEW.author_id

@@ -1,5 +1,5 @@
 -- Additive UPDATE RLS policy for notifications (Slice 3 — bell + center).
--- Slice 1 (20260803000000) enabled RLS on notifications with a SELECT policy
+-- Slice 1 (20260803030000) enabled RLS on notifications with a SELECT policy
 -- only. Without an UPDATE policy the notification center could never mark its
 -- rows read (deny-by-default 42501), so the bell's unread count would never
 -- clear. This migration adds the missing recipient-only UPDATE policy so a
