@@ -235,7 +235,7 @@ CREATE POLICY "Personajes visibles si aprobados" ON public.characters
 -- grant; el INSERT exige borrador/pendiente sin revision previa y con rp_points
 -- acotado (la app siembra los puntos iniciales, por eso no es 0), y el trigger
 -- impide pasar a aprobado/rechazado o tocar rp_points sin ser staff.
-DROP POLICY "Jugadores gestionan sus personajes" ON public.characters;
+DROP POLICY IF EXISTS "Jugadores gestionan sus personajes" ON public.characters;
 
 REVOKE UPDATE ON public.characters FROM anon, authenticated;
 GRANT UPDATE (name, age, sex, physical_description, avatar_url, mana_source,
