@@ -92,6 +92,11 @@
   }
 }
 
+.landing {
+  width: 100%;
+  overflow-x: clip;
+}
+
 @keyframes toast-in {
   from {
     opacity: 0;

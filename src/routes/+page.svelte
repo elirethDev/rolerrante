@@ -1,6 +1,5 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import Footer from '$lib/components/ui/Footer.svelte';
 </script>
 
 <svelte:head>
@@ -105,8 +104,6 @@
   </div>
   <div class="artpane" aria-hidden="true"><div class="art"></div><div class="inlay"></div></div>
 </section>
-
-<Footer />
 
 <style>
   .hero-stage {

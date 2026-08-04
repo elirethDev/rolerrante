@@ -51,11 +51,8 @@ describe("landing page", () => {
     ).toBeInTheDocument();
   });
 
-  it("mounts the canonical footer", () => {
+  it("does not mount its own footer (global layout renders it once)", () => {
     render(Page);
-    expect(screen.getByRole("contentinfo")).toBeInTheDocument();
-    expect(
-      screen.getByText(/© 2026 Rol Errante · Identidad original/i),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole("contentinfo")).not.toBeInTheDocument();
   });
 });
