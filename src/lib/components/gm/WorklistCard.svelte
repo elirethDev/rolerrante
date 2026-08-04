@@ -16,11 +16,13 @@
     onReject,
     onReview,
     onApprove,
+    busy = false,
   }: {
     item: WorklistItem;
     onReject?: (item: WorklistItem) => void;
     onReview?: (item: WorklistItem) => void;
     onApprove?: (item: WorklistItem) => void;
+    busy?: boolean;
   } = $props();
 
   const age = $derived(formatRelativeTime(item.createdAt));
@@ -50,6 +52,7 @@
           type="button"
           class="btn btn-xs btn-error"
           data-testid="wl-reject"
+          disabled={busy}
           onclick={() => onReject?.(item)}
         >
           Rechazar
@@ -67,6 +70,7 @@
         type="button"
         class="btn btn-xs btn-success"
         data-testid="wl-approve"
+        disabled={busy}
         onclick={() => onApprove?.(item)}
       >
         Aprobar

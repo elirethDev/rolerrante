@@ -29,7 +29,14 @@
   // the server-side actions disambiguate by entityType/entityId.
   let form!: HTMLFormElement;
 
+  // In-flight guard: the backing RPCs (approve_character, reject_story,
+  // finalize_event, ...) are NOT idempotent, so a double click / Enter on the
+  // hidden form would double-approve. Set before requestSubmit(), cleared by
+  // the use:enhance callback after success, failure, or navigation.
+  let submitting = $state(false);
+
   function submitApprove(item: WorklistItem) {
+    if (submitting) return;
     if (item.type === 'evento') {
       // finalize_event requires XP per participant; the server defaults to 0
       // when the field is absent, so the GM must opt in explicitly. Cancel or
@@ -43,16 +50,19 @@
     form.action = `?/${'approve'}`;
     form.querySelector<HTMLInputElement>('input[name="entityType"]')!.value = item.type;
     form.querySelector<HTMLInputElement>('input[name="entityId"]')!.value = item.entityId;
+    submitting = true;
     form.requestSubmit();
   }
 
   function submitReject(item: WorklistItem) {
+    if (submitting) return;
     const reason = window.prompt('Motivo del rechazo (obligatorio):', item.name);
     if (!reason) return;
     form.action = `?/${'reject'}`;
     form.querySelector<HTMLInputElement>('input[name="entityType"]')!.value = item.type;
     form.querySelector<HTMLInputElement>('input[name="entityId"]')!.value = item.entityId;
     form.querySelector<HTMLInputElement>('input[name="notes"]')!.value = reason;
+    submitting = true;
     form.requestSubmit();
   }
 
@@ -93,6 +103,7 @@
     {#each filtered as item (item.id)}
       <WorklistCard
         {item}
+        busy={submitting}
         onApprove={() => submitApprove(item)}
         onReject={() => submitReject(item)}
         onReview={() => review(item)}
@@ -101,8 +112,22 @@
   {/if}
 </div>
 
-<!-- Hidden, reused form that posts to the gm page actions (design AD-2). -->
-<form method="POST" use:enhance bind:this={form} aria-hidden="true">
+<!-- Hidden, reused form that posts to the gm page actions (design AD-2). The
+     use:enhance callback only exists to clear the in-flight guard: on submit we
+     set submitting=true, and after the action resolves (success, failure or
+     navigation) the finally block releases the flag so the next click works. -->
+<form
+  method="POST"
+  use:enhance={() => async ({ update }) => {
+    try {
+      await update({ reset: false });
+    } finally {
+      submitting = false;
+    }
+  }}
+  bind:this={form}
+  aria-hidden="true"
+>
   <input type="hidden" name="entityType" value="" />
   <input type="hidden" name="entityId" value="" />
   <input type="hidden" name="notes" value="" />

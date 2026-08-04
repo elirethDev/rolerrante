@@ -58,6 +58,13 @@ describe('WorklistCard', () => {
     }
   });
 
+  it('disables approve/reject while busy and keeps review enabled', () => {
+    render(WorklistCard, { item: item(), busy: true });
+    expect(screen.getByRole('button', { name: 'Rechazar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Aprobar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Revisar' })).not.toBeDisabled();
+  });
+
   it('emits reject/review/approve callbacks with the item', async () => {
     const onReject = vi.fn();
     const onReview = vi.fn();
