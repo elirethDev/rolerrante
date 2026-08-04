@@ -262,6 +262,14 @@
       font-size: 1rem;
     }
   }
+  @media (max-width: 380px) {
+    .hero-title {
+      font-size: clamp(2rem, 6vw + 0.75rem, 3rem);
+    }
+    .hero-sub {
+      font-size: 0.95rem;
+    }
+  }
 
   .stage-art {
     position: relative;

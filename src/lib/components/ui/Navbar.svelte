@@ -47,7 +47,7 @@
         {/if}
       </div>
     {/if}
-    <a href={resolve('/')} class="btn btn-ghost text-xl font-cinzel text-azeroth-gold">RolErrante</a>
+    <a href={resolve('/')} class="btn btn-ghost gap-2 px-2 text-xl font-cinzel text-azeroth-gold"><span class="text-azeroth-gold-bright"><svg width="26" height="26" viewBox="0 0 64 64" fill="none" aria-hidden="true"><defs><linearGradient id="nvgg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFC940"/><stop offset="0.5" stop-color="#F8B700"/><stop offset="1" stop-color="#C8941A"/></linearGradient></defs><circle cx="32" cy="32" r="27.5" stroke="url(#nvgg)" stroke-width="2"/><circle cx="32" cy="32" r="22.5" stroke="url(#nvgg)" stroke-width="0.75" opacity="0.45"/><path d="M32 13.5 L36.2 27.8 L50.5 32 L36.2 36.2 L32 50.5 L27.8 36.2 L13.5 32 L27.8 27.8 Z" fill="url(#nvgg)"/><path d="M18.5 48 C 25 41, 41 26, 47 19.5" stroke="url(#nvgg)" stroke-width="2.4" stroke-linecap="round" opacity="0.85"/><circle cx="18.5" cy="48" r="2.5" fill="url(#nvgg)"/><circle cx="47" cy="19.5" r="2" fill="url(#nvgg)"/></svg></span><span><span class="text-azeroth-gold-bright">Rol</span> Errante</span></a>
   </div>
   <div class="navbar-center hidden lg:flex gap-2">
     {#if user}
