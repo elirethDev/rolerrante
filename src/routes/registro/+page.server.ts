@@ -56,6 +56,13 @@ export const actions: Actions = {
       });
     }
 
+    // Opción A — confirmación de email desactivada: signUp devuelve una sesión
+    // completa, el usuario entra directo. Si el toggle vuelve a activarse en el
+    // dashboard, no hay sesión y se mantiene el flujo clásico de confirmación.
+    if (data.session) {
+      throw redirect(303, '/');
+    }
+
     throw redirect(303, '/login?registrado=1');
   },
 };
