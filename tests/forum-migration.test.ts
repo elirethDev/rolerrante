@@ -84,11 +84,18 @@ describe("forum migration 20260802000000_forum.sql", () => {
   });
 
   it("thread and post writes are owner or GM/admin gated (REQ-FORUM-01.3)", () => {
-    // threads ALL policy
+    // threads are split per command (W3): INSERT/DELETE for author or staff...
     expect(sql).toMatch(
-      /CREATE POLICY "Autor o GM\/Admin gestionan hilos"[.\s\S]*?FOR ALL USING \(author_id = auth\.uid\(\) OR is_gm_or_admin\(\)\)/,
+      /CREATE POLICY "Autor o GM\/Admin insertan hilos" ON public\.threads\s*FOR INSERT WITH CHECK \(author_id = auth\.uid\(\) OR is_gm_or_admin\(\)\)/,
     );
-    // posts ALL policy
+    expect(sql).toMatch(
+      /CREATE POLICY "Autor o GM\/Admin borran hilos" ON public\.threads\s*FOR DELETE USING \(author_id = auth\.uid\(\) OR is_gm_or_admin\(\)\)/,
+    );
+    // ...and a dedicated staff UPDATE policy alongside the content-only author one.
+    expect(sql).toMatch(
+      /CREATE POLICY "GM\/Admin gestionan hilos" ON public\.threads\s*FOR UPDATE USING \(is_gm_or_admin\(\)\)\s*WITH CHECK \(is_gm_or_admin\(\)\)/,
+    );
+    // posts ALL policy keeps the visibility gate on INSERT/UPDATE/DELETE
     expect(sql).toMatch(
       /CREATE POLICY "Autor o GM\/Admin gestionan posts"[.\s\S]*?FOR ALL USING \(author_id = auth\.uid\(\) OR is_gm_or_admin\(\)\)/,
     );
@@ -123,5 +130,76 @@ describe("forum migration 20260802000000_forum.sql", () => {
     expect(sql).toMatch(
       /CREATE INDEX idx_posts_thread_number ON public\.posts\(thread_id, post_number\)/,
     );
+  });
+
+  it("threads UPDATE is column-granted to authenticated (W3)", () => {
+    expect(sql).toContain(
+      "REVOKE UPDATE ON public.threads FROM anon, authenticated;",
+    );
+    const grant = sql.match(
+      /GRANT UPDATE \(([\s\S]*?)\)\s*ON public\.threads TO authenticated;/,
+    );
+    expect(grant).not.toBeNull();
+    // Owner-editable content columns...
+    expect(grant![1]).toMatch(/title/);
+    expect(grant![1]).toMatch(/body/);
+    expect(grant![1]).toMatch(/edited_by/);
+    // ...and the staff columns that the trigger then restricts.
+    expect(grant![1]).toMatch(/is_locked/);
+    expect(grant![1]).toMatch(/linked_entity_id/);
+    // author_id / content_type / category_id are NOT writable (no forged re-parent).
+    expect(grant![1]).not.toMatch(/author_id/);
+    expect(grant![1]).not.toMatch(/content_type/);
+    // is_sticky is granted in the LATER forum_pin migration (column born there).
+    expect(grant![1]).not.toMatch(/is_sticky/);
+  });
+
+  it("protect_thread_staff_fields rejects non-staff status/lock/link changes (W3)", () => {
+    expect(sql).toMatch(
+      /CREATE TRIGGER trg_protect_thread_staff_fields\s+BEFORE UPDATE OF status, is_locked, locked_by, locked_at,\s+linked_entity_type, linked_entity_id\s+ON public\.threads/,
+    );
+    const triggerFn = sql.match(
+      /CREATE OR REPLACE FUNCTION public\.protect_thread_staff_fields\(\)[\s\S]*?\n\$\$/,
+    );
+    expect(triggerFn).not.toBeNull();
+    expect(triggerFn![0]).toMatch(/NOT public\.is_gm_or_admin\(\)/);
+    expect(triggerFn![0]).toMatch(/NEW\.status IS DISTINCT FROM OLD\.status/);
+    expect(triggerFn![0]).toMatch(
+      /NEW\.is_locked IS DISTINCT FROM OLD\.is_locked/,
+    );
+  });
+
+  it("forum_pin migration guards is_sticky from non-staff writes (W3)", () => {
+    const pinSql = readFileSync(
+      resolve(
+        process.cwd(),
+        "supabase/migrations/20260803020000_forum_pin.sql",
+      ),
+      "utf8",
+    );
+    expect(pinSql).toContain(
+      "GRANT UPDATE (is_sticky) ON public.threads TO authenticated;",
+    );
+    expect(pinSql).toMatch(
+      /CREATE TRIGGER trg_protect_thread_is_sticky\s+BEFORE UPDATE OF is_sticky ON public\.threads\s+FOR EACH ROW EXECUTE FUNCTION public\.protect_thread_staff_fields\(\)/,
+    );
+    const fn = pinSql.match(
+      /CREATE OR REPLACE FUNCTION public\.protect_thread_staff_fields\(\)[\s\S]*?\n\$\$/,
+    );
+    expect(fn).not.toBeNull();
+    expect(fn![0]).toMatch(/NEW\.is_sticky IS DISTINCT FROM OLD\.is_sticky/);
+  });
+
+  it("posts writes are gated to visible threads via WITH CHECK (W4)", () => {
+    const postsPolicy =
+      /CREATE POLICY "Autor o GM\/Admin gestionan posts" ON public\.posts[\s\S]*?WITH CHECK \((.*?)\);/s.exec(
+        sql,
+      );
+    expect(postsPolicy).not.toBeNull();
+    const check = postsPolicy![1];
+    expect(check).toMatch(/author_id = auth\.uid\(\) OR is_gm_or_admin\(\)/);
+    expect(check).toMatch(/EXISTS/);
+    expect(check).toMatch(/status IN \('aprobado',\s*'abierto'\)/);
+    expect(check).toMatch(/t\.author_id = auth\.uid\(\)/);
   });
 });

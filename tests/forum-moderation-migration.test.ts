@@ -8,7 +8,7 @@ import { resolve } from "node:path";
 // guards enforced in the fault-tolerant review (CRITICAL 1 / WARNING 2 / 3).
 const migrationPath = resolve(
   process.cwd(),
-  "supabase/migrations/20260803000000_forum_moderation.sql",
+  "supabase/migrations/20260803010000_forum_moderation.sql",
 );
 const sql = readFileSync(migrationPath, "utf8");
 
@@ -24,16 +24,16 @@ function extractFunction(name: string): string {
 
 const selfSelectPath = resolve(
   process.cwd(),
-  "supabase/migrations/20260803000001_reports_self_select_policy.sql",
+  "supabase/migrations/20260803040000_reports_self_select_policy.sql",
 );
 
 const dedupePath = resolve(
   process.cwd(),
-  "supabase/migrations/20260803000003_reports_reporter_dedupe.sql",
+  "supabase/migrations/20260803070000_reports_reporter_dedupe.sql",
 );
 const dedupeSql = readFileSync(dedupePath, "utf8");
 
-describe("reporter dedupe backstop (20260803000003_reports_reporter_dedupe.sql)", () => {
+describe("reporter dedupe backstop (20260803070000_reports_reporter_dedupe.sql)", () => {
   it("deletes exact duplicate rows keeping the lowest id before creating the unique index", () => {
     // DELETE FROM reports r USING reports dup WHERE r.id > dup.id AND same
     // post_id/reporter_id — removes all but the earliest report per reporter+post.
@@ -52,7 +52,7 @@ describe("reporter dedupe backstop (20260803000003_reports_reporter_dedupe.sql)"
   });
 });
 
-describe("reporter self-SELECT policy (20260803000001_reports_self_select_policy.sql)", () => {
+describe("reporter self-SELECT policy (20260803040000_reports_self_select_policy.sql)", () => {
   const sql = readFileSync(selfSelectPath, "utf8");
 
   it("adds a reporter self-SELECT policy so reportPost can read back the insert", () => {
@@ -68,7 +68,7 @@ describe("reporter self-SELECT policy (20260803000001_reports_self_select_policy
   });
 });
 
-describe("forum moderation migration 20260803000000_forum_moderation.sql", () => {
+describe("forum moderation migration 20260803010000_forum_moderation.sql", () => {
   it("binds reports INSERT reporter_id to the caller (REQ-MOD-REP-01.3)", () => {
     // Any authenticated caller may report, but the report must be attributed to
     // the caller's own uid — never a caller-supplied arbitrary reporter.
