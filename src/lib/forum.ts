@@ -419,7 +419,14 @@ export async function reportPost(
     .select('id')
     .single();
 
-  if (error) return { error: error.message };
+  if (error) {
+    // 23505 = duplicate key: the same reporter re-reporting the same post hit
+    // the UNIQUE(post_id, reporter_id) backstop. The user already reported it,
+    // so this is a silent no-op success — not an error — keeping the reportar
+    // flow non-breaking on the app-layer check-then-act race (PR #45 follow-up).
+    if ((error as { code?: string }).code === '23505') return { error: null };
+    return { error: error.message };
+  }
   if (!data) return { error: 'No se pudo crear el reporte' };
 
   await supabase.rpc('log_audit', {

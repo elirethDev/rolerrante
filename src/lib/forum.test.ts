@@ -18,7 +18,7 @@ interface InsertCall {
 }
 
 interface Fixture {
-  insertError?: { message: string } | null;
+  insertError?: { message: string; code?: string } | null;
   insertedId?: string | null;
   rpcError?: { message: string } | null;
   currentUserId?: string | null;
@@ -108,6 +108,22 @@ describe('reportPost', () => {
     const res = await reportPost(client, 'post-1', 'Spam');
 
     expect(res).toEqual({ error: 'RLS bloqueado' });
+    expect(rpcCalls).toHaveLength(0);
+  });
+
+  it('treats a duplicate report insert (23505) as silent no-op success', async () => {
+    const { client, rpcCalls } = makeClient({
+      insertError: {
+        code: '23505',
+        message: 'duplicate key value violates unique constraint "reports_post_reporter_unique"',
+      },
+    });
+    const res = await reportPost(client, 'post-1', 'Spam');
+
+    // Same reporter re-reporting the same post: the DB unique backstop fires,
+    // but the reportar flow must stay non-breaking (no error surfaced).
+    expect(res).toEqual({ error: null });
+    // No new row was created, so no reportar audit is logged.
     expect(rpcCalls).toHaveLength(0);
   });
 });
