@@ -7,6 +7,7 @@
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
   import CombatValues from '$lib/components/sheets/CombatValues.svelte';
   import AvatarCropper from '$lib/components/ui/AvatarCropper.svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import type { ActionData, PageData } from './$types';
   import type { Character } from '$lib/types';
 
@@ -78,8 +79,12 @@
   <title>Editar personaje — RolErrante</title>
 </svelte:head>
 
-<section class="max-w-4xl mx-auto">
-  <h1 class="text-3xl font-cinzel text-azeroth-gold mb-6">Editar personaje</h1>
+<div class="max-w-4xl mx-auto">
+  <PageHeader
+    kicker="Censo del reino"
+    title="Editar personaje"
+    subtitle="Los cambios se guardan como borrador o se envían a revisión del consejo."
+  />
 
   {#if form?.message}
     <div class="alert alert-error mb-4">{form.message}</div>
@@ -109,10 +114,10 @@
     }}
   >
     <!-- DATOS BÁSICOS -->
-    <div class="card bg-base-200 border border-azeroth-border mb-6">
-      <div class="card-body">
-        <h2 class="card-title font-cinzel text-azeroth-gold">Datos básicos</h2>
-        <div class="grid md:grid-cols-2 gap-4">
+    <div class="form-card">
+      <div class="form-card-head"><span class="form-card-num">1</span><h2>Datos básicos</h2><span class="meta">Identidad</span></div>
+      <div class="form-card-body">
+        <div class="grid2">
           <Field label="Nombre" required error={form && 'errors' in form ? (form.errors as Record<string, string>).name ?? null : null}>
             {#snippet ctrl()}
               <input id="name" name="name" type="text" class="input" bind:value={name} required />
@@ -151,7 +156,7 @@
               </select>
             {/snippet}
           </Field>
-          <Field label="Avatar" class="md:col-span-2" error={form && 'errors' in form ? (form.errors as Record<string, string>).avatar_url ?? null : null}>
+          <Field label="URL de avatar" class="md:col-span-2" error={form && 'errors' in form ? (form.errors as Record<string, string>).avatar_url ?? null : null}>
             {#snippet ctrl()}
               <input id="avatar_url" name="avatar_url" type="text" class="input" placeholder="https://..." bind:value={avatarUrl} />
               <div class="divider text-azeroth-muted text-xs">o subí una imagen</div>
@@ -191,9 +196,9 @@
     </div>
 
     <!-- ATRIBUTOS -->
-    <div class="card bg-base-200 border border-azeroth-border mb-6">
-      <div class="card-body">
-        <h2 class="card-title font-cinzel text-azeroth-gold">Atributos (4-10)</h2>
+    <div class="form-card">
+      <div class="form-card-head"><span class="form-card-num">2</span><h2>Atributos (4-10)</h2><span class="meta">base 4</span></div>
+      <div class="form-card-body">
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
           {#each ATTR_KEYS as key (key)}
             <AttributeInput
@@ -229,4 +234,4 @@
       <a href={resolve(`/personajes/${character.id}`)} class="btn btn-ghost">Cancelar</a>
     </div>
   </form>
-</section>
+</div>

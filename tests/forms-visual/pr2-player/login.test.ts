@@ -5,7 +5,7 @@ import Page from "../../../src/routes/login/+page.svelte";
 import {
   readPageSource,
   expectNoInlineFieldsetMarkup,
-  expectPlayerPageTokens,
+  expectPlayerAuthTokens,
   expectRenderedPlayerForm,
 } from "../../../src/test/page-vision";
 
@@ -16,18 +16,17 @@ describe("login page (forms-visual-pass / PR 2)", () => {
     );
   });
 
-  it("keeps md density and max-w-md auth container (REQ-PF-02/FS-01/FS-04)", () => {
-    expectPlayerPageTokens(
+  it("keeps md density and the AuthShell auth container (REQ-PF-02/FS-01/FS-04)", () => {
+    expectPlayerAuthTokens(
       readPageSource("../../../src/routes/login/+page.svelte", import.meta.url),
-      "max-w-md",
     );
   });
 
-  it("renders 2 fieldset-legend Field groups at md density inside max-w-md", () => {
+  it("renders 2 fieldset-legend Field groups at md density inside the auth container", () => {
     const { container } = render(Page, {
       data: { registrado: false } as unknown as PageData,
       form: {} as unknown as ActionData,
     });
-    expectRenderedPlayerForm(container, "max-w-md", 2);
+    expectRenderedPlayerForm(container, "max-w-[440px]", 2);
   });
 });

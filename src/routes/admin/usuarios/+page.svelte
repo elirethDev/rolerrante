@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import { roleLabel } from '$lib/utils';
   import type { ActionData, PageData } from './$types';
 
@@ -10,16 +11,16 @@
   <title>Usuarios — RolErrante</title>
 </svelte:head>
 
-<h1 class="text-3xl font-cinzel text-azeroth-gold mb-6">Gestión de usuarios</h1>
+<PageHeader kicker="Panel admin" title="Gestión de usuarios" />
 
 {#if form?.message}
   <div class="alert alert-error mb-4">{form.message}</div>
 {/if}
 
-<div class="card bg-base-200 border border-azeroth-border">
-  <div class="card-body">
-    <h2 class="card-title font-cinzel text-azeroth-gold">Usuarios registrados</h2>
-    <div class="space-y-2 max-h-[70vh] overflow-y-auto mt-2">
+<div class="panel">
+  <div class="panel-head"><h2>Usuarios registrados</h2></div>
+  <div class="panel-body p-0">
+    <div class="space-y-2 max-h-[70vh] overflow-y-auto">
       {#each data.users as u (u.id)}
         <form
           method="POST"

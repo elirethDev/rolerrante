@@ -5,6 +5,7 @@
   import { isGMOrAdmin } from '$lib/auth';
   import { statusLabel, statusColor, formatDate } from '$lib/utils';
   import TipTapViewer from '$lib/components/editor/TipTapViewer.svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import type { ActionData, PageData } from './$types';
 
   export let data: PageData;
@@ -25,20 +26,22 @@
   <title>{story.title} — RolErrante</title>
 </svelte:head>
 
-<article class="max-w-3xl mx-auto">
-  <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
-    <div>
-      <h1 class="text-3xl md:text-4xl font-cinzel text-azeroth-gold">{story.title}</h1>
-      <p class="text-sm text-azeroth-muted mt-1">
-        Por <span class="text-azeroth-gold">{playerName(story.character?.player)}</span>
-        · {formatDate(story.created_at)}
-        {#if story.character}
-          · Personaje: <a href={resolve(`/personajes/${story.character.id}`)} class="link">{story.character.name}</a>
-        {/if}
-      </p>
-    </div>
-    <span class="badge {statusColor(story.status)}">{statusLabel(story.status)}</span>
-  </div>
+<article class="max-w-[1180px] mx-auto">
+  <PageHeader
+    kicker="Historias del reino"
+    title={story.title}
+  >
+    {#snippet actions()}
+      <span class="badge {statusColor(story.status)}">{statusLabel(story.status)}</span>
+    {/snippet}
+  </PageHeader>
+  <p class="text-sm text-azeroth-muted mt-1 mb-6">
+    Por <span class="text-azeroth-gold">{playerName(story.character?.player)}</span>
+    · {formatDate(story.created_at)}
+    {#if story.character}
+      · Personaje: <a href={resolve(`/personajes/${story.character.id}`)} class="link">{story.character.name}</a>
+    {/if}
+  </p>
 
   {#if story.review_notes}
     <div class="alert alert-warning text-sm mb-6">
@@ -51,9 +54,9 @@
   </div>
 
   {#if canModerate && story.status === 'pendiente'}
-    <div class="card bg-base-200 border border-azeroth-border mt-6">
-      <div class="card-body">
-        <h2 class="card-title font-cinzel">Moderación GM</h2>
+    <div class="panel mt-6">
+      <div class="panel-head"><h2>Moderación GM</h2></div>
+      <div class="panel-body">
         {#if form?.message}<div class="alert alert-error text-sm">{form.message}</div>{/if}
         <div class="flex flex-col gap-3 mt-2">
           <form method="POST" action="?/approve">

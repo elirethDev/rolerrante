@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import { formatDateTime } from '$lib/utils';
   import type { ActionData, PageData } from './$types';
 
@@ -53,15 +54,15 @@
   <title>Moderación del foro — Panel Admin</title>
 </svelte:head>
 
-<h1 class="text-3xl font-cinzel text-azeroth-gold mb-6">Moderación del foro</h1>
+<PageHeader kicker="Panel admin" title="Moderación del foro" />
 
 {#if form?.message}
   <div class="alert alert-error text-sm mb-4">{form.message}</div>
 {/if}
 
-<section class="card bg-base-200 border border-azeroth-border mb-6">
-  <div class="card-body">
-    <h2 class="card-title font-cinzel text-azeroth-gold">Hilos vinculados pendientes</h2>
+<section class="panel mb-6">
+  <div class="panel-head"><h2>Hilos vinculados pendientes</h2></div>
+  <div class="panel-body">
     {#if data.pendingThreads.length === 0}
       <p class="text-azeroth-muted">No hay hilos pendientes de aprobación.</p>
     {:else}
@@ -100,9 +101,9 @@
   </div>
 </section>
 
-<section class="card bg-base-200 border border-azeroth-border">
-  <div class="card-body">
-    <h2 class="card-title font-cinzel text-azeroth-gold">Eventos (revisión al finalizar)</h2>
+<section class="panel">
+  <div class="panel-head"><h2>Eventos (revisión al finalizar)</h2></div>
+  <div class="panel-body">
     {#if data.eventThreads.length === 0}
       <p class="text-azeroth-muted">No hay hilos de evento.</p>
     {:else}
@@ -133,9 +134,9 @@
   </div>
 </section>
 
-<section class="card bg-base-200 border border-azeroth-border mt-6">
-  <div class="card-body">
-    <h2 class="card-title font-cinzel text-azeroth-gold">Reportes de mensajes</h2>
+<section class="panel mt-6">
+  <div class="panel-head"><h2>Reportes de mensajes</h2></div>
+  <div class="panel-body">
     {#if data.reports.length === 0}
       <p class="text-azeroth-muted">No hay reportes abiertos.</p>
     {:else}

@@ -7,6 +7,7 @@
   import AttributeInput from '$lib/components/forms/AttributeInput.svelte';
   import Field from '$lib/components/ui/Field.svelte';
   import CombatValues from '$lib/components/sheets/CombatValues.svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import type { ActionData, PageData } from './$types';
   import type { Skill } from '$lib/types';
 
@@ -69,8 +70,8 @@
   <title>Nuevo personaje — RolErrante</title>
 </svelte:head>
 
-<section class="max-w-4xl mx-auto">
-  <h1 class="text-3xl font-cinzel text-azeroth-gold mb-6">Nuevo personaje</h1>
+<section class="max-w-[1180px] mx-auto">
+  <PageHeader kicker="Personajes" title="Nuevo personaje" />
 
   {#if form?.message}
     <div class="alert alert-error mb-4">{form.message}</div>
@@ -96,9 +97,9 @@
     }}
   >
     <!-- DATOS BÁSICOS -->
-    <div class="card bg-base-200 border border-azeroth-border mb-6">
-      <div class="card-body">
-        <h2 class="card-title font-cinzel text-azeroth-gold">Datos básicos</h2>
+    <div class="form-card">
+      <div class="form-card-head"><span class="form-card-num">1</span><h2>Datos básicos</h2><span class="meta">Identidad del personaje</span></div>
+      <div class="form-card-body">
         <div class="grid md:grid-cols-2 gap-4">
           <Field label="Nombre" required>
             {#snippet ctrl()}
@@ -148,16 +149,15 @@
     </div>
 
     <!-- ATRIBUTOS -->
-    <div class="card bg-base-200 border border-azeroth-border mb-6">
-      <div class="card-body">
-        <h2 class="card-title font-cinzel text-azeroth-gold">Atributos (4-10)</h2>
+    <div class="form-card">
+      <div class="form-card-head"><span class="form-card-num">2</span><h2>Atributos (4-10)</h2><span class="meta">base 4</span></div>
+      <div class="form-card-body">
 
         <!-- Barra de puntos -->
-        <div class="flex items-center gap-3 mb-4 p-3 rounded-lg {attrRemaining < 0 ? 'bg-red-900/30 border border-red-500' : 'bg-base-300'}">
-          <span class="text-sm font-semibold">Puntos de atributo:</span>
-          <span class="badge {attrRemaining < 0 ? 'badge-error' : attrRemaining <= 3 ? 'badge-warning' : 'badge-success'} badge-lg">
-            {attrRemaining} restantes
-          </span>
+        <div class="budget-bar ">
+          <span class="text-sm font-semibold">Puntos de atributo</span>
+          <div class="budget-track" style="max-width:320px"><div class="budget-fill" style="width:{(attrSpent / ATTR_POINTS_BUDGET) * 100}%"></div></div>
+          <span class="budget-word">{attrRemaining} restantes</span>
           <span class="text-xs text-azeroth-muted">(gastados: {attrSpent} / {ATTR_POINTS_BUDGET})</span>
         </div>
 
@@ -185,16 +185,15 @@
     </div>
 
     <!-- HABILIDADES -->
-    <div class="card bg-base-200 border border-azeroth-border mb-6">
-      <div class="card-body">
-        <h2 class="card-title font-cinzel text-azeroth-gold">Habilidades</h2>
+    <div class="form-card">
+      <div class="form-card-head"><span class="form-card-num">3</span><h2>Habilidades</h2><span class="meta">{SKILL_POINTS} puntos</span></div>
+      <div class="form-card-body">
 
         <!-- Barra de puntos -->
-        <div class="flex items-center gap-3 mb-4 p-3 rounded-lg {skillRemaining < 0 ? 'bg-red-900/30 border border-red-500' : 'bg-base-300'}">
-          <span class="text-sm font-semibold">Puntos de habilidad:</span>
-          <span class="badge {skillRemaining < 0 ? 'badge-error' : skillRemaining <= 5 ? 'badge-warning' : 'badge-success'} badge-lg">
-            {skillRemaining} restantes
-          </span>
+        <div class="budget-bar ">
+          <span class="text-sm font-semibold">Puntos de habilidad</span>
+          <div class="budget-track" style="max-width:320px"><div class="budget-fill" style="width:{(skillSpent / SKILL_POINTS) * 100}%"></div></div>
+          <span class="budget-word">{skillRemaining} restantes</span>
           <span class="text-xs text-azeroth-muted">(gastados: {skillSpent} / {SKILL_POINTS})</span>
         </div>
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import { formatDate } from '$lib/utils';
   import type { PageData } from './$types';
 
@@ -29,11 +30,11 @@
   <title>Auditoría del foro — Panel Admin</title>
 </svelte:head>
 
-<h1 class="text-3xl font-cinzel text-azeroth-gold mb-6">Auditoría del foro</h1>
+<PageHeader kicker="Panel admin" title="Auditoría del foro" />
 
-<div class="card bg-base-200 border border-azeroth-border">
-  <div class="card-body">
-    <div class="flex flex-wrap items-center gap-3 mb-4">
+<div class="panel">
+  <div class="panel-body p-0">
+    <div class="flex flex-wrap items-center gap-3 p-4">
       <input
         id="audit-filter"
         type="text"

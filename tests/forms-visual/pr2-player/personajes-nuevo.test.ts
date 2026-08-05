@@ -39,12 +39,12 @@ const data = {
 };
 
 function habilidadBadge(container: HTMLElement): HTMLElement {
-  const card = [...container.querySelectorAll(".card")].find((c) =>
+  const card = [...container.querySelectorAll(".form-card")].find((c) =>
     c.textContent?.includes("Habilidades"),
   );
-  const badge = card?.querySelector(".badge");
-  if (!badge) throw new Error("habilidad badge not found");
-  return badge as HTMLElement;
+  const word = card?.querySelector(".budget-word");
+  if (!word) throw new Error("habilidad badge not found");
+  return word as HTMLElement;
 }
 
 // The wizard renders 7 basic Fields (incl. avatar_url, REQ-CFD-03.2) plus 5
@@ -61,22 +61,22 @@ describe("personajes/nuevo page (forms-visual-pass / PR 2)", () => {
     );
   });
 
-  it("keeps max-w-4xl wizard container with md density (REQ-FS-01/FS-04)", () => {
+  it("keeps max-w-[1180px] wizard container with md density (REQ-FS-01/FS-04)", () => {
     expectPlayerPageTokens(
       readPageSource(
         "../../../src/routes/personajes/nuevo/+page.svelte",
         import.meta.url,
       ),
-      "max-w-4xl",
+      "max-w-[1180px]",
     );
   });
 
-  it("renders all Field groups (7 basic + 5 attributes) at md density inside max-w-4xl", () => {
+  it("renders all Field groups (7 basic + 5 attributes) at md density inside max-w-[1180px]", () => {
     const { container } = render(Page, {
       data: data as unknown as PageData,
       form: {} as unknown as ActionData,
     });
-    expectRenderedPlayerForm(container, "max-w-4xl", EXPECTED_FIELDSETS);
+    expectRenderedPlayerForm(container, "max-w-[1180px]", EXPECTED_FIELDSETS);
   });
 
   it("fires skill input handling via oninput and updates remaining points (REQ-NV-01)", () => {
