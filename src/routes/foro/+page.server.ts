@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { resolveEffectivePermissions, forumAccessAllowed, type PermissionFlags } from '$lib/auth';
-import { searchThreads, type CategoryNode, type LastPostInfo, type ThreadListItem } from '$lib/forum';
+import { searchThreads, minReadRoleSatisfied, type CategoryNode, type LastPostInfo, type ThreadListItem } from '$lib/forum';
 import type { UserRole } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
@@ -11,6 +11,8 @@ type CategoryRow = {
   description: string | null;
   is_visible: boolean;
   sort_order: number;
+  min_read_role: UserRole | null;
+  requires_approval: boolean;
 };
 
 export const load: PageServerLoad = async ({ locals: { supabase, profile }, url }) => {
@@ -44,8 +46,12 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile }, url 
   }
 
   const cats = (categories ?? []) as unknown as CategoryRow[];
-  // Guests (pendiente) see only is_visible categories; admin sees all.
-  const visibleCats = cats.filter((c) => isAdminUser || c.is_visible);
+  // Guests (pendiente) see only is_visible categories; admin sees all. A
+  // category's "rol mínimo de lectura" (min_read_role) further narrows who may
+  // read it (FORO-CAT-MINROLE): NULL = Público (todo el mundo).
+  const visibleCats = cats.filter(
+    (c) => isAdminUser || (c.is_visible && minReadRoleSatisfied(role, c.min_read_role)),
+  );
 
   const q = url.searchParams.get('q')?.trim() ?? '';
 
@@ -136,6 +142,8 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile }, url 
       name: c.name,
       description: c.description,
       is_visible: c.is_visible,
+      min_read_role: c.min_read_role,
+      requires_approval: c.requires_approval,
       flags: { ...flags, can_view: isStaff || c.is_visible ? flags.can_view : true },
       children,
       threads: children.length ? [] : own,

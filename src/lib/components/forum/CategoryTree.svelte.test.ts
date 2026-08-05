@@ -11,6 +11,8 @@ function cat(partial: Partial<CategoryNode> & Pick<CategoryNode, 'id' | 'name'>)
     name: partial.name,
     description: partial.description ?? null,
     is_visible: partial.is_visible ?? true,
+    min_read_role: partial.min_read_role ?? null,
+    requires_approval: partial.requires_approval ?? false,
     flags: partial.flags ?? flags,
     children: partial.children ?? [],
     threads: partial.threads ?? [],

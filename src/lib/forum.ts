@@ -52,6 +52,8 @@ export interface CategoryNode {
   name: string;
   description: string | null;
   is_visible: boolean;
+  min_read_role: UserRole | null;
+  requires_approval: boolean;
   children: CategoryNode[];
   flags: PermissionFlags;
   threads: ThreadListItem[];
