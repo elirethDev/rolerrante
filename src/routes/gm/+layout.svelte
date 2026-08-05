@@ -5,13 +5,7 @@
 
   let { children }: { children: Snippet } = $props();
 
-  const nav = [
-    { href: '/gm', label: 'Dashboard' },
-    { href: '/gm/historias', label: 'Historias' },
-    { href: '/gm/fichas', label: 'Fichas' },
-    { href: '/gm/habilidades', label: 'Habilidades' },
-    { href: '/gm/eventos', label: 'Eventos' },
-  ];
+  const nav = [{ href: '/gm', label: 'Cola de revisión' }];
 </script>
 
 <Sidebar title="Panel GM" icon={Shield} {nav} drawerId="gm-drawer">
