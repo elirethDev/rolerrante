@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
-import { requireAuth } from '$lib/auth';
-import type { Actions, PageServerLoad } from './$types';
+import { requireAuth, validateImageUrl } from '$lib/auth';
+import { buildAvatarPath, avatarPublicUrl, validateAvatarUpload } from '$lib/avatars';
+import type { Actions, PageServerLoad, RequestEvent } from './$types';
 
 export interface ProfileKpis {
   personajes: number;
@@ -128,11 +129,36 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile, user }
 };
 
 export const actions: Actions = {
-  default: async ({ request, locals: { supabase, user, profile } }) => {
+  default: async ({ request, locals: { supabase, user, profile } }: RequestEvent) => {
     requireAuth({ user, profile });
     const form = await request.formData();
     const displayName = String(form.get('display_name') ?? '').trim();
-    const avatarUrl = String(form.get('avatar_url') ?? '').trim() || null;
+    const file = form.get('avatar_file');
+
+    let avatarUrl: string | null;
+    if (file instanceof File && file.size > 0) {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const validation = validateAvatarUpload({ bytes, size: file.size, name: file.name });
+      if (!validation.ok) {
+        return fail(400, { message: validation.error });
+      }
+      const path = buildAvatarPath('profile', user!.id, file.name);
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, bytes, {
+          contentType: 'image/webp',
+          upsert: true,
+          cacheControl: '31536000',
+        });
+      if (uploadError) return fail(400, { message: uploadError.message });
+      avatarUrl = avatarPublicUrl(path);
+    } else {
+      const rawAvatar = String(form.get('avatar_url') ?? '').trim();
+      if (rawAvatar && !validateImageUrl(rawAvatar).valid) {
+        return fail(400, { message: 'URL de avatar no válida' });
+      }
+      avatarUrl = rawAvatar || null;
+    }
 
     const { error } = await supabase
       .from('profiles')
