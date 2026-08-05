@@ -127,7 +127,8 @@ export function validateAvatarUpload(input: {
 /** Storage object path (bucket root is `avatars`), owner-scoped (REQ-AVUP-04). */
 export function buildAvatarPath(kind: AvatarKind, ownerId: string, filename: string): string {
   const prefix = kind === 'profile' ? 'avatars' : 'char-avatars';
-  return `${prefix}/${ownerId}/${sanitizeAvatarFilename(filename)}.webp`;
+  const base = String(filename ?? 'avatar').replace(/\.(webp|png|jpe?g|avif|gif|bmp)$/i, '');
+  return `${prefix}/${ownerId}/${sanitizeAvatarFilename(base)}.webp`;
 }
 
 /** Public URL of a stored avatar object (the avatars bucket is public). */
