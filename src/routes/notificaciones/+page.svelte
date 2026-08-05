@@ -3,6 +3,9 @@
   import { onMount } from 'svelte';
   import { resolve } from '$app/paths';
   import { formatDateTime } from '$lib/utils';
+  import { Bell, MessageSquare, CheckCheck } from '@lucide/svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
@@ -17,42 +20,61 @@
 </script>
 
 <svelte:head>
-  <title>Notificaciones — Foro · RolErrante</title>
+  <title>Notificaciones — RolErrante</title>
 </svelte:head>
 
-<section class="max-w-2xl mx-auto">
-  <h1 class="font-cinzel text-2xl mb-4">Notificaciones</h1>
+<PageHeader
+  kicker="Cuenta"
+  title="Notificaciones"
+  subtitle="Respuestas en tus hilos, menciones, revisiones y avisos de la hermandad."
+/>
 
-  <form
-    method="POST"
-    action="?/markRead"
-    bind:this={markReadForm}
-    aria-hidden="true"
-    class="hidden"
-  ></form>
+<form
+  method="POST"
+  action="?/markRead"
+  bind:this={markReadForm}
+  aria-hidden="true"
+  class="hidden"
+></form>
 
-  {#if data.notifications.length === 0}
-    <p class="text-azeroth-muted">No tenés notificaciones por ahora.</p>
-  {:else}
-    <ul class="flex flex-col gap-2">
-      {#each data.notifications as n (n.id)}
-        <li
-          class="card bg-base-200 border border-azeroth-border {n.read_at ? '' : 'border-l-4 border-l-azeroth-gold'}"
-        >
-          <a href={resolve(`/foro/${n.thread_id}` as any)} class="card-body block p-4">
-            <div class="flex items-center justify-between gap-2">
-              <p class="text-sm">
-                <span class="font-semibold">{n.actor?.display_name ?? n.actor?.username ?? 'Alguien'}</span>
+{#if data.notifications.length === 0}
+  <EmptyState
+    title="Sin notificaciones"
+    description="No tenés notificaciones por ahora. Cuando alguien responda en tus hilos, aparecerán aquí."
+  />
+{:else}
+  <div class="max-w-2xl">
+    <div class="panel">
+      <div class="panel-head">
+        <Bell size={18} />
+        <h2>Recientes <span class="text-azeroth-faint font-medium">({data.notifications.length})</span></h2>
+        <span class="meta">se marcan como leídas al visitar</span>
+      </div>
+      <div class="panel-body py-0">
+        {#each data.notifications as n (n.id)}
+          <a
+            href={resolve(`/foro/${n.thread_id}` as any)}
+            class="notif-row {n.read_at ? '' : 'unread'}"
+          >
+            <MessageSquare size={18} />
+            <div class="min-w-0 flex-1">
+              <p class="text-sm text-azeroth-text-soft">
+                <span class="font-semibold text-azeroth-text-high">
+                  {n.actor?.display_name ?? n.actor?.username ?? 'Alguien'}
+                </span>
                 respondió en <span class="font-semibold">{n.thread?.title ?? 'un hilo'}</span>
               </p>
-              {#if !n.read_at}
-                <span class="badge badge-error badge-sm shrink-0">Nuevo</span>
-              {/if}
+              <p class="text-xs text-azeroth-muted mt-0.5">{formatDateTime(n.created_at)}</p>
             </div>
-            <p class="text-xs text-azeroth-muted mt-1">{formatDateTime(n.created_at)}</p>
+            {#if !n.read_at}
+              <span class="badge badge-error badge-sm shrink-0">Nuevo</span>
+            {/if}
           </a>
-        </li>
-      {/each}
-    </ul>
-  {/if}
-</section>
+        {/each}
+      </div>
+    </div>
+    <p class="text-xs text-azeroth-faint mt-4 flex items-center gap-1.5">
+      <CheckCheck size={14} /> Todas las notificaciones se marcan como leídas al abrir esta página.
+    </p>
+  </div>
+{/if}

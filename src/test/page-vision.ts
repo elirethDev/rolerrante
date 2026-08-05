@@ -42,7 +42,9 @@ export function expectPlayerPageTokens(source: string, maxW: string): void {
 
 /**
  * Rendered-DOM structural contract for a player page:
- *  - outer <section> carries the page max-w token (REQ-FS-04)
+ *  - an outer wrapper (section or div) carries the page max-w token (REQ-FS-04);
+ *    the OD design-system migration restyled some pages from <section> to a
+ *    <div className="max-w-..."> wrapper, so accept either tag with that class
  *  - exactly `count` fieldset groups, all with a .fieldset legend (REQ-FS-02)
  *  - exactly one density: no sm/lg fieldset anywhere (REQ-FS-01)
  */
@@ -51,9 +53,8 @@ export function expectRenderedPlayerForm(
   maxW: string,
   count: number,
 ): void {
-  const section = container.querySelector('section');
-  expect(section).not.toBeNull();
-  expect(section).toHaveClass(maxW);
+  const wrapper = container.querySelector(`section.${maxW}, div.${maxW}, form.${maxW}`);
+  expect(wrapper, `expected a wrapper with class "${maxW}"`).not.toBeNull();
 
   const fieldsets = container.querySelectorAll('fieldset');
   expect(fieldsets.length).toBe(count);
