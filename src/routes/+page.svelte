@@ -39,11 +39,17 @@
   });
 
   // --- Discord widget: live data from +page.server.ts load() (REQ-DW). The
-  // member total stays static because the Discord widget JSON exposes no total.
-  const MEMBERS = 312;
+  // widget exposes only the users currently online; we show a capped list (REQ-DW).
 
   // --- "Conectados" + Discord: live presence data (REQ-DW / REQ-CP-04).
   const onlineLabel = $derived(data.discordWidget.online ?? '—');
+
+  // Cap de lista online: no mostramos todos, solo una cantidad razonable.
+  const ONLINE_CAP = 6;
+  const onlineMembers = $derived(data.discordWidget.members.slice(0, ONLINE_CAP));
+  const onlineOverflow = $derived(
+    Math.max(0, (data.discordWidget.online ?? data.discordWidget.members.length) - onlineMembers.length),
+  );
 
   // --- Presence heartbeat (REQ-CP-03): only for logged-in users, landing page
   // only. Paused while the tab is hidden, resumes on visible/online, stops on
@@ -172,27 +178,25 @@
   <aside class="l-side" aria-label="Comunidad">
     <div class="ds-card">
       <div class="ds-head">
-        <span class="ds-avatar" aria-hidden="true">RE</span>
+        <img class="ds-avatar" src="/favicon.svg" alt="Rol Errante" aria-hidden="true">
         <div>
           <div class="ds-name">Rol Errante · Discord</div>
           <div class="ds-online">{onlineLabel} en línea</div>
         </div>
       </div>
       <div class="ds-body">
-        <p>
-          El canal de la taberna: coordinación de eventos, dudas de tu personaje y charla fuera de juego.
-          Las normas del foro se aplican también aquí.
-        </p>
-        <div class="ds-stats" data-testid="discord-stats">
-          <span><b>{MEMBERS}</b> miembros</span>
-          <span><b>{onlineLabel}</b> en línea</span>
-        </div>
-        {#if data.discordWidget.members.length > 0}
-          <div class="ds-members" aria-label="Miembros conectados de Discord">
-            {#each data.discordWidget.members as name (name)}
-              <span class="ds-member">{name}</span>
+        {#if onlineMembers.length > 0}
+          <ul class="ds-online-list" aria-label="Miembros conectados de Discord" data-testid="discord-online-members">
+            {#each onlineMembers as name (name)}
+              <li>
+                <span class="ds-dot" aria-hidden="true"></span>
+                <span class="ds-online-name">{name}</span>
+              </li>
             {/each}
-          </div>
+          </ul>
+          {#if onlineOverflow > 0}
+            <p class="ds-more">y {onlineOverflow} más en línea</p>
+          {/if}
         {:else}
           <p class="ds-empty">Sin miembros conectados ahora</p>
         {/if}
@@ -691,15 +695,11 @@
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: linear-gradient(160deg, #5865f2, #3a45c5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-cinzel);
-    font-weight: 800;
-    color: #fff;
-    font-size: 1.05rem;
+    overflow: hidden;
     flex: none;
+    display: block;
+    object-fit: cover;
+    border: 1px solid var(--color-azeroth-border-strong);
   }
   .ds-name {
     font-family: var(--font-cinzel);
@@ -737,15 +737,39 @@
   .ds-body p {
     margin: 0;
   }
-  .ds-stats {
+  .ds-online-list {
     display: flex;
-    gap: 12px;
-    font-size: 0.8rem;
-    color: var(--color-azeroth-muted);
+    flex-direction: column;
+    gap: 8px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
   }
-  .ds-stats b {
-    color: var(--color-azeroth-text-high);
-    font-family: var(--font-mono);
+  .ds-online-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    font-size: 0.9rem;
+    color: var(--color-azeroth-text-soft);
+  }
+  .ds-dot {
+    width: 8px;
+    height: 8px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--color-azeroth-success);
+    box-shadow: 0 0 8px var(--color-azeroth-success);
+  }
+  .ds-online-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ds-more {
+    font-size: 0.78rem;
+    color: var(--color-azeroth-muted);
+    margin: 0;
   }
   .ds-btn {
     display: flex;
@@ -767,19 +791,6 @@
     filter: brightness(1.05);
     transform: translateY(-1px);
     color: #1a1508;
-  }
-  .ds-members {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .ds-member {
-    font-size: 0.72rem;
-    color: var(--color-azeroth-text-soft);
-    background: var(--color-azeroth-surface-2);
-    border: 1px solid var(--color-azeroth-border);
-    border-radius: 999px;
-    padding: 2px 9px;
   }
   .ds-empty {
     font-size: 0.78rem;

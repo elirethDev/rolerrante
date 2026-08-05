@@ -146,7 +146,7 @@ describe("landing page (landing-community)", () => {
     expect(screen.getByText("Sin fichas todavía")).toBeInTheDocument();
   });
 
-  it("renders the Discord widget with live data (count, names, invite) (REQ-DW)", () => {
+  it("renders the Discord widget with live data (online list, capped, invite) (REQ-DW)", () => {
     render(Page, {
       data: {
         ...emptyData,
@@ -158,21 +158,38 @@ describe("landing page (landing-community)", () => {
       },
     });
     expect(screen.getByText("Rol Errante · Discord")).toBeInTheDocument();
-    const stats = screen.getByTestId("discord-stats");
-    expect(stats.textContent).toContain("312"); // static member total
-    expect(stats.textContent).toContain("42"); // live online count
     expect(screen.getByText("42 en línea")).toBeInTheDocument();
-    expect(screen.getByText("Kareth")).toBeInTheDocument();
-    expect(screen.getByText("Mariela")).toBeInTheDocument();
+    const list = screen.getByTestId("discord-online-members");
+    expect(list).toHaveTextContent("Kareth");
+    expect(list).toHaveTextContent("Mariela");
+    // no static member total in the widget anymore
+    expect(screen.queryByText("312")).not.toBeInTheDocument();
+    // online rows carry a presence dot
+    expect(list.querySelectorAll(".ds-dot").length).toBe(2);
     const join = screen.getByRole("link", { name: "Unirse a Discord" });
     expect(join).toHaveAttribute("href", "https://discord.gg/liveInvite");
+  });
+
+  it("caps the online member list and shows the overflow count (REQ-DW)", () => {
+    const many = Array.from({ length: 9 }, (_, i) => `User${i}`);
+    render(Page, {
+      data: {
+        ...emptyData,
+        discordWidget: {
+          online: 9,
+          members: many,
+          invite: "https://discord.gg/liveInvite",
+        },
+      },
+    });
+    const list = screen.getByTestId("discord-online-members");
+    expect(list.querySelectorAll("li").length).toBe(6);
+    expect(screen.getByText("y 3 más en línea")).toBeInTheDocument();
   });
 
   it("renders the Discord fallback state when live data is empty (REQ-DW-01)", () => {
     render(Page, { data: emptyData });
     expect(screen.getByText("Rol Errante · Discord")).toBeInTheDocument();
-    const stats = screen.getByTestId("discord-stats");
-    expect(stats.textContent).toContain("312");
     const join = screen.getByRole("link", { name: "Unirse a Discord" });
     expect(join).toHaveAttribute("href", "https://discord.gg/xDJTmZAxPU");
     expect(
