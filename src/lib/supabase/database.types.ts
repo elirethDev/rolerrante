@@ -491,6 +491,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          last_active_at: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
           username: string
@@ -500,6 +501,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id: string
+          last_active_at?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           username: string
@@ -509,6 +511,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          last_active_at?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           username?: string
@@ -1213,6 +1216,10 @@ export type Database = {
       }
       suspend_user: {
         Args: { p_active_until: string; p_justification: string; p_user_id: string }
+        Returns: undefined
+      }
+      touch_presence: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
     }

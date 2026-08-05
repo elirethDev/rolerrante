@@ -9,6 +9,7 @@ export interface Profile {
   display_name: string | null;
   avatar_url: string | null;
   role: UserRole;
+  last_active_at?: string | null;
   created_at: string;
   updated_at: string;
 }
