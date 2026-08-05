@@ -5,6 +5,7 @@
   import TipTapViewer from '$lib/components/editor/TipTapViewer.svelte';
   import ParticipantList from '$lib/components/events/ParticipantList.svelte';
   import SessionList from '$lib/components/events/SessionList.svelte';
+  import SessionManager from '$lib/components/events/SessionManager.svelte';
   import Field from '$lib/components/ui/Field.svelte';
   import type { ActionData, PageData } from './$types';
 
@@ -44,7 +45,11 @@
     <ParticipantList participants={participants} maxPlayers={event.max_players} />
   </div>
 
-  {#if sessions.length > 0}
+  {#if canManage && event.status !== 'finalizado'}
+    <div class="mb-6">
+      <SessionManager {sessions} />
+    </div>
+  {:else if sessions.length > 0}
     <div class="mb-6">
       <SessionList {sessions} />
     </div>
