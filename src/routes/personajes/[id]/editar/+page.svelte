@@ -159,7 +159,7 @@
                 <input
                   id="avatar_pick"
                   type="file"
-                  accept="image/png,image/jpeg,image/webp"
+                  accept="image/*"
                   class="file-input file-input-sm w-full max-w-xs"
                   aria-label="Cargar imagen de avatar"
                   onchange={onPickFile}

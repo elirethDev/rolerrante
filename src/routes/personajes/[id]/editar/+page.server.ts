@@ -51,21 +51,20 @@ function validateCharacterFields(fields: EditableFields): Record<string, string>
  *  - a multipart `avatar_file` is strictly validated and uploaded to the
  *    character path (char-avatars/{character_id}/...), returning its public URL;
  *  - otherwise the pasted `avatar_url` (validated http/https) is kept as-is.
- * Returns fail() when the upload is rejected.
+ * The caller maps the error message to fail() so the Actions return type stays
+ * narrow.
  */
 async function resolveCharacterAvatar(
   supabase: SupabaseClient<Database>,
   form: FormData,
   characterId: string,
   pastedUrl: string,
-): Promise<string | null | ReturnType<typeof fail>> {
+): Promise<{ avatarUrl: string | null; error?: string }> {
   const file = form.get('avatar_file');
   if (file instanceof File && file.size > 0) {
     const bytes = new Uint8Array(await file.arrayBuffer());
     const validation = validateAvatarUpload({ bytes, size: file.size, name: file.name });
-    if (!validation.ok) {
-      return fail(400, { message: validation.error });
-    }
+    if (!validation.ok) return { avatarUrl: null, error: validation.error };
     const path = buildAvatarPath('character', characterId, file.name);
     const { error: uploadError } = await supabase.storage
       .from('avatars')
@@ -74,10 +73,10 @@ async function resolveCharacterAvatar(
         upsert: true,
         cacheControl: '31536000',
       });
-    if (uploadError) return fail(400, { message: uploadError.message });
-    return avatarPublicUrl(path);
+    if (uploadError) return { avatarUrl: null, error: uploadError.message };
+    return { avatarUrl: avatarPublicUrl(path) };
   }
-  return pastedUrl || null;
+  return { avatarUrl: pastedUrl || null };
 }
 
 export const load: PageServerLoad = async ({ params, locals: { user, profile, supabase } }) => {
@@ -120,8 +119,9 @@ export const actions: Actions = {
     const errors = validateCharacterFields(fields);
     if (Object.keys(errors).length) return fail(400, { errors, message: 'Corrige los campos marcados en rojo' });
 
-    const avatarUrl = await resolveCharacterAvatar(supabase, form, params.id, fields.avatarUrl);
-    if (typeof avatarUrl !== 'string' && avatarUrl !== null) return avatarUrl;
+    const avatar = await resolveCharacterAvatar(supabase, form, params.id, fields.avatarUrl);
+    if (avatar.error) return fail(400, { message: avatar.error });
+    const avatarUrl = avatar.avatarUrl;
 
     const { error: updateError } = await supabase
       .from('characters')
@@ -167,8 +167,9 @@ export const actions: Actions = {
     const errors = validateCharacterFields(fields);
     if (Object.keys(errors).length) return fail(400, { errors, message: 'Corrige los campos marcados en rojo' });
 
-    const avatarUrl = await resolveCharacterAvatar(supabase, form, params.id, fields.avatarUrl);
-    if (typeof avatarUrl !== 'string' && avatarUrl !== null) return avatarUrl;
+    const avatar = await resolveCharacterAvatar(supabase, form, params.id, fields.avatarUrl);
+    if (avatar.error) return fail(400, { message: avatar.error });
+    const avatarUrl = avatar.avatarUrl;
 
     const { error: updateError } = await supabase
       .from('characters')
