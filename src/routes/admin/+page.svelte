@@ -2,6 +2,7 @@
   import AuditBanner from '$lib/components/admin/AuditBanner.svelte';
   import AuditActionBadge from '$lib/components/admin/AuditActionBadge.svelte';
   import { formatDate } from '$lib/utils';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
@@ -11,7 +12,11 @@
   <title>Dashboard — RolErrante</title>
 </svelte:head>
 
-<h1 class="text-3xl font-cinzel text-azeroth-gold mb-6">Panel de administración</h1>
+<PageHeader
+  kicker="Zona del consejo · Admin"
+  title="Panel de administración"
+  subtitle="Gestiona usuarios, catálogos, el foro y el registro de auditoría del reino."
+/>
 
 {#if data.lastAction}
   <AuditBanner
@@ -23,27 +28,19 @@
   />
 {/if}
 
-<div class="grid md:grid-cols-3 gap-4 mb-8">
-  <div class="stat bg-base-200 border border-azeroth-border rounded-box p-4">
-    <div class="stat-title text-azeroth-muted">Usuarios</div>
-    <div class="stat-value text-azeroth-gold text-2xl">{data.users}</div>
-  </div>
-
-  <div class="stat bg-base-200 border border-azeroth-border rounded-box p-4">
-    <div class="stat-title text-azeroth-muted">No administradores</div>
-    <div class="stat-value text-azeroth-gold text-2xl">{data.nonAdmin}</div>
-  </div>
-
-  <div class="stat bg-base-200 border border-azeroth-border rounded-box p-4">
-    <div class="stat-title text-azeroth-muted">Eventos de auditoría</div>
-    <div class="stat-value text-azeroth-gold text-2xl">{data.logs}</div>
-  </div>
+<div class="kpi-grid">
+  <div class="kpi"><span class="kpi-num">{data.users}</span><span class="kpi-label">Usuarios</span></div>
+  <div class="kpi"><span class="kpi-num">{data.nonAdmin}</span><span class="kpi-label">No administradores</span></div>
+  <div class="kpi"><span class="kpi-num">{data.logs}</span><span class="kpi-label">Eventos de auditoría</span></div>
 </div>
 
-<div class="card bg-base-200 border border-azeroth-border">
-  <div class="card-body">
-    <h2 class="card-title font-cinzel text-azeroth-gold">Actividad reciente</h2>
-    <div class="overflow-x-auto mt-2">
+<div class="panel">
+  <div class="panel-head">
+    <h2>Actividad reciente</h2>
+    <span class="meta">{data.recentLogs.length} registros</span>
+  </div>
+  <div class="panel-body p-0">
+    <div class="overflow-x-auto">
       <table class="table table-sm">
         <thead>
           <tr>

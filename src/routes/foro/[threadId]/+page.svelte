@@ -17,7 +17,7 @@
   <title>{data.thread.title} — Foro · RolErrante</title>
 </svelte:head>
 
-<section class="max-w-3xl mx-auto">
+<section class="max-w-[1180px] mx-auto">
   <div class="flex items-start justify-between gap-4">
     <ThreadDetail
       thread={data.thread}
@@ -45,9 +45,9 @@
 
   <div class="mt-6 flex gap-3">
     {#if data.flags.can_post && !data.isLocked}
-      <div class="w-full card bg-base-200 border border-azeroth-border">
-        <div class="card-body">
-          <h2 class="card-title font-cinzel text-lg mb-2">Responder</h2>
+      <div class="w-full panel">
+        <div class="panel-head"><h2>Responder</h2></div>
+        <div class="panel-body">
           <ReplyComposer
             draftKey={`forum:draft:${data.thread.id}`}
             quotePayload={replyTo}

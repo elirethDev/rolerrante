@@ -1,5 +1,6 @@
 <script lang="ts">
   import Field from '$lib/components/ui/Field.svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import AuditActionBadge from '$lib/components/admin/AuditActionBadge.svelte';
   import { formatDate } from '$lib/utils';
   import type { PageData } from './$types';
@@ -21,21 +22,23 @@
   <title>Auditoría — RolErrante</title>
 </svelte:head>
 
-<h1 class="text-3xl font-cinzel text-azeroth-gold mb-6">Registro de auditoría</h1>
+<PageHeader kicker="Panel admin" title="Registro de auditoría" />
 
-<div class="card bg-base-200 border border-azeroth-border">
-  <div class="card-body">
-    <Field label="Filtrar por acción" size="sm" class="mb-4">
-      {#snippet ctrl()}
-        <input
-          id="log-filter"
-          type="text"
-          class="input input-sm"
-          placeholder="Ej: login, create..."
-          bind:value={filter}
-        />
-      {/snippet}
-    </Field>
+<div class="panel">
+  <div class="panel-body pt-4">
+    <div class="px-1">
+      <Field label="Filtrar por acción" size="sm" class="mb-4 max-w-md">
+        {#snippet ctrl()}
+          <input
+            id="log-filter"
+            type="text"
+            class="input input-sm"
+            placeholder="Ej: login, create..."
+            bind:value={filter}
+          />
+        {/snippet}
+      </Field>
+    </div>
 
     <div class="overflow-x-auto">
       <table class="table table-sm">

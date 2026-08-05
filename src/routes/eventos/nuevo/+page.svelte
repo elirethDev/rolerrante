@@ -5,6 +5,7 @@
   import TipTapEditor from '$lib/components/editor/TipTapEditor.svelte';
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import type { ActionData } from './$types';
 
   export let form: ActionData;
@@ -18,8 +19,12 @@
   <title>Nuevo evento — RolErrante</title>
 </svelte:head>
 
-<section class="max-w-3xl mx-auto">
-  <h1 class="text-3xl font-cinzel text-azeroth-gold mb-6">Nuevo evento</h1>
+<div class="max-w-3xl mx-auto">
+  <PageHeader
+    kicker="Agenda del reino"
+    title="Nuevo evento"
+    subtitle="Publicá un encuentro, campaña o velada para la comunidad."
+  />
 
   {#if form?.message}
     <div class="alert alert-error mb-4">{form.message}</div>
@@ -95,4 +100,4 @@
       <a href={resolve('/eventos')} class="btn btn-ghost">Cancelar</a>
     </div>
   </form>
-</section>
+</div>

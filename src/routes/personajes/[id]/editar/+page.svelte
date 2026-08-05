@@ -7,6 +7,7 @@
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
   import CombatValues from '$lib/components/sheets/CombatValues.svelte';
   import AvatarCropper from '$lib/components/ui/AvatarCropper.svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import type { ActionData, PageData } from './$types';
   import type { Character } from '$lib/types';
 
@@ -78,8 +79,12 @@
   <title>Editar personaje — RolErrante</title>
 </svelte:head>
 
-<section class="max-w-4xl mx-auto">
-  <h1 class="text-3xl font-cinzel text-azeroth-gold mb-6">Editar personaje</h1>
+<div class="max-w-4xl mx-auto">
+  <PageHeader
+    kicker="Censo del reino"
+    title="Editar personaje"
+    subtitle="Los cambios se guardan como borrador o se envían a revisión del consejo."
+  />
 
   {#if form?.message}
     <div class="alert alert-error mb-4">{form.message}</div>
@@ -109,91 +114,51 @@
     }}
   >
     <!-- DATOS BÁSICOS -->
-    <div class="card bg-base-200 border border-azeroth-border mb-6">
-      <div class="card-body">
-        <h2 class="card-title font-cinzel text-azeroth-gold">Datos básicos</h2>
-        <div class="grid md:grid-cols-2 gap-4">
-          <Field label="Nombre" required error={form && 'errors' in form ? (form.errors as Record<string, string>).name ?? null : null}>
-            {#snippet ctrl()}
-              <input id="name" name="name" type="text" class="input" bind:value={name} required />
-            {/snippet}
-          </Field>
-          <Field label="Raza" required error={form && 'errors' in form ? (form.errors as Record<string, string>).race ?? null : null}>
-            {#snippet ctrl()}
-              <select id="race_id" name="race_id" class="select" bind:value={raceId} required>
-                <option value="">Selecciona</option>
-                {#each data.races as race (race.id)}
-                  <option value={race.id}>{race.name}</option>
-                {/each}
-              </select>
-            {/snippet}
-          </Field>
-          <Field label="Edad">
-            {#snippet ctrl()}
-              <input id="age" name="age" type="number" class="input" min="0" bind:value={age} />
-            {/snippet}
-          </Field>
-          <Field label="Sexo">
-            {#snippet ctrl()}
-              <input id="sex" name="sex" type="text" class="input" bind:value={sex} />
-            {/snippet}
-          </Field>
-          <Field label="Descripción física" class="md:col-span-2">
-            {#snippet ctrl()}
-              <textarea id="physical_description" name="physical_description" class="textarea" rows="3" bind:value={physicalDescription}></textarea>
-            {/snippet}
-          </Field>
-          <Field label="Fuente de maná">
-            {#snippet ctrl()}
-              <select id="mana_source" name="mana_source" class="select" bind:value={manaSource}>
-                <option value="I">Inteligencia</option>
-                <option value="E">Espíritu</option>
-              </select>
-            {/snippet}
-          </Field>
-          <Field label="Avatar" class="md:col-span-2" error={form && 'errors' in form ? (form.errors as Record<string, string>).avatar_url ?? null : null}>
-            {#snippet ctrl()}
-              <input id="avatar_url" name="avatar_url" type="text" class="input" placeholder="https://..." bind:value={avatarUrl} />
-              <div class="divider text-azeroth-muted text-xs">o subí una imagen</div>
-              {#key pickerKey}
-                <input
-                  id="avatar_pick"
-                  type="file"
-                  accept="image/*"
-                  class="file-input file-input-sm w-full max-w-xs"
-                  aria-label="Cargar imagen de avatar"
-                  onchange={onPickFile}
-                />
-              {/key}
-              {#if cropSrc}
-                <div class="mt-3">
-                  <AvatarCropper src={cropSrc} onavatarfile={onAvatarFile} />
-                </div>
-              {/if}
-              {#if avatarFile}
-                <p class="mt-2 text-sm text-success">Imagen lista para subir al guardar.</p>
-              {/if}
-              <p class="mt-2 text-xs text-azeroth-muted">
-                La imagen se recorta a un cuadrado y se sube como WebP (máx. 150KB). Se conserva la URL externa como alternativa.
-              </p>
-            {/snippet}
-          </Field>
-          <Field label="Estado" required>
-            {#snippet ctrl()}
-              <select id="status" name="status" class="select" bind:value={status}>
-                <option value="borrador">Borrador</option>
-                <option value="pendiente">Pendiente (enviar a revisión)</option>
-              </select>
-            {/snippet}
-          </Field>
+    <div class="form-card">
+      <div class="form-card-head"><span class="form-card-num">1</span><h2>Datos básicos</h2><span class="meta">Identidad</span></div>
+      <div class="form-card-body">
+        <div class="grid2">
+          <div class="field"><label for="name">Nombre <span style="color:var(--color-azeroth-danger)">*</span></label><input class="input" id="name" name="name" type="text" bind:value={name} required /></div>
+          <div class="field"><label for="race_id">Raza <span style="color:var(--color-azeroth-danger)">*</span></label><select class="select" id="race_id" name="race_id" bind:value={raceId} required><option value="">Selecciona</option>{#each data.races as race (race.id)}<option value={race.id}>{race.name}</option>{/each}</select></div>
+          <div class="field"><label for="age">Edad</label><input class="input" id="age" name="age" type="number" min="0" bind:value={age} /></div>
+          <div class="field"><label for="sex">Sexo</label><input class="input" id="sex" name="sex" type="text" bind:value={sex} /></div>
+          <div class="field full"><label for="physical_description">Descripción física</label><textarea class="textarea" id="physical_description" name="physical_description" rows="3" bind:value={physicalDescription}></textarea></div>
+          <div class="field"><label for="mana_source">Fuente de maná</label><select class="select" id="mana_source" name="mana_source" bind:value={manaSource}><option value="I">Inteligencia</option><option value="E">Espíritu</option></select></div>
+          <div class="field full">
+            <label for="avatar_url">URL de avatar</label>
+            <input class="input" id="avatar_url" name="avatar_url" type="text" placeholder="https://..." bind:value={avatarUrl} />
+            <div class="divider text-azeroth-muted text-xs">o subí una imagen</div>
+            {#key pickerKey}
+              <input
+                id="avatar_pick"
+                type="file"
+                accept="image/*"
+                class="file-input file-input-sm w-full max-w-xs"
+                aria-label="Cargar imagen de avatar"
+                onchange={onPickFile}
+              />
+            {/key}
+            {#if cropSrc}
+              <div class="mt-3">
+                <AvatarCropper src={cropSrc} onavatarfile={onAvatarFile} />
+              </div>
+            {/if}
+            {#if avatarFile}
+              <p class="mt-2 text-sm text-success">Imagen lista para subir al guardar.</p>
+            {/if}
+            <p class="mt-2 text-xs text-azeroth-muted">
+              La imagen se recorta a un cuadrado y se sube como WebP (máx. 150KB). Se conserva la URL externa como alternativa.
+            </p>
+          </div>
+          <div class="field"><label for="status">Estado</label><select class="select" id="status" name="status" bind:value={status}><option value="borrador">Borrador</option><option value="pendiente">Pendiente (enviar a revisión)</option></select></div>
         </div>
       </div>
     </div>
 
     <!-- ATRIBUTOS -->
-    <div class="card bg-base-200 border border-azeroth-border mb-6">
-      <div class="card-body">
-        <h2 class="card-title font-cinzel text-azeroth-gold">Atributos (4-10)</h2>
+    <div class="form-card">
+      <div class="form-card-head"><span class="form-card-num">2</span><h2>Atributos (4-10)</h2><span class="meta">base 4</span></div>
+      <div class="form-card-body">
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
           {#each ATTR_KEYS as key (key)}
             <AttributeInput
@@ -229,4 +194,4 @@
       <a href={resolve(`/personajes/${character.id}`)} class="btn btn-ghost">Cancelar</a>
     </div>
   </form>
-</section>
+</div>

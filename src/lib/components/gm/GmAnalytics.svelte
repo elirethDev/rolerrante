@@ -4,21 +4,9 @@
   let { kpi }: { kpi: GmKpi } = $props();
 </script>
 
-<div data-testid="gm-analytics" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-  <div class="stat bg-base-200 border border-azeroth-border rounded-lg">
-    <div class="stat-title">Pendientes</div>
-    <div class="stat-value">{kpi.pendientes}</div>
-  </div>
-  <div class="stat bg-base-200 border border-azeroth-border rounded-lg">
-    <div class="stat-title">Aprobadas hoy</div>
-    <div class="stat-value">{kpi.aprobadasHoy}</div>
-  </div>
-  <div class="stat bg-base-200 border border-azeroth-border rounded-lg">
-    <div class="stat-title">Tiempo medio</div>
-    <div class="stat-value">{kpi.tiempoMedio}h</div>
-  </div>
-  <div class="stat bg-base-200 border border-azeroth-border rounded-lg">
-    <div class="stat-title">Antigüedad &gt;48h</div>
-    <div class="stat-value">{kpi.antiguedad48h}</div>
-  </div>
+<div data-testid="gm-analytics" class="kpi-grid">
+  <div class="kpi"><span class="kpi-num">{kpi.pendientes}</span><span class="kpi-label">Pendientes</span></div>
+  <div class="kpi"><span class="kpi-num">{kpi.aprobadasHoy}</span><span class="kpi-label">Aprobadas hoy</span></div>
+  <div class="kpi"><span class="kpi-num">{kpi.tiempoMedio}h</span><span class="kpi-label">Tiempo medio</span></div>
+  <div class="kpi"><span class="kpi-num">{kpi.antiguedad48h}</span><span class="kpi-label">Antigüedad &gt;48h</span></div>
 </div>

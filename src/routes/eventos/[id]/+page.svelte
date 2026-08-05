@@ -7,6 +7,7 @@
   import SessionList from '$lib/components/events/SessionList.svelte';
   import SessionManager from '$lib/components/events/SessionManager.svelte';
   import Field from '$lib/components/ui/Field.svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import type { ActionData, PageData } from './$types';
 
   export let data: PageData;
@@ -25,20 +26,24 @@
   <title>{event.title} — RolErrante</title>
 </svelte:head>
 
-<section class="max-w-3xl mx-auto">
-  <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
-    <div>
-      <h1 class="text-3xl md:text-4xl font-cinzel text-azeroth-gold">{event.title}</h1>
-      <p class="text-sm text-azeroth-muted mt-1">
-        {formatDateTime(event.starts_at)}{#if event.ends_at} — {formatDateTime(event.ends_at)}{/if}
-        · {event.type} · {event.location ?? 'Sin ubicación'}
-      </p>
-    </div>
-    <span class="badge badge-lg {statusColor(event.status)}">{statusLabel(event.status)}</span>
-  </div>
+<div class="max-w-3xl mx-auto">
+  <PageHeader
+    kicker="Evento"
+    title={event.title}
+  >
+    {#snippet actions()}
+      <span class="badge badge-lg {statusColor(event.status)}">{statusLabel(event.status)}</span>
+    {/snippet}
+  </PageHeader>
+  <p class="page-sub" style="margin-top:-0.5rem;margin-bottom:1.5rem">
+    {formatDateTime(event.starts_at)}{#if event.ends_at} — {formatDateTime(event.ends_at)}{/if}
+    · {event.type} · {event.location ?? 'Sin ubicación'}
+  </p>
 
-  <div class="bg-base-100 border border-azeroth-border rounded-lg p-6 mb-6">
-    <TipTapViewer content={String(event.description)} />
+  <div class="panel mb-6">
+    <div class="panel-body">
+      <TipTapViewer content={String(event.description)} />
+    </div>
   </div>
 
   <div class="mb-6">
@@ -57,8 +62,8 @@
 
   {#if data.profile && isOpen}
     {#if !data.participant && data.characters.length > 0}
-      <form method="POST" action="?/join" use:enhance class="card bg-base-200 border border-azeroth-border mb-6">
-        <div class="card-body flex-row items-end gap-4">
+      <form method="POST" action="?/join" use:enhance class="panel mb-6">
+        <div class="panel-body flex-row items-end gap-4">
           <Field label="Inscribir personaje" required class="flex-1">
             {#snippet ctrl()}
               <select id="character_id" name="character_id" class="select" required>
@@ -80,9 +85,9 @@
   {/if}
 
   {#if canManage && event.status !== 'finalizado'}
-    <div class="card bg-base-200 border border-azeroth-border">
-      <div class="card-body">
-        <h2 class="card-title font-cinzel text-azeroth-gold">Gestión del evento</h2>
+    <div class="panel">
+      <div class="panel-head"><h2>Gestión del evento</h2></div>
+      <div class="panel-body">
         {#if form?.message}<div class="alert alert-error text-sm">{form.message}</div>{/if}
         <form method="POST" action="?/finalize" use:enhance class="flex gap-3 items-end mt-2">
           <Field label="XP por participante confirmado" required>
@@ -99,4 +104,4 @@
   {#if event.status === 'finalizado'}
     <div class="alert alert-success mt-6">Evento finalizado. XP otorgada a los participantes confirmados.</div>
   {/if}
-</section>
+</div>

@@ -3,6 +3,7 @@
   import PermissionPanel from '$lib/components/forum/PermissionPanel.svelte';
   import Modal from '$lib/components/ui/Modal.svelte';
   import Field from '$lib/components/ui/Field.svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import type { ActionData, PageData } from './$types';
   import type { UserRole } from '$lib/types';
 
@@ -89,22 +90,22 @@
   <title>Foro — Panel Admin</title>
 </svelte:head>
 
-<h1 class="text-3xl font-cinzel text-azeroth-gold mb-6">Gestión del foro</h1>
+<PageHeader kicker="Panel admin" title="Gestión del foro" />
 
 {#if form?.message}
   <div class="alert alert-error text-sm mb-4">{form.message}</div>
 {/if}
 
-<section class="card bg-base-200 border border-azeroth-border mb-6">
-  <div class="card-body">
-    <div class="flex items-center justify-between">
-      <h2 class="card-title font-cinzel text-azeroth-gold">Categorías</h2>
-      <button class="btn btn-primary btn-sm" onclick={() => (createOpen = true)}>
-        Nueva categoría
-      </button>
-    </div>
+<section class="panel mb-6">
+  <div class="panel-head">
+    <h2>Categorías</h2>
+    <button class="btn btn-primary btn-sm ml-auto" onclick={() => (createOpen = true)}>
+      Nueva categoría
+    </button>
+  </div>
 
-    <div class="space-y-2 mt-2">
+  <div class="panel-body">
+    <div class="space-y-2">
       {#each roots as root (root.id)}
         {@const siblings = siblingsOf(root)}
         <div class="border border-azeroth-border rounded p-3">

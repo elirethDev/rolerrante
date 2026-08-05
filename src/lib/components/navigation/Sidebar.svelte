@@ -7,46 +7,54 @@
   interface NavItem {
     href: string;
     label: string;
+    icon?: Component;
+    count?: number;
+    section?: string;
   }
 
   interface Props {
     title: string;
     icon: Component;
     nav: NavItem[];
-    drawerId: string;
     children?: Snippet;
   }
 
-  let { title, icon, nav, drawerId, children }: Props = $props();
+  let { title, icon: TitleIcon, nav, children }: Props = $props();
 </script>
 
-<div class="drawer lg:drawer-open">
-  <div class="drawer-content p-6">
-    {@render children?.()}
-  </div>
-  <div class="drawer-side">
-    <label for={drawerId} class="drawer-overlay"></label>
-    <aside class="bg-base-200 w-64 min-h-full p-4 border-r border-azeroth-border">
-      <div class="flex items-center gap-2 mb-6 px-2">
-        {#if icon}
-          {@const Icon = icon}
-          <Icon class="text-azeroth-gold" size={24} />
+<div class="side-layout">
+  <nav class="side-nav" aria-label={title}>
+    <span class="side-sec">
+      <span class="inline-flex items-center gap-2">
+        {#if TitleIcon}
+          {@const Icon = TitleIcon}
+          <Icon size={16} />
         {/if}
-        <span class="font-cinzel text-xl text-azeroth-gold">{title}</span>
-      </div>
-      <ul class="menu gap-1">
-        {#each nav as item (item.href)}
-          <li>
-            <a
-              href={resolve(item.href as any)}
-              class:active={page.url.pathname === item.href}
-              aria-current={page.url.pathname === item.href ? 'page' : undefined}
-            >
-              {item.label}
-            </a>
-          </li>
-        {/each}
-      </ul>
-    </aside>
+        {title}
+      </span>
+    </span>
+    {#each nav as item, i (item.href)}
+      {@const Icon = item.icon}
+      {#if item.section && (i === 0 || nav[i - 1].section !== item.section)}
+        <span class="side-sec">{item.section}</span>
+      {/if}
+      <a
+        href={resolve(item.href as any)}
+        class="side-item"
+        aria-current={page.url.pathname === item.href ? 'page' : undefined}
+      >
+        {#if Icon}
+          <Icon size={18} />
+        {/if}
+        {item.label}
+        {#if item.count !== undefined}
+          <span class="side-count">{item.count}</span>
+        {/if}
+      </a>
+    {/each}
+  </nav>
+
+  <div class="min-w-0">
+    {@render children?.()}
   </div>
 </div>

@@ -9,6 +9,7 @@
   import WorklistCard from '$lib/components/gm/WorklistCard.svelte';
   import AuditBanner from '$lib/components/admin/AuditBanner.svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
 
   let { data }: { data: PageData } = $props();
   const queue = $derived(data.queue);
@@ -78,7 +79,11 @@
   <title>Panel GM — RolErrante</title>
 </svelte:head>
 
-<h1 class="text-3xl font-cinzel text-azeroth-gold flex items-center gap-3 mb-6"><Shield /> Panel GM</h1>
+<PageHeader
+  kicker="Zona del consejo · GM"
+  title="Panel GM"
+  subtitle="Revisa y aprueba fichas, historias, habilidades y cierres de eventos en una sola cola."
+/>
 
 {#if lastAction}
   <!-- service_role audit last-action banner (design AD-1), reusing AuditBanner -->

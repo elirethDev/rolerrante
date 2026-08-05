@@ -1,6 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import Field from '$lib/components/ui/Field.svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import type { ActionData, PageData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -59,21 +60,21 @@
   <title>Catálogos — RolErrante</title>
 </svelte:head>
 
-<h1 class="text-3xl font-cinzel text-azeroth-gold mb-6">Catálogos</h1>
+<PageHeader kicker="Panel admin" title="Catálogos" />
 
 {#if form?.message}<div class="alert alert-error mb-4">{form.message}</div>{/if}
 
 <div class="grid lg:grid-cols-2 gap-6">
 
   <!-- Razas -->
-  <div class="card bg-base-200 border border-azeroth-border">
-    <div class="card-body">
-      <div class="flex justify-between items-center">
-        <h2 class="card-title font-cinzel text-azeroth-gold">Razas</h2>
-        {#if !showRaceForm}
-          <button class="btn btn-primary btn-sm" onclick={openNewRace}>Nueva raza</button>
-        {/if}
-      </div>
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Razas</h2>
+      {#if !showRaceForm}
+        <button class="btn btn-primary btn-sm ml-auto" onclick={openNewRace}>Nueva raza</button>
+      {/if}
+    </div>
+    <div class="panel-body">
 
       {#if showRaceForm}
         <form
@@ -215,14 +216,14 @@
   </div>
 
   <!-- Habilidades -->
-  <div class="card bg-base-200 border border-azeroth-border">
-    <div class="card-body">
-      <div class="flex justify-between items-center">
-        <h2 class="card-title font-cinzel text-azeroth-gold">Habilidades</h2>
-        {#if !showSkillForm}
-          <button class="btn btn-primary btn-sm" onclick={openNewSkill}>Nueva habilidad</button>
-        {/if}
-      </div>
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Habilidades</h2>
+      {#if !showSkillForm}
+        <button class="btn btn-primary btn-sm ml-auto" onclick={openNewSkill}>Nueva habilidad</button>
+      {/if}
+    </div>
+    <div class="panel-body">
 
       {#if showSkillForm}
         <form

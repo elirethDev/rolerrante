@@ -5,6 +5,7 @@
   import TipTapEditor from '$lib/components/editor/TipTapEditor.svelte';
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import type { ActionData, PageData } from './$types';
 
   export let data: PageData;
@@ -21,8 +22,8 @@
   <title>Nueva historia — RolErrante</title>
 </svelte:head>
 
-<section class="max-w-3xl mx-auto">
-  <h1 class="text-3xl font-cinzel text-azeroth-gold mb-6">Nueva historia</h1>
+<section class="max-w-[1180px] mx-auto">
+  <PageHeader kicker="Historias del reino" title="Nueva historia" />
 
   {#if form?.message}
     <div class="alert alert-error mb-4">{form.message}</div>

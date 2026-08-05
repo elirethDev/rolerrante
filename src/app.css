@@ -632,3 +632,131 @@ h1, h2, h3, h4, h5, h6, .font-cinzel {
 .notif-row.unread {
   border-left: 3px solid var(--color-azeroth-gold);
 }
+
+/* ============================================================================
+   LATERAL — sidebar del sistema (side-layout / side-nav / side-item)
+   Traducido 1:1 del design system (rolerrante.css «9. CHROME»).
+   ============================================================================ */
+.side-layout {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+.side-nav {
+  position: sticky;
+  top: calc(64px + 16px);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.side-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 13px;
+  border-radius: var(--radius-sm);
+  color: var(--color-azeroth-text-soft);
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+.side-item svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--color-azeroth-muted);
+}
+.side-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-azeroth-text-high);
+}
+.side-item[aria-current='page'] {
+  background: linear-gradient(90deg, rgba(248, 183, 0, 0.12), rgba(248, 183, 0, 0.02));
+  color: var(--color-azeroth-gold-bright);
+  border-left-color: var(--color-azeroth-gold);
+}
+.side-item[aria-current='page'] svg {
+  color: var(--color-azeroth-gold);
+}
+.side-count {
+  margin-left: auto;
+  font-size: 0.72rem;
+  color: var(--color-azeroth-faint);
+  font-family: var(--font-mono);
+}
+.side-sec {
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-azeroth-faint);
+  font-weight: 700;
+  padding: 14px 13px 6px;
+}
+@media (max-width: 900px) {
+  .side-layout {
+    grid-template-columns: 1fr;
+  }
+  .side-nav {
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 6px;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+  }
+  .side-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .side-item {
+    white-space: nowrap;
+    border-left: 0;
+    border-bottom: 2px solid transparent;
+  }
+  .side-item[aria-current='page'] {
+    border-bottom-color: var(--color-azeroth-gold);
+    background: rgba(248, 183, 0, 0.08);
+  }
+  .side-sec {
+    display: none;
+  }
+  .side-count {
+    display: none;
+  }
+}
+
+/* ============================================================================
+   KPIs del sistema (kpi-grid / kpi / kpi-num / kpi-label)
+   ============================================================================ */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px 20px;
+  border: 1px solid var(--color-azeroth-border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--color-azeroth-surface-2), var(--color-azeroth-surface));
+  box-shadow: var(--shadow-1);
+}
+.kpi-num {
+  font-family: var(--font-cinzel);
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--color-azeroth-gold-bright);
+  line-height: 1;
+}
+.kpi-label {
+  font-size: 0.76rem;
+  color: var(--color-azeroth-muted);
+  letter-spacing: 0.04em;
+}
