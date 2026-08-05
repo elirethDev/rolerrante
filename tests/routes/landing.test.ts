@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/svelte";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, afterEach, beforeEach } from "vitest";
 import Page from "../../src/routes/+page.svelte";
 import { load } from "../../src/routes/+page.server";
 import type {
@@ -67,6 +67,12 @@ const emptyData = {
   cronicas: [],
   eventos: [],
   fichas: [],
+  discordWidget: {
+    online: null,
+    members: [],
+    invite: "https://discord.gg/xDJTmZAxPU",
+  },
+  onlineUsers: [],
 };
 
 describe("landing page (landing-community)", () => {
@@ -140,23 +146,66 @@ describe("landing page (landing-community)", () => {
     expect(screen.getByText("Sin fichas todavía")).toBeInTheDocument();
   });
 
-  it("renders the Discord widget with the configured invite and demo stats", () => {
-    render(Page, { data: emptyData });
+  it("renders the Discord widget with live data (count, names, invite) (REQ-DW)", () => {
+    render(Page, {
+      data: {
+        ...emptyData,
+        discordWidget: {
+          online: 42,
+          members: ["Kareth", "Mariela"],
+          invite: "https://discord.gg/liveInvite",
+        },
+      },
+    });
     expect(screen.getByText("Rol Errante · Discord")).toBeInTheDocument();
+    const stats = screen.getByTestId("discord-stats");
+    expect(stats.textContent).toContain("312"); // static member total
+    expect(stats.textContent).toContain("42"); // live online count
+    expect(screen.getByText("42 en línea")).toBeInTheDocument();
+    expect(screen.getByText("Kareth")).toBeInTheDocument();
+    expect(screen.getByText("Mariela")).toBeInTheDocument();
     const join = screen.getByRole("link", { name: "Unirse a Discord" });
-    expect(join).toHaveAttribute("href", "https://discord.gg/xDJTmZAxPU");
-    expect(screen.getByTestId("discord-stats").textContent).toContain("312");
-    expect(screen.getByTestId("discord-stats").textContent).toContain("128");
-    expect(screen.getAllByText(/en línea/).length).toBeGreaterThan(0);
+    expect(join).toHaveAttribute("href", "https://discord.gg/liveInvite");
   });
 
-  it("renders the Conectados demo widget listing placeholder users", () => {
+  it("renders the Discord fallback state when live data is empty (REQ-DW-01)", () => {
     render(Page, { data: emptyData });
+    expect(screen.getByText("Rol Errante · Discord")).toBeInTheDocument();
+    const stats = screen.getByTestId("discord-stats");
+    expect(stats.textContent).toContain("312");
+    const join = screen.getByRole("link", { name: "Unirse a Discord" });
+    expect(join).toHaveAttribute("href", "https://discord.gg/xDJTmZAxPU");
+    expect(
+      screen.getByText("Sin miembros conectados ahora"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders the Conectados list from onlineUsers with names and empty state (REQ-CP-04)", () => {
+    render(Page, {
+      data: {
+        ...emptyData,
+        onlineUsers: [
+          { username: "kareth", displayName: "Kareth", avatarUrl: null },
+          { username: "mariela", displayName: "Mariela", avatarUrl: null },
+        ],
+      },
+    });
     const online = screen.getByLabelText(/Quién está conectado/);
     expect(online).toHaveTextContent("Kareth");
     expect(online).toHaveTextContent("Mariela");
-    expect(online).toHaveTextContent("escribiendo");
-    expect(online.textContent).toContain("en Crínicas");
+
+    render(Page, { data: emptyData });
+    expect(
+      screen.getByText("Nadie conectado en este momento."),
+    ).toBeInTheDocument();
+  });
+
+  it("does not start a heartbeat timer for a guest (REQ-CP-05)", () => {
+    const ping = vi.fn().mockResolvedValue({ ok: true, status: 204 });
+    vi.stubGlobal("fetch", ping);
+    render(Page, { data: emptyData }); // user: null
+    expect(ping).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 
   it("renders the data cards (crónicas, eventos, fichas) when present", () => {
@@ -189,7 +238,7 @@ describe("landing load()", () => {
   ) {
     const from = vi.fn((table: string) => {
       const chain: Record<string, unknown> = {};
-      const methods = ["select", "in", "order", "limit", "eq", "not"];
+      const methods = ["select", "in", "order", "limit", "eq", "not", "gt"];
       for (const m of methods) chain[m] = vi.fn(() => chain);
       chain.then = (res: (r: QResult<unknown[]>) => void) =>
         res(
@@ -209,6 +258,28 @@ describe("landing load()", () => {
     (load as unknown as (...a: unknown[]) => Promise<unknown>)({
       locals: { supabase },
     });
+
+  beforeEach(() => {
+    // Load() now fetches the public Discord widget; stub it to a benign 200 so
+    // these data-mapping tests never hit the network.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            presence_count: 0,
+            instant_invite: null,
+            members: [],
+          }),
+      }),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
 
   function thread(over: Partial<Record<string, unknown>> = {}) {
     return {
@@ -230,7 +301,18 @@ describe("landing load()", () => {
   it("returns empty arrays for every section when the DB has no rows", async () => {
     const supabase = makeSupabase({});
     const result = await runLoad(supabase);
-    expect(result).toEqual({ feed: [], cronicas: [], eventos: [], fichas: [] });
+    expect(result).toEqual({
+      feed: [],
+      cronicas: [],
+      eventos: [],
+      fichas: [],
+      discordWidget: {
+        online: 0,
+        members: [],
+        invite: "https://discord.gg/xDJTmZAxPU",
+      },
+      onlineUsers: [],
+    });
   });
 
   it("maps threads/events/characters into the landing DTOs", async () => {
@@ -314,5 +396,174 @@ describe("landing load()", () => {
     expect(result.feed).toHaveLength(1);
     expect(result.eventos).toEqual([]);
     expect(result.fichas).toEqual([]);
+  });
+});
+
+describe("landing load(): discord widget + online users (REQ-DW / REQ-CP-04)", () => {
+  const DISCORD_URL =
+    "https://discord.com/api/guilds/1284639402273931355/widget.json";
+  const STATIC_INVITE = "https://discord.gg/xDJTmZAxPU";
+
+  type QResult<T> = { data: T | null; error: unknown };
+
+  function makeSupabase(
+    rows: Record<string, unknown[]>,
+    errors: Record<string, unknown> = {},
+  ) {
+    const from = vi.fn((table: string) => {
+      const chain: Record<string, unknown> = {};
+      const methods = ["select", "in", "order", "limit", "eq", "not", "gt"];
+      for (const m of methods) chain[m] = vi.fn(() => chain);
+      chain.then = (res: (r: QResult<unknown[]>) => void) =>
+        res(
+          errors[table]
+            ? { data: null, error: errors[table] }
+            : { data: rows[table] ?? null, error: null },
+        );
+      return chain;
+    });
+    return from;
+  }
+
+  const runLoad = (supabase: unknown) =>
+    (load as unknown as (...a: unknown[]) => Promise<unknown>)({
+      locals: { supabase },
+    });
+
+  function mockFetch(status: number, body: unknown) {
+    const res = {
+      ok: status >= 200 && status < 300,
+      status,
+      json: () => Promise.resolve(body),
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(res));
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  type ActiveRow = {
+    username: string;
+    display_name: string | null;
+    avatar_url: string | null;
+  };
+
+  it("maps a 200 Discord widget into discordWidget {online, members, invite}", async () => {
+    mockFetch(200, {
+      presence_count: 7,
+      instant_invite: "https://discord.gg/liveInvite",
+      members: [
+        {
+          username: "Kareth",
+          avatar_url: "https://cdn.discordapp.com/avatars/a1.png",
+        },
+        {
+          username: "Mariela",
+          avatar_url: "https://cdn.discordapp.com/avatars/a2.png",
+        },
+        { id: "bot-id", username: undefined },
+      ],
+    });
+    expect(globalThis.fetch).toHaveBeenCalledTimes(0); // stub in place, not yet called
+    const supabase = makeSupabase({});
+    const result = (await runLoad(supabase)) as {
+      discordWidget: {
+        online: number | null;
+        members: string[];
+        invite: string;
+      };
+    };
+    // fetch was called once with the widget URL and a browser-like UA header
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    const [url, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
+      .calls[0];
+    expect(url).toBe(DISCORD_URL);
+    expect(
+      (init as { headers: Record<string, string> }).headers["User-Agent"],
+    ).toMatch(/RolErrante/);
+    expect(result.discordWidget.online).toBe(7);
+    // members are username-only; the avatar_url is discarded (REQ-DW-03)
+    expect(result.discordWidget.members).toEqual(["Kareth", "Mariela"]);
+    expect(result.discordWidget.invite).toBe("https://discord.gg/liveInvite");
+    expect(JSON.stringify(result)).not.toContain("cdn.discordapp.com");
+  });
+
+  it("degrades discordWidget to null/empty + static invite when Discord returns 403", async () => {
+    mockFetch(403, { message: "forbidden" });
+    const supabase = makeSupabase({});
+    const result = (await runLoad(supabase)) as {
+      discordWidget: {
+        online: number | null;
+        members: string[];
+        invite: string;
+      };
+    };
+    expect(result.discordWidget).toEqual({
+      online: null,
+      members: [],
+      invite: STATIC_INVITE,
+    });
+  });
+
+  it("degrades discordWidget when the Discord fetch throws (no network)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("ENOTFOUND")));
+    const supabase = makeSupabase({});
+    const result = (await runLoad(supabase)) as {
+      discordWidget: {
+        online: number | null;
+        members: string[];
+        invite: string;
+      };
+    };
+    expect(result.discordWidget).toEqual({
+      online: null,
+      members: [],
+      invite: STATIC_INVITE,
+    });
+  });
+
+  it("maps active profiles into onlineUsers with public-safe columns (REQ-CP-04)", async () => {
+    mockFetch(200, { presence_count: 0, instant_invite: null, members: [] });
+    const active: ActiveRow[] = [
+      {
+        username: "kareth",
+        display_name: "Kareth",
+        avatar_url: "https://x.supabase.co/avatar1.png",
+      },
+      { username: "mariela", display_name: null, avatar_url: null },
+    ];
+    const supabase = { from: makeSupabase({ profiles: active }) };
+    const result = (await runLoad(supabase)) as {
+      onlineUsers: {
+        username: string;
+        displayName: string;
+        avatarUrl: string | null;
+      }[];
+    };
+    expect(result.onlineUsers).toEqual([
+      {
+        username: "kareth",
+        displayName: "Kareth",
+        avatarUrl: "https://x.supabase.co/avatar1.png",
+      },
+      { username: "mariela", displayName: "mariela", avatarUrl: null },
+    ]);
+  });
+
+  it("returns an empty onlineUsers array when no profiles are active (REQ-CP-04)", async () => {
+    mockFetch(200, { presence_count: 0, instant_invite: null, members: [] });
+    const supabase = { from: makeSupabase({ profiles: [] }) };
+    const result = (await runLoad(supabase)) as { onlineUsers: unknown[] };
+    expect(result.onlineUsers).toEqual([]);
+  });
+
+  it("degrades onlineUsers to [] when the profiles query throws (REQ-CP-04)", async () => {
+    mockFetch(200, { presence_count: 0, instant_invite: null, members: [] });
+    const supabase = {
+      from: makeSupabase({}, { profiles: { message: "db down" } }),
+    };
+    const result = (await runLoad(supabase)) as { onlineUsers: unknown[] };
+    expect(result.onlineUsers).toEqual([]);
   });
 });

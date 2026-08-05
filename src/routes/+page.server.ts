@@ -137,44 +137,116 @@ type CharRow = {
   owner: ThreadAuthor | null;
 };
 
+// --- Community presence (landing-community) ----------------------------------
+// Discord widget: public JSON, fetched server-side only (the widget URL must
+// never reach the client). No CSP change: member names only, Discord avatar
+// URLs are discarded (REQ-DW-03). The static invite is the fallback when
+// Discord is unreachable or returns non-2xx.
+const DISCORD_WIDGET_URL = 'https://discord.com/api/guilds/1284639402273931355/widget.json';
+const STATIC_DISCORD_INVITE = 'https://discord.gg/xDJTmZAxPU';
+const PRESENCE_WINDOW_MS = 3 * 60_000;
+
+export interface DiscordWidget {
+  online: number | null;
+  members: string[];
+  invite: string;
+}
+
+export interface OnlineUser {
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+const EMPTY_DISCORD: DiscordWidget = {
+  online: null,
+  members: [],
+  invite: STATIC_DISCORD_INVITE,
+};
+
+type DiscordWidgetRow = {
+  presence_count?: number;
+  instant_invite?: string | null;
+  members?: Array<{ username?: string }>;
+};
+
+async function fetchDiscordWidget(): Promise<DiscordWidget> {
+  try {
+    const res = await fetch(DISCORD_WIDGET_URL, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RolErrante/1.0)' },
+    });
+    if (!res.ok) return EMPTY_DISCORD;
+    const json = (await res.json()) as DiscordWidgetRow;
+    return {
+      online: typeof json.presence_count === 'number' ? json.presence_count : null,
+      members: (json.members ?? [])
+        .map((m) => m.username)
+        .filter((u): u is string => typeof u === 'string' && u.length > 0),
+      invite:
+        typeof json.instant_invite === 'string' && json.instant_invite.length > 0
+          ? json.instant_invite
+          : STATIC_DISCORD_INVITE,
+    };
+  } catch (err) {
+    console.error('[landing] widget de Discord degradado a estado vacío', err);
+    return EMPTY_DISCORD;
+  }
+}
+
+type OnlineUserRow = {
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+};
+
 export const load: PageServerLoad = async ({ locals: { supabase } }) => {
-  const [feedRows, cronicaRows, eventRows, charRows] = await Promise.all([
-    rowsOrEmpty<FeedThreadRow>(() =>
-      supabase
-        .from('threads')
-        .select(
-          'id, title, content_type, status, is_locked, is_sticky, updated_at, created_at, body, author:author_id(username, display_name), category:category_id(name)',
-        )
-        .in('status', ['abierto', 'aprobado'])
-        .order('updated_at', { ascending: false })
-        .limit(6),
-    ),
-    rowsOrEmpty<FeedThreadRow>(() =>
-      supabase
-        .from('threads')
-        .select('id, title, status, updated_at, body, author:author_id(username, display_name)')
-        .eq('content_type', 'historia')
-        .in('status', ['abierto', 'aprobado'])
-        .order('updated_at', { ascending: false })
-        .limit(3),
-    ),
-    rowsOrEmpty<EventRow>(() =>
-      supabase
-        .from('events')
-        .select('id, title, description, starts_at, status, creator:creator_id(username, display_name)')
-        .in('status', ['publicado', 'en_curso', 'finalizacion_pendiente'])
-        .order('starts_at', { ascending: true, nullsFirst: false })
-        .limit(4),
-    ),
-    rowsOrEmpty<CharRow>(() =>
-      supabase
-        .from('characters')
-        .select('id, name, avatar_url, status, updated_at, race:race_id(name, group_name), owner:player_id(username, display_name)')
-        .in('status', ['aprobado', 'pendiente'])
-        .order('updated_at', { ascending: false })
-        .limit(8),
-    ),
-  ]);
+  const [feedRows, cronicaRows, eventRows, charRows, discordWidget, onlineRows] =
+    await Promise.all([
+      rowsOrEmpty<FeedThreadRow>(() =>
+        supabase
+          .from('threads')
+          .select(
+            'id, title, content_type, status, is_locked, is_sticky, updated_at, created_at, body, author:author_id(username, display_name), category:category_id(name)',
+          )
+          .in('status', ['abierto', 'aprobado'])
+          .order('updated_at', { ascending: false })
+          .limit(6),
+      ),
+      rowsOrEmpty<FeedThreadRow>(() =>
+        supabase
+          .from('threads')
+          .select('id, title, status, updated_at, body, author:author_id(username, display_name)')
+          .eq('content_type', 'historia')
+          .in('status', ['abierto', 'aprobado'])
+          .order('updated_at', { ascending: false })
+          .limit(3),
+      ),
+      rowsOrEmpty<EventRow>(() =>
+        supabase
+          .from('events')
+          .select('id, title, description, starts_at, status, creator:creator_id(username, display_name)')
+          .in('status', ['publicado', 'en_curso', 'finalizacion_pendiente'])
+          .order('starts_at', { ascending: true, nullsFirst: false })
+          .limit(4),
+      ),
+      rowsOrEmpty<CharRow>(() =>
+        supabase
+          .from('characters')
+          .select('id, name, avatar_url, status, updated_at, race:race_id(name, group_name), owner:player_id(username, display_name)')
+          .in('status', ['aprobado', 'pendiente'])
+          .order('updated_at', { ascending: false })
+          .limit(8),
+      ),
+      fetchDiscordWidget(),
+      rowsOrEmpty<OnlineUserRow>(() =>
+        supabase
+          .from('profiles')
+          .select('username, display_name, avatar_url')
+          .gt('last_active_at', new Date(Date.now() - PRESENCE_WINDOW_MS).toISOString())
+          .order('last_active_at', { ascending: false })
+          .limit(12),
+      ),
+    ]);
 
   const now = Date.now();
   const feed: LandingFeedItem[] = feedRows.map((t) => ({
@@ -225,5 +297,11 @@ export const load: PageServerLoad = async ({ locals: { supabase } }) => {
       updatedAt: c.updated_at,
     }));
 
-  return { feed, cronicas, eventos, fichas };
+  const onlineUsers: OnlineUser[] = onlineRows.map((r) => ({
+    username: r.username,
+    displayName: r.display_name || r.username,
+    avatarUrl: r.avatar_url,
+  }));
+
+  return { feed, cronicas, eventos, fichas, discordWidget, onlineUsers };
 };

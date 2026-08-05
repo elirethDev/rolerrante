@@ -6,6 +6,7 @@
   import Tag from '$lib/components/ui/Tag.svelte';
   import SectionHead from '$lib/components/landing/SectionHead.svelte';
   import { formatRelativeTime } from '$lib/utils';
+  import { startHeartbeat } from '$lib/presence';
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
@@ -37,20 +38,34 @@
     };
   });
 
-  // --- Discord widget: static demo numbers (no Discord presence API). Replace
-  // with real values once a bot/API exposes them. DISCORD_INVITE is the real
-  // invite the community configured.
-  const DISCORD_INVITE = 'https://discord.gg/xDJTmZAxPU';
+  // --- Discord widget: live data from +page.server.ts load() (REQ-DW). The
+  // member total stays static because the Discord widget JSON exposes no total.
   const MEMBERS = 312;
-  const ONLINE = 128;
 
-  // --- "Conectados": static demo list (no presence backend). Placeholder only.
-  const ONLINE_USERS = [
-    { name: 'Kareth', activity: 'escribiendo', place: 'en Crínicas', ring: true },
-    { name: 'Mariela', activity: '', place: 'en Eventos', ring: false },
-    { name: 'Raviel', activity: '', place: 'en Fichas', ring: false },
-    { name: 'Torgal', activity: '', place: 'en La Taberna', ring: false },
-  ];
+  // --- "Conectados" + Discord: live presence data (REQ-DW / REQ-CP-04).
+  const onlineLabel = $derived(data.discordWidget.online ?? '—');
+
+  // --- Presence heartbeat (REQ-CP-03): only for logged-in users, landing page
+  // only. Paused while the tab is hidden, resumes on visible/online, stops on
+  // pagehide/beforeunload/destroy. The scheduling logic lives in $lib/presence
+  // (unit-tested); here we only wire it to the browser targets.
+  $effect(() => {
+    if (!data.user) return;
+    return startHeartbeat({
+      send: () => {
+        void fetch('/api/presence/heartbeat', { method: 'POST', keepalive: true }).catch(() => {});
+      },
+      visibility: () => document.visibilityState,
+      addEventListener: (type, handler) => {
+        if (type === 'visibilitychange') document.addEventListener(type, handler);
+        else window.addEventListener(type, handler);
+      },
+      removeEventListener: (type, handler) => {
+        if (type === 'visibilitychange') document.removeEventListener(type, handler);
+        else window.removeEventListener(type, handler);
+      },
+    });
+  });
 
   const characterHref = (id: string) => resolve(`/personajes/${id}` as any) as string;
   const threadHref = (id: string) => resolve(`/foro/${id}` as any) as string;
@@ -160,7 +175,7 @@
         <span class="ds-avatar" aria-hidden="true">RE</span>
         <div>
           <div class="ds-name">Rol Errante · Discord</div>
-          <div class="ds-online">{ONLINE} en línea</div>
+          <div class="ds-online">{onlineLabel} en línea</div>
         </div>
       </div>
       <div class="ds-body">
@@ -170,9 +185,18 @@
         </p>
         <div class="ds-stats" data-testid="discord-stats">
           <span><b>{MEMBERS}</b> miembros</span>
-          <span><b>{ONLINE}</b> en línea</span>
+          <span><b>{onlineLabel}</b> en línea</span>
         </div>
-        <a class="ds-btn" href={DISCORD_INVITE} target="_blank" rel="noopener noreferrer">
+        {#if data.discordWidget.members.length > 0}
+          <div class="ds-members" aria-label="Miembros conectados de Discord">
+            {#each data.discordWidget.members as name (name)}
+              <span class="ds-member">{name}</span>
+            {/each}
+          </div>
+        {:else}
+          <p class="ds-empty">Sin miembros conectados ahora</p>
+        {/if}
+        <a class="ds-btn" href={data.discordWidget.invite} target="_blank" rel="noopener noreferrer">
           Unirse a Discord
         </a>
       </div>
@@ -180,17 +204,17 @@
 
     <div class="users-online" aria-label="Quién está conectado">
       <span class="kicker">Conectados</span>
-      {#each ONLINE_USERS as u (u.name)}
-        <div class="uo-row">
-          <Avatar name={u.name} size="sm" ring={u.ring} alt={u.name} />
-          <span class="who">{u.name}</span>
-          {#if u.activity}
-            <span class="badge badge-success badge-xs">{u.activity}</span>
-          {/if}
-          <span class="uo-tag">{u.place}</span>
-        </div>
-      {/each}
-      <a class="uo-more" href={resolve('/foro')}>Ver toda la lista ({ONLINE_USERS.length}) →</a>
+      {#if data.onlineUsers.length > 0}
+        {#each data.onlineUsers as u (u.username)}
+          <div class="uo-row">
+            <Avatar src={u.avatarUrl} name={u.displayName} size="sm" alt={u.displayName} />
+            <span class="who">{u.displayName}</span>
+          </div>
+        {/each}
+        <a class="uo-more" href={resolve('/foro')}>Ver toda la lista ({data.onlineUsers.length}) →</a>
+      {:else}
+        <p class="uo-empty">Nadie conectado en este momento.</p>
+      {/if}
     </div>
   </aside>
 </div>
@@ -744,6 +768,24 @@
     transform: translateY(-1px);
     color: #1a1508;
   }
+  .ds-members {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .ds-member {
+    font-size: 0.72rem;
+    color: var(--color-azeroth-text-soft);
+    background: var(--color-azeroth-surface-2);
+    border: 1px solid var(--color-azeroth-border);
+    border-radius: 999px;
+    padding: 2px 9px;
+  }
+  .ds-empty {
+    font-size: 0.78rem;
+    color: var(--color-azeroth-muted);
+    margin: 0;
+  }
 
   /* conectados */
   .users-online {
@@ -769,13 +811,6 @@
     font-weight: 600;
     color: var(--color-azeroth-text-high);
   }
-  .uo-tag {
-    margin-left: auto;
-    font-size: 0.68rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--color-azeroth-faint);
-  }
   .uo-more {
     font-size: 0.78rem;
     color: var(--color-azeroth-link);
@@ -785,6 +820,12 @@
   }
   .uo-more:hover {
     text-decoration: underline;
+  }
+  .uo-empty {
+    font-size: 0.8rem;
+    color: var(--color-azeroth-muted);
+    margin: 0;
+    padding: 4px 0;
   }
 
   /* media cards (crónicas / eventos) */
