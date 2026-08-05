@@ -159,6 +159,21 @@ describe('gm/+page.server.ts', () => {
   });
 
   describe('actions disambiguation', () => {
+    it('approve passes an optional note through to the matching RPC', async () => {
+      const rpc = {
+        approve_character: vi.fn().mockReturnValue({ error: null }),
+        approve_story: vi.fn().mockReturnValue({ error: null }),
+      };
+      const supabase = makeSupabase({ rpc });
+      const locals = makeLocals(supabase, 'gm');
+
+      await actionFn('approve')(makeEvent(locals, makeForm({ entityType: 'ficha', entityId: 'c1', notes: 'n' })));
+      expect(rpc.approve_character).toHaveBeenCalledWith({ p_character_id: 'c1', p_notes: 'n' });
+
+      await actionFn('approve')(makeEvent(locals, makeForm({ entityType: 'cronica', entityId: 's1', notes: 'n' })));
+      expect(rpc.approve_story).toHaveBeenCalledWith({ p_story_id: 's1', p_notes: 'n' });
+    });
+
     it('approve routes by entity type to the matching existing RPC', async () => {
       const rpc = {
         approve_character: vi.fn().mockReturnValue({ error: null }),

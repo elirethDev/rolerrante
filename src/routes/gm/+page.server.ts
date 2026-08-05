@@ -101,10 +101,11 @@ export const actions: Actions = {
     const entityType = parseEntityType(String(form.get('entityType') ?? ''));
     const entityId = String(form.get('entityId') ?? '');
     const xp = parseInt(String(form.get('xp') ?? '0'), 10);
+    const notes = String(form.get('notes') ?? '');
 
     if (!entityType || !entityId) return fail(400, { message: 'Datos de entidad inválidos' });
 
-    const call = resolveActionRpc(entityType, 'approve', entityId, { xp });
+    const call = resolveActionRpc(entityType, 'approve', entityId, { xp, notes });
     if (!call) return fail(400, { message: 'Acción no soportada para este tipo' });
 
     const { error: rpcError } = await supabase.rpc(call.rpc, call.params as never);

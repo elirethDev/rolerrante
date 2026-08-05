@@ -150,15 +150,24 @@ export function resolveActionRpc(
   const notes = opts.notes ?? '';
   const common: Record<WorklistItemType, { approve: RpcCall; reject: RpcCall | null }> = {
     ficha: {
-      approve: { rpc: 'approve_character', params: { p_character_id: id } },
+      approve: {
+        rpc: 'approve_character',
+        params: notes ? { p_character_id: id, p_notes: notes } : { p_character_id: id },
+      },
       reject: { rpc: 'reject_character', params: { p_character_id: id, p_notes: notes } },
     },
     cronica: {
-      approve: { rpc: 'approve_story', params: { p_story_id: id } },
+      approve: {
+        rpc: 'approve_story',
+        params: notes ? { p_story_id: id, p_notes: notes } : { p_story_id: id },
+      },
       reject: { rpc: 'reject_story', params: { p_story_id: id, p_notes: notes } },
     },
     solicitud: {
-      approve: { rpc: 'approve_skill_request', params: { p_request_id: id } },
+      approve: {
+        rpc: 'approve_skill_request',
+        params: notes ? { p_request_id: id, p_notes: notes } : { p_request_id: id },
+      },
       reject: { rpc: 'reject_skill_request', params: { p_request_id: id, p_notes: notes } },
     },
     evento: {

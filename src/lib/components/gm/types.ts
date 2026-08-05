@@ -2,6 +2,14 @@
 
 export type WorklistItemType = 'ficha' | 'evento' | 'cronica' | 'solicitud';
 
+/** Human labels for the worklist type tags (design gm.html `[data-type]` tags). */
+export const TYPE_LABELS: Record<WorklistItemType, string> = {
+  ficha: 'Ficha',
+  evento: 'Evento',
+  cronica: 'Crónica',
+  solicitud: 'Solicitud',
+};
+
 /** A single row of the unified GM pending queue (design `WorklistItem`). */
 export interface WorklistItem {
   id: string;

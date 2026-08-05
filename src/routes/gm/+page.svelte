@@ -35,7 +35,7 @@
   // the use:enhance callback after success, failure, or navigation.
   let submitting = $state(false);
 
-  function submitApprove(item: WorklistItem) {
+  function submitApprove(item: WorklistItem, notes = '') {
     if (submitting) return;
     if (item.type === 'evento') {
       // finalize_event requires XP per participant; the server defaults to 0
@@ -50,13 +50,16 @@
     form.action = `?/${'approve'}`;
     form.querySelector<HTMLInputElement>('input[name="entityType"]')!.value = item.type;
     form.querySelector<HTMLInputElement>('input[name="entityId"]')!.value = item.entityId;
+    form.querySelector<HTMLInputElement>('input[name="notes"]')!.value = notes;
     submitting = true;
     form.requestSubmit();
   }
 
-  function submitReject(item: WorklistItem) {
+  function submitReject(item: WorklistItem, notes = '') {
     if (submitting) return;
-    const reason = window.prompt('Motivo del rechazo (obligatorio):', item.name);
+    // A reason is required (spec R4): prefer the inline note, fall back to the
+    // prompt when the GM approved/rejected without opening the comment editor.
+    const reason = notes.trim() || window.prompt('Motivo del rechazo (obligatorio):', item.name);
     if (!reason) return;
     form.action = `?/${'reject'}`;
     form.querySelector<HTMLInputElement>('input[name="entityType"]')!.value = item.type;
@@ -100,15 +103,24 @@
   {:else if filtered.length === 0}
     <EmptyState title="Sin pendientes" icon={Shield} />
   {:else}
-    {#each filtered as item (item.id)}
-      <WorklistCard
-        {item}
-        busy={submitting}
-        onApprove={() => submitApprove(item)}
-        onReject={() => submitReject(item)}
-        onReview={() => review(item)}
-      />
-    {/each}
+    <div class="panel">
+      <div class="panel-head">
+        <span class="text-azeroth-gold shrink-0"><Shield size={18} /></span>
+        <h2>Cola de revisión</h2>
+        <span class="meta">{filtered.length} pendientes</span>
+      </div>
+      <div class="panel-body py-4">
+        {#each filtered as item (item.id)}
+          <WorklistCard
+            {item}
+            busy={submitting}
+            onApprove={(it, n) => submitApprove(it, n)}
+            onReject={(it, n) => submitReject(it, n)}
+            onReview={() => review(item)}
+          />
+        {/each}
+      </div>
+    </div>
   {/if}
 </div>
 
