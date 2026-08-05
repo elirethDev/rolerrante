@@ -1210,6 +1210,10 @@ export type Database = {
         Args: { p_notes: string; p_story_id: string }
         Returns: undefined
       }
+      request_character_review: {
+        Args: { p_character_id: string }
+        Returns: undefined
+      }
       resolve_report: {
         Args: { p_justification: string; p_report_id: string; p_status: string }
         Returns: undefined
@@ -1247,6 +1251,7 @@ export type Database = {
         | "banear"
         | "reportar_resuelto"
         | "reportar_descartado"
+        | "solicitar_revision"
       event_status:
         | "publicado"
         | "en_curso"

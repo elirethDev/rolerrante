@@ -2,6 +2,47 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { isGMOrAdmin, requireAuth, validateImageUrl } from '$lib/auth';
 import type { Actions, PageServerLoad } from './$types';
 
+type EditableFields = {
+  name: string;
+  raceId: string;
+  age: number;
+  sex: string;
+  physicalDescription: string;
+  manaSource: 'I' | 'E';
+  avatarUrl: string;
+  status: 'borrador' | 'pendiente';
+  attrs: Record<string, number>;
+};
+
+function parseCharacterFields(form: FormData): EditableFields {
+  return {
+    name: String(form.get('name') ?? '').trim(),
+    raceId: String(form.get('race_id') ?? ''),
+    age: Number(form.get('age') ?? 0),
+    sex: String(form.get('sex') ?? ''),
+    physicalDescription: String(form.get('physical_description') ?? ''),
+    manaSource: String(form.get('mana_source') ?? 'I') as 'I' | 'E',
+    avatarUrl: String(form.get('avatar_url') ?? '').trim(),
+    status: form.get('status') === 'borrador' ? 'borrador' : 'pendiente',
+    attrs: {
+      attr_fis: Number(form.get('attr_fis') ?? 0),
+      attr_des: Number(form.get('attr_des') ?? 0),
+      attr_int: Number(form.get('attr_int') ?? 0),
+      attr_per: Number(form.get('attr_per') ?? 0),
+      attr_esp: Number(form.get('attr_esp') ?? 0),
+    },
+  };
+}
+
+function validateCharacterFields(fields: EditableFields): Record<string, string> {
+  const errors: Record<string, string> = {};
+  if (!fields.name) errors.name = 'El nombre es obligatorio';
+  if (!fields.raceId) errors.race = 'Selecciona una raza';
+  const avatarCheck = validateImageUrl(fields.avatarUrl);
+  if (fields.avatarUrl && !avatarCheck.valid) errors.avatar_url = 'URL de avatar no válida';
+  return errors;
+}
+
 export const load: PageServerLoad = async ({ params, locals: { user, profile, supabase } }) => {
   requireAuth({ user, profile });
 
@@ -19,7 +60,7 @@ export const load: PageServerLoad = async ({ params, locals: { user, profile, su
 
   const { data: races } = await supabase.from('races').select('*').order('name');
 
-  return { character, races: races ?? [], isStaff };
+  return { character, races: races ?? [], isStaff, isOwner };
 };
 
 export const actions: Actions = {
@@ -38,50 +79,72 @@ export const actions: Actions = {
     const isStaff = isGMOrAdmin(profile?.role ?? null);
     if (!isOwner && !isStaff) return fail(403, { message: 'No puedes editar este personaje' });
 
-    const name = String(form.get('name') ?? '').trim();
-    const raceId = String(form.get('race_id') ?? '');
-    const age = Number(form.get('age') ?? 0);
-    const sex = String(form.get('sex') ?? '');
-    const physicalDescription = String(form.get('physical_description') ?? '');
-    const manaSource = String(form.get('mana_source') ?? 'I') as 'I' | 'E';
-    const avatarUrl = String(form.get('avatar_url') ?? '').trim();
-    const status = form.get('status') === 'borrador' ? 'borrador' : 'pendiente';
-
-    const attrs = {
-      attr_fis: Number(form.get('attr_fis') ?? 0),
-      attr_des: Number(form.get('attr_des') ?? 0),
-      attr_int: Number(form.get('attr_int') ?? 0),
-      attr_per: Number(form.get('attr_per') ?? 0),
-      attr_esp: Number(form.get('attr_esp') ?? 0),
-    };
-
-    const errors: Record<string, string> = {};
-    if (!name) errors.name = 'El nombre es obligatorio';
-    if (!raceId) errors.race = 'Selecciona una raza';
-
-    const avatarCheck = validateImageUrl(avatarUrl);
-    if (avatarUrl && !avatarCheck.valid) errors.avatar_url = 'URL de avatar no válida';
-
+    const fields = parseCharacterFields(form);
+    const errors = validateCharacterFields(fields);
     if (Object.keys(errors).length) return fail(400, { errors, message: 'Corrige los campos marcados en rojo' });
 
     const { error: updateError } = await supabase
       .from('characters')
       .update({
-        name,
-        race_id: raceId,
-        age,
-        sex,
-        physical_description: physicalDescription,
-        mana_source: manaSource,
-        ...attrs,
-        avatar_url: avatarUrl || null,
-        status,
+        name: fields.name,
+        race_id: fields.raceId,
+        age: fields.age,
+        sex: fields.sex,
+        physical_description: fields.physicalDescription,
+        mana_source: fields.manaSource,
+        ...fields.attrs,
+        avatar_url: fields.avatarUrl || null,
+        status: fields.status,
         reviewed_by: null,
         reviewed_at: null,
       })
       .eq('id', params.id);
 
     if (updateError) return fail(400, { message: updateError.message });
+
+    throw redirect(303, `/personajes/${params.id}`);
+  },
+  // Re-approval loop: guarda el contenido editado con la sesión del propietario
+  // y delega la transición a revisión (status='pendiente' + limpieza de review_*)
+  // al RPC SECURITY DEFINER request_character_review, porque review_notes queda
+  // fuera del GRANT UPDATE del propietario.
+  request_review: async ({ request, params, locals: { supabase, user, profile } }) => {
+    requireAuth({ user, profile });
+    const form = await request.formData();
+
+    const { data: character } = await supabase
+      .from('characters')
+      .select('*')
+      .eq('id', params.id)
+      .single();
+    if (!character) return fail(404, { message: 'Personaje no encontrado' });
+
+    if (character.player_id !== user!.id) {
+      return fail(403, { message: 'Solo el propietario puede enviar la ficha a revisión' });
+    }
+
+    const fields = parseCharacterFields(form);
+    const errors = validateCharacterFields(fields);
+    if (Object.keys(errors).length) return fail(400, { errors, message: 'Corrige los campos marcados en rojo' });
+
+    const { error: updateError } = await supabase
+      .from('characters')
+      .update({
+        name: fields.name,
+        race_id: fields.raceId,
+        age: fields.age,
+        sex: fields.sex,
+        physical_description: fields.physicalDescription,
+        mana_source: fields.manaSource,
+        ...fields.attrs,
+        avatar_url: fields.avatarUrl || null,
+      })
+      .eq('id', params.id);
+
+    if (updateError) return fail(400, { message: updateError.message });
+
+    const { error: rpcError } = await supabase.rpc('request_character_review', { p_character_id: params.id });
+    if (rpcError) return fail(400, { message: rpcError.message });
 
     throw redirect(303, `/personajes/${params.id}`);
   },

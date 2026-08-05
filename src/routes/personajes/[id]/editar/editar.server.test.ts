@@ -8,11 +8,14 @@ import { load, actions } from './+page.server';
 const loadFn = load as unknown as (...args: unknown[]) => Promise<any>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const defaultFn = actions.default as unknown as (...args: unknown[]) => Promise<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const requestReviewFn = actions.request_review as unknown as (...args: unknown[]) => Promise<any>;
 
 // ---------------------------------------------------------------------------
 // Minimal chainable supabase mock for the character edit route. `from('characters')`
 // supports `.select().eq().single()` (load + ownership check) and `.update().eq()`
-// (the save), mirroring the stories editar.server.test.ts factory.
+// (the save), mirroring the stories editar.server.test.ts factory. `rpc()` mocks
+// the request_character_review SECURITY DEFINER call.
 // ---------------------------------------------------------------------------
 type SingleResult = { data: unknown; error: unknown } | null;
 
@@ -20,7 +23,13 @@ export function makeSupabase(fixture: {
   loadCharacter?: SingleResult;
   racesList?: unknown[];
   updateCharacter?: Mock;
+  rpc?: Mock;
+  rpcError?: unknown;
 }) {
+  const rpc = (fn: string, args: unknown) => {
+    if (fixture.rpc) fixture.rpc(fn, args);
+    return Promise.resolve({ data: null, error: fixture.rpcError ?? null });
+  };
   const from = (table: string) => {
     const b: Record<string, unknown> = {
       select: () => b,
@@ -43,7 +52,7 @@ export function makeSupabase(fixture: {
     };
     return b;
   };
-  return { from };
+  return { from, rpc };
 }
 
 const makeUser = (id = 'user-1') => ({ id } as never);
@@ -204,5 +213,105 @@ describe('editar route default action — draft state machine (REQ-CFD-02.1/02.2
       () => {},
     );
     expect(updateCharacter).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('editar route request_review action — re-approval loop', () => {
+  it('fails 403 for a non-owner, non-staff player and never calls the RPC', async () => {
+    const updateCharacter = vi.fn();
+    const rpc = vi.fn();
+    const supabase = makeSupabase({
+      loadCharacter: { data: { id: 'char-1', player_id: 'user-999', status: 'aprobado' }, error: null },
+      updateCharacter,
+      rpc,
+    });
+    const res = await requestReviewFn(makeEvent(makeLocals(supabase)) as never);
+    expect(res.status).toBe(403);
+    expect(updateCharacter).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('fails 403 for staff editing another player ficha (owner-scoped RPC)', async () => {
+    const updateCharacter = vi.fn();
+    const rpc = vi.fn();
+    const supabase = makeSupabase({
+      loadCharacter: { data: { id: 'char-1', player_id: 'user-999', status: 'aprobado' }, error: null },
+      updateCharacter,
+      rpc,
+    });
+    const res = await requestReviewFn(makeEvent(makeLocals(supabase, makeUser(), 'gm')) as never);
+    expect(res.status).toBe(403);
+    expect(updateCharacter).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('saves content (content columns only) and calls request_character_review, then redirects', async () => {
+    const updateCharacter = vi.fn();
+    const rpc = vi.fn();
+    const supabase = makeSupabase({
+      loadCharacter: {
+        data: { id: 'char-1', player_id: 'user-1', status: 'aprobado', review_notes: 'visto', reviewed_by: 'gm-1', reviewed_at: '2026-01-01' },
+        error: null,
+      },
+      updateCharacter,
+      rpc,
+    });
+    await requestReviewFn(makeEvent(makeLocals(supabase)) as never).then(
+      () => {
+        throw new Error('expected a redirect to be thrown');
+      },
+      (e) => {
+        expect((e as { status?: number }).status).toBe(303);
+        expect((e as { location?: string }).location).toBe('/personajes/char-1');
+      },
+    );
+
+    // content is saved via the owner session, but the review transition is
+    // delegated to the SECURITY DEFINER RPC (status/review_* are not owner writes)
+    const updateArg = updateCharacter.mock.calls[0][0] as Record<string, unknown>;
+    expect(updateArg.name).toBe('Aragorn');
+    expect(updateArg.race_id).toBe('r1');
+    expect(updateArg).not.toHaveProperty('status');
+    expect(updateArg).not.toHaveProperty('reviewed_by');
+    expect(updateArg).not.toHaveProperty('reviewed_at');
+
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc.mock.calls[0][0]).toBe('request_character_review');
+    expect(rpc.mock.calls[0][1]).toEqual({ p_character_id: 'char-1' });
+  });
+
+  it('rejects an invalid avatar_url with 400 and never saves nor calls the RPC', async () => {
+    const updateCharacter = vi.fn();
+    const rpc = vi.fn();
+    const supabase = makeSupabase({
+      loadCharacter: { data: { id: 'char-1', player_id: 'user-1', status: 'aprobado' }, error: null },
+      updateCharacter,
+      rpc,
+    });
+    const res = await requestReviewFn(
+      makeEvent(
+        makeLocals(supabase),
+        { id: 'char-1' },
+        'name=Aragorn&race_id=r1&age=87&sex=Hombre&mana_source=I&status=pendiente&attr_fis=5&attr_des=5&attr_int=5&attr_per=5&attr_esp=5&avatar_url=javascript:alert(1)',
+      ) as never,
+    );
+    expect(res.status).toBe(400);
+    expect(updateCharacter).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('fails 400 with the RPC message when request_character_review errors', async () => {
+    const updateCharacter = vi.fn();
+    const rpc = vi.fn();
+    const supabase = makeSupabase({
+      loadCharacter: { data: { id: 'char-1', player_id: 'user-1', status: 'aprobado' }, error: null },
+      updateCharacter,
+      rpc,
+      rpcError: new Error('boom'),
+    });
+    const res = await requestReviewFn(makeEvent(makeLocals(supabase)) as never);
+    expect(res.status).toBe(400);
+    expect(updateCharacter).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenCalledTimes(1);
   });
 });

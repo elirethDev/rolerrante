@@ -159,8 +159,19 @@
     </div>
 
     <!-- BOTONES -->
-    <div class="flex gap-3 items-center">
+    <div class="flex flex-wrap gap-3 items-center">
       <SubmitButton class="font-cinzel" pending={pending}>Guardar cambios</SubmitButton>
+      {#if data.isOwner}
+        <button
+          type="submit"
+          formaction="?/request_review"
+          class="btn btn-secondary font-cinzel"
+          disabled={pending}
+          aria-busy={pending}
+        >
+          Guardar y enviar a revisión
+        </button>
+      {/if}
       <a href={resolve(`/personajes/${character.id}`)} class="btn btn-ghost">Cancelar</a>
     </div>
   </form>
