@@ -1,44 +1,46 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { onDestroy } from 'svelte';
   import Field from '$lib/components/ui/Field.svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import Avatar from '$lib/components/ui/Avatar.svelte';
+  import AvatarCropper from '$lib/components/ui/AvatarCropper.svelte';
   import { formatDate, roleLabel } from '$lib/utils';
   import type { ActivityItem } from './+page.server';
   import type { ActionData, PageData } from './$types';
 
-  export let data: PageData;
-  export let form: ActionData;
+  let { data, form }: { data: PageData; form: ActionData } = $props();
 
-  $: profile = data.profile;
-  $: kpis = data.kpis ?? { personajes: 0, cronicas: 0, eventos: 0, reputacion: 0 };
-  $: actividad = data.actividad ?? [];
+  let profile = $derived(data.profile);
+  let kpis = $derived(data.kpis ?? { personajes: 0, cronicas: 0, eventos: 0, reputacion: 0 });
+  let actividad = $derived(data.actividad ?? []);
 
-  // Avatar capture (ON THIS PAGE only): a local file becomes a preview via
-  // ObjectURL and, on "Usar imagen", its object URL is written into the
-  // avatar_url field so the existing save action persists it as-is. Real
-  // avatar storage/upload is out of scope (follow-up) — the object URL only
-  // lives for this session.
-  let avatarUrlInput: HTMLInputElement;
-  let avatarPreview: string | null = null;
+  // Avatar upload UI (REQ-AVUP-01/05): pick a local file, crop it to a fixed
+  // 1:1 square, then the WebP File is attached to the form submit as
+  // `avatar_file`. The server validates and persists the stored public URL.
+  let avatarFile = $state<File | null>(null);
+  let pickerKey = $state(0);
+  let cropSrc = $state<string | null>(null);
 
   function onPickFile(event: Event) {
     const input = event.currentTarget as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
-    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
-    avatarPreview = URL.createObjectURL(file);
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    cropSrc = URL.createObjectURL(file);
+    avatarFile = null;
   }
 
-  function useAvatarPreview() {
-    if (avatarPreview && avatarUrlInput) {
-      avatarUrlInput.value = avatarPreview;
-    }
+  function onAvatarFile(file: File) {
+    avatarFile = file;
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    cropSrc = null;
+    pickerKey += 1;
   }
 
-  onDestroy(() => {
-    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+  $effect(() => {
+    return () => {
+      if (cropSrc) URL.revokeObjectURL(cropSrc);
+    };
   });
 </script>
 
@@ -140,14 +142,25 @@
 
   <div class="panel">
     <div class="panel-head"><h2>Editar identidad</h2></div>
-    <form method="POST" use:enhance class="p-6 space-y-4">
+    <form
+      method="POST"
+      enctype="multipart/form-data"
+      use:enhance={({ formData }) => {
+        // Attach the cropped WebP file (if any) so the server action can
+        // validate + upload it (REQ-AVUP-05 multipart submit).
+        if (avatarFile) {
+          formData.set('avatar_file', avatarFile, avatarFile.name);
+        }
+      }}
+      class="p-6 space-y-4"
+    >
       <Field label="Nombre a mostrar">
         {#snippet ctrl()}
           <input id="display_name" name="display_name" type="text" class="input" value={profile.display_name ?? ''} />
         {/snippet}
       </Field>
 
-      <Field label="URL de avatar">
+      <Field label="Avatar">
         {#snippet ctrl()}
           <input
             id="avatar_url"
@@ -156,27 +169,28 @@
             class="input"
             value={profile.avatar_url ?? ''}
             placeholder="https://..."
-            bind:this={avatarUrlInput}
           />
-          <div class="mt-3 flex flex-wrap items-center gap-3">
+          <div class="divider text-azeroth-muted text-xs">o subí una imagen</div>
+          {#key pickerKey}
             <input
+              id="avatar_pick"
               type="file"
-              accept="image/*"
+              accept="image/png,image/jpeg,image/webp"
               class="file-input file-input-sm w-full max-w-xs"
               aria-label="Cargar imagen de avatar"
               onchange={onPickFile}
             />
-            {#if avatarPreview}
-              <span class="avatar">
-                <span class="w-14 rounded">
-                  <img src={avatarPreview} alt="Vista previa del avatar" class="rounded" />
-                </span>
-              </span>
-              <button type="button" class="btn btn-sm" onclick={useAvatarPreview}>Usar imagen</button>
-            {/if}
-          </div>
+          {/key}
+          {#if cropSrc}
+            <div class="mt-3">
+              <AvatarCropper src={cropSrc} onavatarfile={onAvatarFile} />
+            </div>
+          {/if}
+          {#if avatarFile}
+            <p class="mt-2 text-sm text-success">Imagen lista para subir al guardar.</p>
+          {/if}
           <p class="mt-2 text-xs text-azeroth-muted">
-            La imagen se previsualiza localmente y se guarda como URL; el almacenamiento real está pendiente.
+            La imagen se recorta a un cuadrado y se sube como WebP (máx. 150KB). Se conservan la vista previa y la URL externa como alternativa.
           </p>
         {/snippet}
       </Field>
