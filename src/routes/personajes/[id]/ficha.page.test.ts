@@ -107,6 +107,20 @@ describe('personajes/[id] ficha layout (OD side-layout redesign)', () => {
     expect(screen.getByRole('button', { name: /Rechazar/ })).toBeInTheDocument();
   });
 
+  it('shows an "En revisión" state badge for a pending ficha (re-submission loop)', () => {
+    renderPage(makeData({ character: { ...character, status: 'pendiente', reviewed_at: null } }));
+
+    expect(screen.getByTestId('character-revision-state')).toBeInTheDocument();
+    expect(screen.getByTestId('character-revision-state')).toHaveTextContent('En revisión');
+  });
+
+  it('does not show "En revisión" for an approved ficha', () => {
+    renderPage(makeData());
+
+    expect(screen.queryByTestId('character-revision-state')).not.toBeInTheDocument();
+    expect(screen.getByTestId('character-canon-badge')).toBeInTheDocument();
+  });
+
   it('hides GM moderation controls from non-staff viewers', () => {
     renderPage(makeData({ character: { ...character, status: 'pendiente' } }));
 

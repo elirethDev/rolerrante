@@ -37,11 +37,18 @@
       </p>
       <h1 class="text-2xl font-cinzel mt-1">Ficha de personaje</h1>
     </div>
-    {#if canEdit}
-      <a href={resolve(`/personajes/${character.id}/editar`)} class="btn btn-primary btn-sm font-cinzel">
-        Editar ficha
-      </a>
-    {/if}
+    <div class="flex flex-wrap items-center gap-3">
+      {#if character.status === 'pendiente'}
+        <span class="badge badge-lg badge-warning" data-testid="character-revision-state">
+          En revisión
+        </span>
+      {/if}
+      {#if canEdit}
+        <a href={resolve(`/personajes/${character.id}/editar`)} class="btn btn-primary btn-sm font-cinzel">
+          Editar ficha
+        </a>
+      {/if}
+    </div>
   </header>
 
   <div class="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">

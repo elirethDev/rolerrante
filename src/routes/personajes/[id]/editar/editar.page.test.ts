@@ -29,7 +29,8 @@ const character = {
 
 const races = [{ id: 'r1', name: 'Dúnedain' }, { id: 'r2', name: 'Elfo' }];
 
-const makeData = (overrides: Record<string, unknown> = {}) => ({ character, races, isStaff: false, ...overrides });
+const makeData = (overrides: Record<string, unknown> = {}) =>
+  ({ character, races, isStaff: false, isOwner: true, ...overrides });
 
 function renderPage(dataOverrides: Record<string, unknown> = {}, form: Record<string, unknown> = {}) {
   return render(EditPage, {
@@ -62,5 +63,20 @@ describe('personajes/[id]/editar form (REQ-CFD-01.2 / REQ-CFD-03.1)', () => {
   it('surfaces an avatar_url validation error returned by the server (rollback UI)', () => {
     renderPage({}, { errors: { avatar_url: 'URL de avatar no válida' }, message: 'Corrige los campos marcados en rojo' });
     expect(screen.getAllByText('URL de avatar no válida').length).toBeGreaterThan(0);
+  });
+
+  it('offers "Guardar y enviar a revisión" to the owner, posting to ?/request_review', () => {
+    renderPage();
+
+    const reviewBtn = screen.getByRole('button', { name: 'Guardar y enviar a revisión' });
+    expect(reviewBtn.getAttribute('formaction')).toBe('?/request_review');
+    expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeInTheDocument();
+  });
+
+  it('hides "Guardar y enviar a revisión" for staff editing someone else ficha', () => {
+    renderPage({ isOwner: false, isStaff: true });
+
+    expect(screen.queryByRole('button', { name: 'Guardar y enviar a revisión' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeInTheDocument();
   });
 });
