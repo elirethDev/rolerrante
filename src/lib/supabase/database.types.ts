@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -58,8 +58,10 @@ export type Database = {
           description: string | null
           id: string
           is_visible: boolean
+          min_read_role: Database["public"]["Enums"]["user_role"]
           name: string
           parent_id: string | null
+          requires_approval: boolean
           sort_order: number
           updated_at: string
         }
@@ -68,8 +70,10 @@ export type Database = {
           description?: string | null
           id?: string
           is_visible?: boolean
+          min_read_role?: Database["public"]["Enums"]["user_role"]
           name: string
           parent_id?: string | null
+          requires_approval?: boolean
           sort_order?: number
           updated_at?: string
         }
@@ -78,8 +82,10 @@ export type Database = {
           description?: string | null
           id?: string
           is_visible?: boolean
+          min_read_role?: Database["public"]["Enums"]["user_role"]
           name?: string
           parent_id?: string | null
+          requires_approval?: boolean
           sort_order?: number
           updated_at?: string
         }
