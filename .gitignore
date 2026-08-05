@@ -15,5 +15,8 @@ node-install.log
 
 # Local AI agent instructions (never expose to public repo)
 AGENTS.md
+
+# Local design-system handoff (exposes absolute machine paths — never public)
+docs/design-system-migration.md
 # Local codegraph index
 .codegraph/

@@ -1,6 +1,29 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database, Json } from './supabase/database.types';
 import type { PermissionFlags } from './auth';
+import type { UserRole } from './types';
+
+/**
+ * Role rank used by the per-category "rol mínimo de lectura" gate (FORO-CAT-MINROLE).
+ * pendiente < rolero < gm < admin.
+ */
+export const ROLE_RANK: Record<UserRole, number> = {
+  pendiente: 0,
+  rolero: 1,
+  gm: 2,
+  admin: 3,
+};
+
+/**
+ * Whether a viewer's role reaches a category's minimum read role. A null minimum
+ * (Público) admits every role; otherwise the viewer's rank must be >= the
+ * minimum's rank. Admin-bypass (is_visible/min role override) is decided by the
+ * caller.
+ */
+export function minReadRoleSatisfied(role: UserRole, min: UserRole | null): boolean {
+  if (!min) return true;
+  return ROLE_RANK[role] >= ROLE_RANK[min];
+}
 
 export type ThreadEntityType = 'story' | 'character' | 'event';
 export type ThreadRow = Database['public']['Tables']['threads']['Row'];
@@ -29,6 +52,8 @@ export interface CategoryNode {
   name: string;
   description: string | null;
   is_visible: boolean;
+  min_read_role: UserRole | null;
+  requires_approval: boolean;
   children: CategoryNode[];
   flags: PermissionFlags;
   threads: ThreadListItem[];

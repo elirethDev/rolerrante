@@ -5,6 +5,7 @@ import {
   type PermissionFlags,
   type PermissionInput,
 } from "../src/lib/auth";
+import { minReadRoleSatisfied, ROLE_RANK } from "../src/lib/forum";
 import type { UserRole } from "../src/lib/types";
 
 type SectionRow = PermissionFlags;
@@ -116,6 +117,34 @@ describe("resolveEffectivePermissions", () => {
   });
 });
 
+// RED test (FORO-CAT-MINROLE): role-rank gate for category minimum read role.
+describe("minReadRoleSatisfied", () => {
+  it("ranks roles as pendiente < rolero < gm < admin", () => {
+    expect(ROLE_RANK.pendiente).toBeLessThan(ROLE_RANK.rolero);
+    expect(ROLE_RANK.rolero).toBeLessThan(ROLE_RANK.gm);
+    expect(ROLE_RANK.gm).toBeLessThan(ROLE_RANK.admin);
+  });
+
+  it("lets any role through when minimum is null (Público)", () => {
+    for (const role of ["pendiente", "rolero", "gm", "admin"] as UserRole[]) {
+      expect(minReadRoleSatisfied(role, null)).toBe(true);
+    }
+  });
+
+  it("denies a viewer below the minimum role", () => {
+    expect(minReadRoleSatisfied("pendiente", "rolero")).toBe(false);
+    expect(minReadRoleSatisfied("rolero", "gm")).toBe(false);
+    expect(minReadRoleSatisfied("gm", "admin")).toBe(false);
+  });
+
+  it("admits a viewer at or above the minimum role", () => {
+    expect(minReadRoleSatisfied("rolero", "rolero")).toBe(true);
+    expect(minReadRoleSatisfied("gm", "rolero")).toBe(true);
+    expect(minReadRoleSatisfied("admin", "admin")).toBe(true);
+    expect(minReadRoleSatisfied("admin", "gm")).toBe(true);
+  });
+});
+
 // RED test (REQ-FORUM-03.5): server-side image URL protocol validation.
 describe("validateForumImageUrls", () => {
   it("accepts http and https image sources", () => {
@@ -125,7 +154,6 @@ describe("validateForumImageUrls", () => {
     expect(result.valid).toBe(true);
     expect(result.rejected).toEqual([]);
   });
-
   it.each([
     "javascript:alert(1)",
     "data:image/png;base64,AAAA",

@@ -1,10 +1,12 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
+  import { onDestroy } from 'svelte';
   import Field from '$lib/components/ui/Field.svelte';
   import AttributeInput from '$lib/components/forms/AttributeInput.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
   import CombatValues from '$lib/components/sheets/CombatValues.svelte';
+  import AvatarCropper from '$lib/components/ui/AvatarCropper.svelte';
   import type { ActionData, PageData } from './$types';
   import type { Character } from '$lib/types';
 
@@ -44,6 +46,32 @@
     mana_source: manaSource as 'I' | 'E',
   };
   let previewSkills: { skill: { name: string }; level: number }[] = [];
+
+  // Avatar upload UI (REQ-AVUP-01/05): crop to 1:1 and attach the WebP File to
+  // the form submit as `avatar_file`. The URL text field remains as fallback.
+  let avatarFile: File | null = null;
+  let pickerKey = 0;
+  let cropSrc: string | null = null;
+
+  function onPickFile(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    cropSrc = URL.createObjectURL(file);
+    avatarFile = null;
+  }
+
+  function onAvatarFile(file: File) {
+    avatarFile = file;
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    cropSrc = null;
+    pickerKey += 1;
+  }
+
+  onDestroy(() => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+  });
 </script>
 
 <svelte:head>
@@ -68,8 +96,12 @@
 
   <form
     method="POST"
-    use:enhance={() => {
+    enctype="multipart/form-data"
+    use:enhance={({ formData }) => {
       pending = true;
+      if (avatarFile) {
+        formData.set('avatar_file', avatarFile, avatarFile.name);
+      }
       return async ({ result, update }) => {
         pending = false;
         await update();
@@ -119,9 +151,31 @@
               </select>
             {/snippet}
           </Field>
-          <Field label="URL de avatar" class="md:col-span-2" error={form && 'errors' in form ? (form.errors as Record<string, string>).avatar_url ?? null : null}>
+          <Field label="Avatar" class="md:col-span-2" error={form && 'errors' in form ? (form.errors as Record<string, string>).avatar_url ?? null : null}>
             {#snippet ctrl()}
               <input id="avatar_url" name="avatar_url" type="text" class="input" placeholder="https://..." bind:value={avatarUrl} />
+              <div class="divider text-azeroth-muted text-xs">o subí una imagen</div>
+              {#key pickerKey}
+                <input
+                  id="avatar_pick"
+                  type="file"
+                  accept="image/*"
+                  class="file-input file-input-sm w-full max-w-xs"
+                  aria-label="Cargar imagen de avatar"
+                  onchange={onPickFile}
+                />
+              {/key}
+              {#if cropSrc}
+                <div class="mt-3">
+                  <AvatarCropper src={cropSrc} onavatarfile={onAvatarFile} />
+                </div>
+              {/if}
+              {#if avatarFile}
+                <p class="mt-2 text-sm text-success">Imagen lista para subir al guardar.</p>
+              {/if}
+              <p class="mt-2 text-xs text-azeroth-muted">
+                La imagen se recorta a un cuadrado y se sube como WebP (máx. 150KB). Se conserva la URL externa como alternativa.
+              </p>
             {/snippet}
           </Field>
           <Field label="Estado" required>

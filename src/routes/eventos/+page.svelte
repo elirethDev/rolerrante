@@ -32,7 +32,7 @@
     }),
   );
 
-  const canCreate = $derived(data.profile?.role === 'gm' || data.profile?.role === 'admin');
+  const canCreate = $derived(Boolean(data.profile));
 </script>
 
 <svelte:head>

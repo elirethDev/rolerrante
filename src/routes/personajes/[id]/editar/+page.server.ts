@@ -1,5 +1,8 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { isGMOrAdmin, requireAuth, validateImageUrl } from '$lib/auth';
+import { buildAvatarPath, avatarPublicUrl, validateAvatarUpload } from '$lib/avatars';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '$lib/supabase/database.types';
 import type { Actions, PageServerLoad } from './$types';
 
 type EditableFields = {
@@ -43,6 +46,39 @@ function validateCharacterFields(fields: EditableFields): Record<string, string>
   return errors;
 }
 
+/**
+ * Resolve the avatar value for a character form (REQ-AVUP-03/05):
+ *  - a multipart `avatar_file` is strictly validated and uploaded to the
+ *    character path (char-avatars/{character_id}/...), returning its public URL;
+ *  - otherwise the pasted `avatar_url` (validated http/https) is kept as-is.
+ * The caller maps the error message to fail() so the Actions return type stays
+ * narrow.
+ */
+async function resolveCharacterAvatar(
+  supabase: SupabaseClient<Database>,
+  form: FormData,
+  characterId: string,
+  pastedUrl: string,
+): Promise<{ avatarUrl: string | null; error?: string }> {
+  const file = form.get('avatar_file');
+  if (file instanceof File && file.size > 0) {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const validation = validateAvatarUpload({ bytes, size: file.size, name: file.name });
+    if (!validation.ok) return { avatarUrl: null, error: validation.error };
+    const path = buildAvatarPath('character', characterId, file.name);
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(path, bytes, {
+        contentType: 'image/webp',
+        upsert: true,
+        cacheControl: '31536000',
+      });
+    if (uploadError) return { avatarUrl: null, error: uploadError.message };
+    return { avatarUrl: avatarPublicUrl(path) };
+  }
+  return { avatarUrl: pastedUrl || null };
+}
+
 export const load: PageServerLoad = async ({ params, locals: { user, profile, supabase } }) => {
   requireAuth({ user, profile });
 
@@ -83,6 +119,10 @@ export const actions: Actions = {
     const errors = validateCharacterFields(fields);
     if (Object.keys(errors).length) return fail(400, { errors, message: 'Corrige los campos marcados en rojo' });
 
+    const avatar = await resolveCharacterAvatar(supabase, form, params.id, fields.avatarUrl);
+    if (avatar.error) return fail(400, { message: avatar.error });
+    const avatarUrl = avatar.avatarUrl;
+
     const { error: updateError } = await supabase
       .from('characters')
       .update({
@@ -93,7 +133,7 @@ export const actions: Actions = {
         physical_description: fields.physicalDescription,
         mana_source: fields.manaSource,
         ...fields.attrs,
-        avatar_url: fields.avatarUrl || null,
+        avatar_url: avatarUrl,
         status: fields.status,
         reviewed_by: null,
         reviewed_at: null,
@@ -127,6 +167,10 @@ export const actions: Actions = {
     const errors = validateCharacterFields(fields);
     if (Object.keys(errors).length) return fail(400, { errors, message: 'Corrige los campos marcados en rojo' });
 
+    const avatar = await resolveCharacterAvatar(supabase, form, params.id, fields.avatarUrl);
+    if (avatar.error) return fail(400, { message: avatar.error });
+    const avatarUrl = avatar.avatarUrl;
+
     const { error: updateError } = await supabase
       .from('characters')
       .update({
@@ -137,7 +181,7 @@ export const actions: Actions = {
         physical_description: fields.physicalDescription,
         mana_source: fields.manaSource,
         ...fields.attrs,
-        avatar_url: fields.avatarUrl || null,
+        avatar_url: avatarUrl,
       })
       .eq('id', params.id);
 

@@ -10,7 +10,7 @@ export const load: PageServerLoad = async ({ locals: { user, profile, supabase }
     .from('characters')
     .select('id, name')
     .eq('player_id', user!.id)
-    .in('status', ['aprobado', 'borrador'])
+    .eq('status', 'aprobado')
     .order('name');
 
   return { characters: characters ?? [] };
@@ -37,11 +37,14 @@ export const actions: Actions = {
 
     const { data: character } = await supabase
       .from('characters')
-      .select('id')
+      .select('id, status')
       .eq('id', characterId)
       .eq('player_id', user!.id)
       .single();
     if (!character) return fail(403, { message: 'No puedes escribir para ese personaje' });
+    if (character.status !== 'aprobado') {
+      return fail(400, { message: 'Necesitás al menos un personaje aprobado para escribir una crónica' });
+    }
 
     const { data: story, error } = await supabase
       .from('stories')

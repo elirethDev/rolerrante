@@ -12,6 +12,8 @@ interface CategoryFixture {
   parent_id: string | null;
   is_visible: boolean;
   sort_order: number;
+  min_read_role?: string | null;
+  requires_approval?: boolean;
 }
 
 // Fluent supabase mock: categories list, section_permissions list, threads list,
@@ -94,6 +96,8 @@ const cat = (p: Partial<CategoryFixture>): CategoryFixture => ({
   parent_id: null,
   is_visible: true,
   sort_order: 0,
+  min_read_role: null,
+  requires_approval: false,
   ...p,
 });
 
@@ -344,6 +348,54 @@ describe('foro category counts + last-post (REQ-FORUM-02.1/02.2)', () => {
     expect(sub.threads_count).toBe(1);
     expect(sub.posts_count).toBe(1);
     expect(sub.lastPost).toEqual({ avatar_url: null, author_display_name: 'Pub' });
+  });
+});
+
+describe('foro min-read-role gate (FORO-CAT-MINROLE)', () => {
+  it('hides a min-gated category from a viewer below the minimum role', async () => {
+    const supabase = makeSupabase({
+      categories: [
+        cat({ id: 'gm', name: 'Zona GM', is_visible: true, min_read_role: 'gm', sort_order: 1 }),
+        cat({ id: 'pub', name: 'General', is_visible: true, min_read_role: null, sort_order: 2 }),
+      ],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'rolero')));
+    const names = result.categories.map((r: { name: string }) => r.name);
+    expect(names).toContain('General');
+    expect(names).not.toContain('Zona GM');
+  });
+
+  it('shows the category to a viewer meeting the minimum role', async () => {
+    const supabase = makeSupabase({
+      categories: [
+        cat({ id: 'gm', name: 'Zona GM', is_visible: true, min_read_role: 'gm', sort_order: 1 }),
+      ],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'gm')));
+    expect(result.categories.map((r: { name: string }) => r.name)).toContain('Zona GM');
+  });
+
+  it('admin sees every category regardless of min_read_role or is_visible', async () => {
+    const supabase = makeSupabase({
+      categories: [
+        cat({ id: 'g1', name: 'Solo GM', is_visible: true, min_read_role: 'gm' }),
+        cat({ id: 'h1', name: 'Oculta', is_visible: false }),
+      ],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'admin')));
+    expect(result.categories).toHaveLength(2);
+  });
+
+  it('carries min_read_role and requires_approval onto the CategoryNode', async () => {
+    const supabase = makeSupabase({
+      categories: [
+        cat({ id: 'g1', name: 'Aprobable', is_visible: true, min_read_role: 'rolero', requires_approval: true }),
+      ],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'rolero')));
+    const node = result.categories.find((r: { id: string }) => r.id === 'g1');
+    expect(node.min_read_role).toBe('rolero');
+    expect(node.requires_approval).toBe(true);
   });
 });
 

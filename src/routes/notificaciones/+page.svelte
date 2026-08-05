@@ -1,6 +1,7 @@
 <script lang="ts">
   /* eslint-disable @typescript-eslint/no-explicit-any -- resolve() is typed for literal routes; forum hrefs are runtime strings */
   import { onMount } from 'svelte';
+  import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
   import { formatDateTime } from '$lib/utils';
   import { Bell, MessageSquare, CheckCheck } from '@lucide/svelte';
@@ -14,6 +15,9 @@
 
   // Visit marks all notifications as read (REQ-NOTIF-02): fire the server
   // action once on mount so the next layout load drops the bell badge to zero.
+  // `use:enhance` keeps this an AJAX submit — WITHOUT it, requestSubmit() issues
+  // a full-page POST that reloads the page, remounts this component and fires
+  // onMount again, causing an infinite reload loop in the browser.
   onMount(() => {
     markReadForm?.requestSubmit();
   });
@@ -32,6 +36,7 @@
 <form
   method="POST"
   action="?/markRead"
+  use:enhance
   bind:this={markReadForm}
   aria-hidden="true"
   class="hidden"
