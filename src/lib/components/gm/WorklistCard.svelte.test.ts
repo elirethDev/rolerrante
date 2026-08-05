@@ -81,4 +81,44 @@ describe('WorklistCard', () => {
     expect(onReview).toHaveBeenCalledWith(it);
     expect(onApprove).toHaveBeenCalledWith(it);
   });
+
+  it.each([
+    ['ficha', 'Ficha'],
+    ['cronica', 'Crónica'],
+    ['evento', 'Evento'],
+    ['solicitud', 'Solicitud'],
+  ] as const)('renders the %s type tag (%s)', (type, label) => {
+    const { unmount } = render(WorklistCard, { item: item({ type }) });
+    expect(screen.getByTestId('wl-type')).toHaveTextContent(label);
+    unmount();
+  });
+
+  it('toggles the inline notes editor from the Comentar button', async () => {
+    const { unmount } = render(WorklistCard, { item: item() });
+    const user = userEvent.setup();
+    expect(screen.queryByTestId('wl-notes')).not.toBeInTheDocument();
+    await user.click(screen.getByTestId('wl-comment'));
+    expect(screen.getByTestId('wl-notes')).toBeInTheDocument();
+    await user.click(screen.getByTestId('wl-comment'));
+    expect(screen.queryByTestId('wl-notes')).not.toBeInTheDocument();
+    unmount();
+  });
+
+  it('passes a typed inline note to approve and reject', async () => {
+    const onApprove = vi.fn();
+    const onReject = vi.fn();
+    const it = item();
+    render(WorklistCard, { item: it, onApprove, onReject });
+
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId('wl-comment'));
+    await user.type(screen.getByTestId('wl-notes'), 'Falta contexto canónico');
+    await user.click(screen.getByRole('button', { name: 'Aprobar' }));
+    expect(onApprove).toHaveBeenCalledWith(it, 'Falta contexto canónico');
+
+    await user.clear(screen.getByTestId('wl-notes'));
+    await user.type(screen.getByTestId('wl-notes'), 'Razón del rechazo');
+    await user.click(screen.getByRole('button', { name: 'Rechazar' }));
+    expect(onReject).toHaveBeenCalledWith(it, 'Razón del rechazo');
+  });
 });
