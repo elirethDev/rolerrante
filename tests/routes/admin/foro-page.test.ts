@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, no-unused-vars -- test props intentionally loose */
+/* eslint-disable @typescript-eslint/no-explicit-any -- test props intentionally loose */
 import { describe, expect, it } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/svelte";
 import Page from "../../../src/routes/admin/foro/+page.svelte";
@@ -14,7 +14,9 @@ type Category = {
   requires_approval: boolean;
 };
 
-const cat = (over: Partial<Category> & { id: string; name: string }): Category => ({
+const cat = (
+  over: Partial<Category> & { id: string; name: string },
+): Category => ({
   description: null,
   parent_id: null,
   sort_order: 0,
@@ -27,7 +29,12 @@ const cat = (over: Partial<Category> & { id: string; name: string }): Category =
 const makeData = (over: Record<string, unknown> = {}) => ({
   categories: [
     cat({ id: "r1", name: "General" }),
-    cat({ id: "r2", name: "Zona GM", min_read_role: "gm", requires_approval: true }),
+    cat({
+      id: "r2",
+      name: "Zona GM",
+      min_read_role: "gm",
+      requires_approval: true,
+    }),
     cat({ id: "s1", name: "Debates", parent_id: "r1", sort_order: 1 }),
   ],
   sectionPermissions: [],
@@ -46,7 +53,9 @@ describe("admin/foro category management UI", () => {
 
   it("renders a create modal with the min-read-role select (Público/Miembro/Moderador/GM) (FORO-CAT-MINROLE)", async () => {
     renderPage();
-    await fireEvent.click(screen.getByRole("button", { name: "Nueva categoría" }));
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Nueva categoría" }),
+    );
     const select = document.querySelector(
       'select[name="min_read_role"]',
     ) as HTMLSelectElement;
@@ -65,7 +74,9 @@ describe("admin/foro category management UI", () => {
   it("opens a prefilled edit modal for a category (FORO-CAT-APPR)", async () => {
     renderPage();
     // Scope to Zona GM's own row (its name label) and click its Editar button.
-    const zonaRow = screen.getByText("Zona GM").closest(".border") as HTMLElement;
+    const zonaRow = screen
+      .getByText("Zona GM")
+      .closest(".border") as HTMLElement;
     const zonaEdit = zonaRow.querySelector(
       'button[aria-label="Editar"]',
     ) as HTMLButtonElement;
@@ -82,8 +93,11 @@ describe("admin/foro category management UI", () => {
     ) as HTMLSelectElement;
     expect(minSelect.value).toBe("gm");
     expect(
-      (dialog.querySelector('input[name="requires_approval"]') as HTMLInputElement)
-        .checked,
+      (
+        dialog.querySelector(
+          'input[name="requires_approval"]',
+        ) as HTMLInputElement
+      ).checked,
     ).toBe(true);
   });
 

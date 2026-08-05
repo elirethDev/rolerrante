@@ -58,7 +58,7 @@ export type Database = {
           description: string | null
           id: string
           is_visible: boolean
-          min_read_role: Database["public"]["Enums"]["user_role"]
+          min_read_role: Database["public"]["Enums"]["user_role"] | null
           name: string
           parent_id: string | null
           requires_approval: boolean
@@ -70,7 +70,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_visible?: boolean
-          min_read_role?: Database["public"]["Enums"]["user_role"]
+          min_read_role?: Database["public"]["Enums"]["user_role"] | null
           name: string
           parent_id?: string | null
           requires_approval?: boolean
@@ -82,7 +82,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_visible?: boolean
-          min_read_role?: Database["public"]["Enums"]["user_role"]
+          min_read_role?: Database["public"]["Enums"]["user_role"] | null
           name?: string
           parent_id?: string | null
           requires_approval?: boolean

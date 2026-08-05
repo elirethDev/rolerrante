@@ -321,9 +321,7 @@ describe("admin/foro category CRUD actions (REQ-FORUM-04.1)", () => {
     });
     await expectRedirect(
       () =>
-        act("reorder")(
-          makeEvent(makeLocals(supabase), "id=b&direction=up"),
-        ),
+        act("reorder")(makeEvent(makeLocals(supabase), "id=b&direction=up")),
       "/admin/foro",
     );
     const updates = supabase.calls.update as [
@@ -332,10 +330,10 @@ describe("admin/foro category CRUD actions (REQ-FORUM-04.1)", () => {
     ];
     expect(updates.length).toBe(2);
     // b moves up to 0, a moves down to 1
-    expect(updates).toContainEqual(
-      expect.objectContaining({ sort_order: 0 }),
-    );
-    const sorted = updates.map((u) => u.sort_order).sort((x, y) => x - y);
+    expect(updates).toContainEqual(expect.objectContaining({ sort_order: 0 }));
+    const sorted = updates
+      .map((u) => Number(u.sort_order))
+      .sort((x, y) => x - y);
     expect(sorted).toEqual([0, 1]);
   });
 
@@ -349,9 +347,7 @@ describe("admin/foro category CRUD actions (REQ-FORUM-04.1)", () => {
     });
     await expectRedirect(
       () =>
-        act("reorder")(
-          makeEvent(makeLocals(supabase), "id=a&direction=up"),
-        ),
+        act("reorder")(makeEvent(makeLocals(supabase), "id=a&direction=up")),
       "/admin/foro",
     );
     expect(supabase.calls.update).toHaveLength(0);

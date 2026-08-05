@@ -293,7 +293,7 @@
   </label>
 {/snippet}
 
-<Modal bind:open={createOpen} title="Nueva categoría" aria-label="Nueva categoría">
+<Modal bind:open={createOpen} title="Nueva categoría">
   {@const v = emptyForm()}
   <div class="space-y-3">
     <form method="POST" action="?/createCategory" use:enhance class="space-y-3">
@@ -306,7 +306,7 @@
 
 {#if editForm}
   {@const v = editForm}
-  <Modal bind:open={editOpen} title="Editar categoría" aria-label="Editar categoría">
+  <Modal bind:open={editOpen} title="Editar categoría">
     <div class="space-y-3">
       <form method="POST" action="?/updateCategory" use:enhance class="space-y-3">
         <input type="hidden" name="id" value={v.id ?? ''} />

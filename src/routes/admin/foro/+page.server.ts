@@ -6,7 +6,7 @@ import type { Actions, PageServerLoad } from './$types';
 const ROLES: UserRole[] = ['pendiente', 'rolero', 'gm', 'admin'];
 
 // Parse the "rol mínimo de lectura" select: empty string = Público (NULL).
-function readMinReadRole(value: FormDataEntryValue | null): UserRole | null {
+function readMinReadRole(value: unknown): UserRole | null {
   const raw = String(value ?? '').trim();
   return raw && (ROLES as string[]).includes(raw) ? (raw as UserRole) : null;
 }
@@ -105,7 +105,7 @@ export const actions: Actions = {
     const parentId = target.parent_id ?? null;
     const { data: siblings } = await locals.supabase
       .from('categories')
-      .select('id, sort_order')
+      .select('id, sort_order, parent_id')
       .order('sort_order', { ascending: true });
 
     // Same-parent grouping + stable secondary key (id) so ties never reorder
