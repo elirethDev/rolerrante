@@ -1,18 +1,16 @@
-import { fail, redirect, error } from '@sveltejs/kit';
-import { isGMOrAdmin, requireAuth } from '$lib/auth';
+import { fail, redirect } from '@sveltejs/kit';
+import { requireAuth } from '$lib/auth';
 import { verifyTurnstileToken } from '$lib/turnstile';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals: { user, profile } }) => {
   requireAuth({ user, profile });
-  if (!isGMOrAdmin(profile?.role ?? null)) throw error(403, 'Solo GM o admin pueden crear eventos');
   return {};
 };
 
 export const actions: Actions = {
   default: async ({ request, locals: { supabase, user, profile } }) => {
     requireAuth({ user, profile });
-    if (!isGMOrAdmin(profile?.role ?? null)) throw error(403);
 
     const form = await request.formData();
     const title = String(form.get('title') ?? '').trim();
