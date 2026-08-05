@@ -41,13 +41,13 @@
         class="input"
       />
       {#if data.isSearch}
-        <button
-          type="button"
-          class="absolute right-3 top-1/2 -translate-y-1/2 text-azeroth-muted"
+        <a
+          href={resolve('/foro' as any)}
           aria-label="Limpiar búsqueda"
+          class="absolute right-3 top-1/2 -translate-y-1/2 text-azeroth-muted"
         >
-          <a href={resolve('/foro' as any)}><X size={18} /></a>
-        </button>
+          <X size={18} />
+        </a>
       {/if}
     </div>
   </form>

@@ -5,7 +5,7 @@ import Page from "../../../src/routes/registro/+page.svelte";
 import {
   readPageSource,
   expectNoInlineFieldsetMarkup,
-  expectPlayerPageTokens,
+  expectPlayerAuthTokens,
   expectRenderedPlayerForm,
 } from "../../../src/test/page-vision";
 
@@ -19,19 +19,18 @@ describe("registro page (forms-visual-pass / PR 2)", () => {
     );
   });
 
-  it("keeps md density and max-w-md auth container (REQ-PF-02/FS-01/FS-04)", () => {
-    expectPlayerPageTokens(
+  it("keeps md density and the AuthShell auth container (REQ-PF-02/FS-01/FS-04)", () => {
+    expectPlayerAuthTokens(
       readPageSource(
         "../../../src/routes/registro/+page.svelte",
         import.meta.url,
       ),
-      "max-w-md",
     );
   });
 
-  it("renders 4 fieldset-legend Field groups at md density inside max-w-md", () => {
+  it("renders 4 fieldset-legend Field groups at md density inside the auth container", () => {
     const { container } = render(Page, { form: {} as unknown as ActionData });
-    expectRenderedPlayerForm(container, "max-w-md", 4);
+    expectRenderedPlayerForm(container, "max-w-[440px]", 4);
   });
 
   it("passes inline error spans through the Field error prop (REQ-PF-02)", () => {

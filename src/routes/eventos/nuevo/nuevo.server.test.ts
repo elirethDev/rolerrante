@@ -87,7 +87,7 @@ const expectRedirectFor = async (fn: (...args: unknown[]) => Promise<any>, local
     () => {
       throw new Error('expected a redirect to be thrown');
     },
-    (e: { status?: number }) => e,
+    (e: { status?: number; location?: string }) => e,
   );
   expect(err.status).toBe(303);
   return err;
