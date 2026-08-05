@@ -29,8 +29,8 @@
   {/if}
 
   {#if data.characters.length === 0}
-    <div class="alert alert-warning">Necesitas al menos un personaje para escribir una historia.</div>
-    <a href={resolve('/personajes/nuevo')} class="btn btn-primary mt-4">Crear personaje</a>
+    <div class="alert alert-warning">Necesitás al menos un personaje aprobado para escribir una crónica.</div>
+    <a href={resolve('/personajes/nuevo')} class="btn btn-primary mt-4">Crear ficha</a>
   {:else}
     <form
       method="POST"
