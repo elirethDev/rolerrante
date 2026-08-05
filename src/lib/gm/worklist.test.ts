@@ -135,6 +135,35 @@ describe('worklist pure logic', () => {
       });
     });
 
+    it('approve passes through an optional note for ficha/cronica/solicitud', () => {
+      expect(resolveActionRpc('ficha', 'approve', 'c1', { notes: 'n' })).toEqual({
+        rpc: 'approve_character',
+        params: { p_character_id: 'c1', p_notes: 'n' },
+      });
+      expect(resolveActionRpc('cronica', 'approve', 's1', { notes: 'n' })).toEqual({
+        rpc: 'approve_story',
+        params: { p_story_id: 's1', p_notes: 'n' },
+      });
+      expect(resolveActionRpc('solicitud', 'approve', 'r1', { notes: 'n' })).toEqual({
+        rpc: 'approve_skill_request',
+        params: { p_request_id: 'r1', p_notes: 'n' },
+      });
+    });
+
+    it('approve without notes keeps the lean params (no p_notes key)', () => {
+      expect(resolveActionRpc('ficha', 'approve', 'c1')).toEqual({
+        rpc: 'approve_character',
+        params: { p_character_id: 'c1' },
+      });
+    });
+
+    it('event approve never receives notes (finalize_event has no p_notes)', () => {
+      expect(resolveActionRpc('evento', 'approve', 'e1', { xp: 3, notes: 'n' })).toEqual({
+        rpc: 'finalize_event',
+        params: { p_event_id: 'e1', p_xp_per_participant: 3 },
+      });
+    });
+
     it('maps event approve to finalize_event passing through xp', () => {
       expect(resolveActionRpc('evento', 'approve', 'e1', { xp: 5 })).toEqual({
         rpc: 'finalize_event',
