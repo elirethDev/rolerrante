@@ -9,11 +9,11 @@ import { resolve } from "node:path";
 // a clean DB" proxy, mirroring the established migration test pattern).
 const migrationPath = resolve(
   process.cwd(),
-  "supabase/migrations/20260805000000_avatar_storage.sql",
+  "supabase/migrations/20260805000001_avatar_storage.sql",
 );
 const sql = readFileSync(migrationPath, "utf8");
 
-describe("avatar_storage migration 20260805000000_avatar_storage.sql", () => {
+describe("avatar_storage migration 20260805000001_avatar_storage.sql", () => {
   it("creates an avatars bucket marked public (REQ-AVUP-04)", () => {
     expect(sql).toMatch(/INSERT\s+INTO\s+storage\.buckets/i);
     expect(sql).toMatch(/'avatars'/);
