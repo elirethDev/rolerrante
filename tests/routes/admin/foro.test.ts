@@ -13,6 +13,8 @@ interface Fixture {
   categories?: unknown[];
   permsList?: unknown[];
   thread?: unknown;
+  category?: unknown;
+  reorderCategories?: unknown[];
 }
 
 // Minimal chainable supabase mock covering the admin/foro flows:
@@ -49,7 +51,12 @@ function makeSupabase(fixture: Fixture = {}) {
         return b;
       }),
       maybeSingle: vi.fn(async () => ({
-        data: table === "threads" ? (fixture.thread ?? null) : null,
+        data:
+          table === "threads"
+            ? (fixture.thread ?? null)
+            : table === "categories"
+              ? (fixture.category ?? null)
+              : null,
         error: null,
       })),
       single: vi.fn(async () => ({ data: null, error: null })),
@@ -59,7 +66,7 @@ function makeSupabase(fixture: Fixture = {}) {
       ) => {
         const list =
           table === "categories"
-            ? (fixture.categories ?? [])
+            ? (fixture.reorderCategories ?? fixture.categories ?? [])
             : table === "section_permissions"
               ? (fixture.permsList ?? [])
               : null;
@@ -232,6 +239,133 @@ describe("admin/foro category CRUD actions (REQ-FORUM-04.1)", () => {
       "/admin/foro",
     );
     expect(supabase.calls.delete).toContain("categories");
+  });
+
+  it("createCategory persists min_read_role and requires_approval (FORO-CAT-MINROLE/APPR)", async () => {
+    const supabase = makeSupabase();
+    await expectRedirect(
+      () =>
+        act("createCategory")(
+          makeEvent(
+            makeLocals(supabase),
+            "name=Staff&min_read_role=gm&requires_approval=on",
+          ),
+        ),
+      "/admin/foro",
+    );
+    const inserted = supabase.calls.insert[0] as {
+      min_read_role: string;
+      requires_approval: boolean;
+      is_visible: boolean;
+    };
+    expect(inserted.min_read_role).toBe("gm");
+    expect(inserted.requires_approval).toBe(true);
+    expect(inserted.is_visible).toBe(true);
+  });
+
+  it("createCategory defaults min_read_role to null (Público) and requires_approval false", async () => {
+    const supabase = makeSupabase();
+    await expectRedirect(
+      () => act("createCategory")(makeEvent(makeLocals(supabase), "name=Pub")),
+      "/admin/foro",
+    );
+    const inserted = supabase.calls.insert[0] as {
+      min_read_role: string | null;
+      requires_approval: boolean;
+    };
+    expect(inserted.min_read_role).toBeNull();
+    expect(inserted.requires_approval).toBe(false);
+  });
+
+  it("updateCategory edits all fields including parent and min read role", async () => {
+    const supabase = makeSupabase();
+    await expectRedirect(
+      () =>
+        act("updateCategory")(
+          makeEvent(
+            makeLocals(supabase),
+            "id=c1&name=Renombrado&parent_id=p1&sort_order=5&is_visible=on&min_read_role=gm&requires_approval=off",
+          ),
+        ),
+      "/admin/foro",
+    );
+    const updated = supabase.calls.update[0] as Record<string, unknown>;
+    expect(updated.name).toBe("Renombrado");
+    expect(updated.parent_id).toBe("p1");
+    expect(updated.sort_order).toBe(5);
+    expect(updated.min_read_role).toBe("gm");
+    expect(updated.requires_approval).toBe(false);
+  });
+
+  it("updateCategory keeps is_visible off when unchecked (checkboxes absent)", async () => {
+    const supabase = makeSupabase();
+    await expectRedirect(
+      () =>
+        act("updateCategory")(
+          makeEvent(makeLocals(supabase), "id=c1&name=SinVisible"),
+        ),
+      "/admin/foro",
+    );
+    const updated = supabase.calls.update[0] as { is_visible: boolean };
+    expect(updated.is_visible).toBe(false);
+  });
+
+  it("reorder swaps sort_order with the adjacent sibling (up) (FORO-CAT-REORDER)", async () => {
+    const supabase = makeSupabase({
+      category: { id: "b", parent_id: null },
+      reorderCategories: [
+        { id: "a", parent_id: null, sort_order: 0 },
+        { id: "b", parent_id: null, sort_order: 1 },
+        { id: "c", parent_id: null, sort_order: 2 },
+      ],
+    });
+    await expectRedirect(
+      () =>
+        act("reorder")(
+          makeEvent(makeLocals(supabase), "id=b&direction=up"),
+        ),
+      "/admin/foro",
+    );
+    const updates = supabase.calls.update as [
+      Record<string, unknown>,
+      Record<string, unknown>,
+    ];
+    expect(updates.length).toBe(2);
+    // b moves up to 0, a moves down to 1
+    expect(updates).toContainEqual(
+      expect.objectContaining({ sort_order: 0 }),
+    );
+    const sorted = updates.map((u) => u.sort_order).sort((x, y) => x - y);
+    expect(sorted).toEqual([0, 1]);
+  });
+
+  it("reorder moving the top sibling up is a no-op (no update writes) (FORO-CAT-REORDER)", async () => {
+    const supabase = makeSupabase({
+      category: { id: "a", parent_id: null },
+      reorderCategories: [
+        { id: "a", parent_id: null, sort_order: 0 },
+        { id: "b", parent_id: null, sort_order: 1 },
+      ],
+    });
+    await expectRedirect(
+      () =>
+        act("reorder")(
+          makeEvent(makeLocals(supabase), "id=a&direction=up"),
+        ),
+      "/admin/foro",
+    );
+    expect(supabase.calls.update).toHaveLength(0);
+  });
+
+  it("reorder rejects an invalid direction with 400", async () => {
+    const supabase = makeSupabase({
+      category: { id: "a", parent_id: null },
+      reorderCategories: [{ id: "a", parent_id: null, sort_order: 0 }],
+    });
+    const res = (await act("reorder")(
+      makeEvent(makeLocals(supabase), "id=a&direction=sideways"),
+    )) as { status: number };
+    expect(res.status).toBe(400);
   });
 });
 
