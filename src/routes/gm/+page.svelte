@@ -36,6 +36,16 @@
   // the use:enhance callback after success, failure, or navigation.
   let submitting = $state(false);
 
+  // Optimistic "done ✓" overlay (design gm.html / rolerrante.js): after an
+  // approve succeeds, the entity id stays in this set so its card renders the
+  // done badge while the page reload finishes (or if the row lingers).
+  let approvedIds = $state<Set<string>>(new Set());
+  // Success toast (design rolerrante.js:84-87): "Aprobado — firmado en auditoría".
+  let notice = $state<string | null>(null);
+  // Which action the hidden form is submitting; the enhance callback uses it to
+  // decide whether a success result is an approve (marks done + toast).
+  let pending: { action: 'approve' | 'reject'; entityId: string } | null = $state(null);
+
   function submitApprove(item: WorklistItem, notes = '') {
     if (submitting) return;
     if (item.type === 'evento') {
@@ -53,6 +63,7 @@
     form.querySelector<HTMLInputElement>('input[name="entityId"]')!.value = item.entityId;
     form.querySelector<HTMLInputElement>('input[name="notes"]')!.value = notes;
     submitting = true;
+    pending = { action: 'approve', entityId: item.entityId };
     form.requestSubmit();
   }
 
@@ -67,11 +78,16 @@
     form.querySelector<HTMLInputElement>('input[name="entityId"]')!.value = item.entityId;
     form.querySelector<HTMLInputElement>('input[name="notes"]')!.value = reason;
     submitting = true;
+    pending = { action: 'reject', entityId: item.entityId };
     form.requestSubmit();
   }
 
   function review(item: WorklistItem) {
     goto(item.detailHref);
+  }
+
+  function dismissNotice() {
+    notice = null;
   }
 </script>
 
@@ -96,6 +112,25 @@
   />
 {/if}
 
+{#if notice}
+  <div
+    class="alert alert-success mb-4"
+    role="status"
+    data-testid="gm-success"
+    aria-live="polite"
+  >
+    <span>{notice}</span>
+    <button
+      type="button"
+      class="btn btn-xs btn-ghost"
+      aria-label="Descartar aviso"
+      onclick={dismissNotice}
+    >
+      ✕
+    </button>
+  </div>
+{/if}
+
 <GmAnalytics kpi={kpi} />
 
 <div class="mt-6">
@@ -118,6 +153,7 @@
         {#each filtered as item (item.id)}
           <WorklistCard
             {item}
+            done={approvedIds.has(item.entityId)}
             busy={submitting}
             onApprove={(it, n) => submitApprove(it, n)}
             onReject={(it, n) => submitReject(it, n)}
@@ -130,16 +166,28 @@
 </div>
 
 <!-- Hidden, reused form that posts to the gm page actions (design AD-2). The
-     use:enhance callback only exists to clear the in-flight guard: on submit we
-     set submitting=true, and after the action resolves (success, failure or
-     navigation) the finally block releases the flag so the next click works. -->
+     use:enhance callback clears the in-flight guard and, on a successful
+     approve, records the entity id so the card renders the "done" overlay and
+     the success toast shows (design rolerrante.js:84-87). -->
 <form
   method="POST"
-  use:enhance={() => async ({ update }) => {
+  use:enhance={(props) => async ({ update, result }) => {
+    const entityId = props.formElement.querySelector<HTMLInputElement>('input[name="entityId"]')?.value;
     try {
       await update({ reset: false });
+      if (result.type === 'success') {
+        if (pending?.action === 'approve' && entityId) {
+          approvedIds = new Set([...approvedIds, entityId]);
+          notice = 'Aprobado — firmado en auditoría';
+        } else if (pending?.action === 'reject') {
+          notice = 'Rechazado';
+        }
+      } else {
+        notice = null;
+      }
     } finally {
       submitting = false;
+      pending = null;
     }
   }}
   bind:this={form}
