@@ -1,3 +1,5 @@
+import { toExcerpt } from '$lib/forum-compose';
+import type { Json } from '$lib/supabase/database.types';
 import type { PageServerLoad } from './$types';
 import { STORY_TABS, STORY_STATUS, type StoryTab } from '$lib/historias';
 
@@ -5,15 +7,20 @@ type StoryStatus = 'pendiente' | 'borrador' | 'aprobado' | 'rechazado';
 
 // El feed embebe el personaje (inner) y su autor, de modo que "Mis historias"
 // se resuelve contra el dueño del personaje (character.player_id) y la tarjeta
-// muestra el autor sin consultas extra.
+// muestra el autor sin consultas extra. `content` se usa solo para el excerpt
+// de la tarjeta (alineado con la screen de historias).
 const STORY_SELECT =
   '*, character:character_id!inner(id, name, status, player:player_id!inner(id, display_name, username))';
+
+const EXCERPT_MAX = 120;
 
 type StoryRow = {
   id: string;
   status: string;
   title: string;
+  content: Json | null;
   created_at: string;
+  excerpt?: string;
   character?: {
     id: string;
     name: string;
@@ -21,6 +28,26 @@ type StoryRow = {
     player?: { id: string; display_name: string | null; username: string } | null;
   } | null;
 };
+
+/** Plain text de un cuerpo TipTap JSON (doc → nodos → texto + contenido anidado). */
+function tiptapText(node: unknown): string {
+  if (Array.isArray(node)) return node.map(tiptapText).join(' ');
+  if (node && typeof node === 'object') {
+    const n = node as Record<string, unknown>;
+    const text = typeof n.text === 'string' ? n.text : '';
+    const inner = Array.isArray(n.content) ? n.content.map(tiptapText).join(' ') : '';
+    return [text, inner].filter(Boolean).join(' ');
+  }
+  return '';
+}
+
+/** Excerpt normalizado de una historia: HTML string o TipTap JSON. */
+function extractExcerpt(value: Json | null | undefined, max = EXCERPT_MAX): string {
+  if (value == null) return '';
+  const plain = typeof value === 'string' ? toExcerpt(value, max) : tiptapText(value);
+  const normalized = plain.replace(/\s+/g, ' ').trim();
+  return normalized.length <= max ? normalized : normalized.slice(0, max).trim();
+}
 
 export const load: PageServerLoad = async ({ locals: { supabase, user, profile }, url }) => {
   const rawTab = url.searchParams.get('tab') ?? 'todas';
@@ -101,5 +128,11 @@ export const load: PageServerLoad = async ({ locals: { supabase, user, profile }
     stories = (data ?? []) as StoryRow[];
   }
 
-  return { stories, counts, tab, q, profile };
+  return {
+    stories: stories.map((s) => ({ ...s, excerpt: extractExcerpt(s.content) })),
+    counts,
+    tab,
+    q,
+    profile,
+  };
 };

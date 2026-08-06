@@ -9,6 +9,7 @@
   import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import FilterTabs from '$lib/components/ui/FilterTabs.svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
+  import Avatar from '$lib/components/ui/Avatar.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -107,13 +108,21 @@
             {statusLabel(story.status)}
           </span>
         </div>
-        <p class="text-sm text-azeroth-muted">
-          Por <span class="text-azeroth-gold">{playerName(story.character?.player)}</span>
-          · {formatDate(story.created_at)}
-        </p>
-        {#if story.character}
-          <p class="text-sm">Personaje: <span class="font-semibold">{story.character.name}</span></p>
+        {#if story.excerpt}
+          <p class="media-excerpt">{story.excerpt}</p>
         {/if}
+        <div class="media-foot">
+          <span class="who">
+            <Avatar name={playerName(story.character?.player)} size="sm" />
+            por {playerName(story.character?.player)}
+            <span class="text-azeroth-faint">· {formatDate(story.created_at)}</span>
+          </span>
+          {#if story.character}
+            <span class="char">
+              Personaje: <b class="text-azeroth-gold">{story.character.name}</b>
+            </span>
+          {/if}
+        </div>
       </a>
     {/each}
   </div>

@@ -183,6 +183,29 @@ describe('historias index load() — server-side tabs and search', () => {
     expect(result.stories.map((s: { id: string }) => s.id).sort()).toEqual(['s2', 's3']);
   });
 
+  it('derives an excerpt from the TipTap content for the card', async () => {
+    const supabase = makeSupabase({
+      stories: [
+        story({
+          content: {
+            type: 'doc',
+            content: [
+              {
+                type: 'paragraph',
+                content: [
+                  { type: 'text', text: 'Tres noches ' },
+                  { type: 'text', text: 'bajo la luna de cuerno.' },
+                ],
+              },
+            ],
+          },
+        }),
+      ],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase)));
+    expect(result.stories[0].excerpt).toBe('Tres noches bajo la luna de cuerno.');
+  });
+
   it('exposes counts for the tabs (statuses + mias)', async () => {
     const supabase = makeSupabase({
       stories: [
