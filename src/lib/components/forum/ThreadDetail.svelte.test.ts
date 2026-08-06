@@ -114,3 +114,32 @@ describe('ThreadDetail OP (first post) action bar', () => {
     expect(screen.getByRole('button', { name: /Compartir/i })).toBeInTheDocument();
   });
 });
+
+describe('ThreadDetail lock banner + staff controls', () => {
+  it('shows a prominent lock banner with a Reabrir hilo button for staff on a locked thread', () => {
+    render(ThreadDetail, makeProps({ isLocked: true, isStaff: true }));
+    expect(screen.getByText(/Este hilo está bloqueado/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Reabrir hilo/i })).toBeInTheDocument();
+  });
+
+  it('shows the lock banner to everyone but only staff can reopen', () => {
+    render(ThreadDetail, makeProps({ isLocked: true, isStaff: false }));
+    expect(screen.getByText(/Este hilo está bloqueado/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Reabrir hilo/i })).not.toBeInTheDocument();
+  });
+
+  it('offers a subtle Bloquear hilo action to staff on an open thread', () => {
+    render(ThreadDetail, makeProps({ isLocked: false, isStaff: true }));
+    expect(screen.getByRole('button', { name: /Bloquear hilo/i })).toBeInTheDocument();
+  });
+
+  it('does not offer Bloquear hilo to non-staff on an open thread', () => {
+    render(ThreadDetail, makeProps({ isLocked: false, isStaff: false }));
+    expect(screen.queryByRole('button', { name: /Bloquear hilo/i })).not.toBeInTheDocument();
+  });
+
+  it('does not show the lock banner on an open thread', () => {
+    render(ThreadDetail, makeProps({ isLocked: false, isStaff: false }));
+    expect(screen.queryByText(/Este hilo está bloqueado/i)).not.toBeInTheDocument();
+  });
+});

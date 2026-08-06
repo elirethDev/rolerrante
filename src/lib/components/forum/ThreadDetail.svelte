@@ -79,12 +79,17 @@
     </div>
 
     {#if isStaff}
-      <div class="mt-2">
+      <div class="mt-2 flex flex-wrap gap-2">
         <form method="POST" action={isSticky ? '?/unpin' : '?/pin'}>
           <button type="submit" class="btn btn-outline btn-xs">
             {isSticky ? 'Desfijar hilo' : 'Fijar hilo'}
           </button>
         </form>
+        {#if !isLocked}
+          <form method="POST" action="?/lock">
+            <button type="submit" class="btn btn-outline btn-xs">Bloquear hilo</button>
+          </form>
+        {/if}
       </div>
     {/if}
 
@@ -103,6 +108,23 @@
       {/if}
     </p>
   </header>
+
+  {#if isLocked}
+    <div class="alert alert-error mb-6" data-testid="lock-banner">
+      <Lock size={20} />
+      <div>
+        <p class="font-semibold">Este hilo está bloqueado</p>
+        <p class="text-sm opacity-80">
+          Los autores no pueden responder mientras el hilo permanezca bloqueado.
+        </p>
+        {#if isStaff}
+          <form method="POST" action="?/unlock" class="mt-2">
+            <button type="submit" class="btn btn-outline btn-xs">Reabrir hilo</button>
+          </form>
+        {/if}
+      </div>
+    </div>
+  {/if}
 
   <PostCard post={opPost} threadId={thread.id} onCitar={onCitar} editorName={opEditorName} />
 

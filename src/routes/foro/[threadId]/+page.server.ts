@@ -422,6 +422,63 @@ export const actions: Actions = {
     return { success: true };
   },
 
+  // Lock / reopen from the public thread page (REQ-FORUM-04.3). GM/admin only;
+  // the author can never block their own thread. Mirrors admin/foro/hilos/
+  // [threadId] but gated with fail(403) like the other thread-page staff actions.
+  lock: async ({ params, locals: { supabase, user, profile } }) => {
+    requireAuth({ user, profile });
+    if (!profile?.role || !isGMOrAdmin(profile.role)) return fail(403, { message: 'Acceso denegado' });
+    const threadId = params.threadId;
+
+    const { data: thread } = await supabase.from('threads').select('*').eq('id', threadId).single();
+    if (!thread) throw error(404, 'Hilo no encontrado');
+    if ((thread as unknown as { author_id?: string }).author_id === user?.id) {
+      return fail(403, { message: 'El autor no puede bloquear su propio hilo' });
+    }
+    if ((thread as unknown as { is_locked: boolean }).is_locked) return { success: true };
+
+    const { error: dbError } = await supabase
+      .from('threads')
+      .update({ is_locked: true, locked_by: user!.id, locked_at: new Date().toISOString() })
+      .eq('id', threadId);
+    if (dbError) return fail(400, { message: dbError.message });
+
+    await supabase.rpc('log_audit', {
+      p_action: 'bloquear_hilo',
+      p_entity_type: 'thread',
+      p_entity_id: threadId,
+      p_details: { thread_id: threadId },
+    });
+    return { success: true };
+  },
+
+  unlock: async ({ params, locals: { supabase, user, profile } }) => {
+    requireAuth({ user, profile });
+    if (!profile?.role || !isGMOrAdmin(profile.role)) return fail(403, { message: 'Acceso denegado' });
+    const threadId = params.threadId;
+
+    const { data: thread } = await supabase.from('threads').select('*').eq('id', threadId).single();
+    if (!thread) throw error(404, 'Hilo no encontrado');
+    if ((thread as unknown as { author_id?: string }).author_id === user?.id) {
+      return fail(403, { message: 'El autor no puede desbloquear su propio hilo' });
+    }
+    if (!(thread as unknown as { is_locked: boolean }).is_locked) return { success: true };
+
+    const { error: dbError } = await supabase
+      .from('threads')
+      .update({ is_locked: false, locked_by: null, locked_at: null })
+      .eq('id', threadId);
+    if (dbError) return fail(400, { message: dbError.message });
+
+    await supabase.rpc('log_audit', {
+      p_action: 'desbloquear_hilo',
+      p_entity_type: 'thread',
+      p_entity_id: threadId,
+      p_details: { thread_id: threadId },
+    });
+    return { success: true };
+  },
+
   // Slice 2 — follow/unfollow + in-app preference (REQ-FOLLOW-01/02).
   follow: async ({ params, locals: { supabase, user, profile } }) => {
     requireAuth({ user, profile });

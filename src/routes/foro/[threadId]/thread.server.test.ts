@@ -14,6 +14,10 @@ const pinFn = actions.pin as unknown as (...args: unknown[]) => Promise<any>;
 const unpinFn = actions.unpin as unknown as (...args: unknown[]) => Promise<any>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const reportFn = actions.report as unknown as (...args: unknown[]) => Promise<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const lockFn = actions.lock as unknown as (...args: unknown[]) => Promise<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const unlockFn = actions.unlock as unknown as (...args: unknown[]) => Promise<any>;
 
 type Handler = (...args: unknown[]) => void;
 
@@ -998,5 +1002,74 @@ describe('thread detail pin/unpin actions', () => {
     const supabase = makeSupabase({ thread: makeThread({ is_sticky: true }) });
     const result = await loadFn(makeEvent(makeLocals(supabase)));
     expect(result.isSticky).toBe(true);
+  });
+});
+
+// OD alignment: staff lock/unlock from the PUBLIC thread page (REQ-FORUM-04.3).
+// Mirrors admin/foro/hilos/[threadId] but gated with fail(403) like the other
+// thread-page staff actions (pin/unpin).
+describe('thread detail lock/unlock actions (public page)', () => {
+  const makeLockEvent = (locals: ReturnType<typeof makeLocals>) =>
+    ({ locals, params: { threadId: 't1' }, url: new URL('http://localhost/foro/t1') }) as never;
+
+  it('gm locks another thread: sets is_locked true + locked_by, logs bloquear_hilo', async () => {
+    const supabase = makeSupabase({ thread: makeThread({ is_locked: false, author_id: 'u-other' }) });
+    const res = await lockFn(makeLockEvent(makeLocals(supabase, 'gm', 'staff1')));
+    expect(res.success).toBe(true);
+    const update = (supabase.fixtures.updateCalls ?? []).find((u) => u.is_locked === true);
+    expect(update).toBeDefined();
+    expect(update?.locked_by).toBe('staff1');
+    const audit = supabase.fixtures.audit ?? [];
+    expect(audit.some((a) => a.args?.p_action === 'bloquear_hilo')).toBe(true);
+  });
+
+  it('admin reopens a locked thread: is_locked false, locked_by null, logs desbloquear_hilo', async () => {
+    const supabase = makeSupabase({
+      thread: makeThread({ is_locked: true, author_id: 'u-other', locked_by: 'gm-a', locked_at: '2026-08-02T00:00:00Z' }),
+    });
+    const res = await unlockFn(makeLockEvent(makeLocals(supabase, 'admin', 'admin1')));
+    expect(res.success).toBe(true);
+    const update = (supabase.fixtures.updateCalls ?? []).find((u) => u.is_locked === false);
+    expect(update).toBeDefined();
+    expect(update?.locked_by).toBeNull();
+    expect(update?.locked_at).toBeNull();
+    const audit = supabase.fixtures.audit ?? [];
+    expect(audit.some((a) => a.args?.p_action === 'desbloquear_hilo')).toBe(true);
+  });
+
+  it('rejects a non-staff (rolero) lock with 403 and no update/audit', async () => {
+    const supabase = makeSupabase({ thread: makeThread({ is_locked: false, author_id: 'u-other' }) });
+    const res = await lockFn(makeLockEvent(makeLocals(supabase, 'rolero', 'u1')));
+    expect(res.status).toBe(403);
+    expect(supabase.fixtures.updateCalls ?? []).toHaveLength(0);
+    expect(supabase.fixtures.audit ?? []).toHaveLength(0);
+  });
+
+  it('rejects a non-staff unlock with 403', async () => {
+    const supabase = makeSupabase({ thread: makeThread({ is_locked: true, author_id: 'u-other' }) });
+    const res = await unlockFn(makeLockEvent(makeLocals(supabase, 'rolero', 'u1')));
+    expect(res.status).toBe(403);
+    expect(supabase.fixtures.updateCalls ?? []).toHaveLength(0);
+  });
+
+  it('blocks the author from locking their own thread with 403 (staff author)', async () => {
+    const supabase = makeSupabase({ thread: makeThread({ is_locked: false, author_id: 'u1' }) });
+    const res = await lockFn(makeLockEvent(makeLocals(supabase, 'gm', 'u1')));
+    expect(res.status).toBe(403);
+    expect(supabase.fixtures.updateCalls ?? []).toHaveLength(0);
+  });
+
+  it('blocks the author from reopening their own thread with 403', async () => {
+    const supabase = makeSupabase({ thread: makeThread({ is_locked: true, author_id: 'admin1' }) });
+    const res = await unlockFn(makeLockEvent(makeLocals(supabase, 'admin', 'admin1')));
+    expect(res.status).toBe(403);
+    expect(supabase.fixtures.updateCalls ?? []).toHaveLength(0);
+  });
+
+  it('is a no-op success when locking an already-locked thread (idempotent)', async () => {
+    const supabase = makeSupabase({ thread: makeThread({ is_locked: true, author_id: 'u-other' }) });
+    const res = await lockFn(makeLockEvent(makeLocals(supabase, 'gm', 'staff1')));
+    expect(res.success).toBe(true);
+    expect(supabase.fixtures.updateCalls ?? []).toHaveLength(0);
   });
 });
