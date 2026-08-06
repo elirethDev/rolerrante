@@ -2,6 +2,10 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { load, actions } from './+page.server';
 import type { Mock } from 'vitest';
+import {
+  makeSupabase as makeSupabaseMock,
+  type SupabaseMock,
+} from '../../../tests/helpers/supabase-mock';
 
 // The service_role helper must degrade to null (no key) in tests so the loader
 // never makes a real network call. Provide a stubbed module.
@@ -27,6 +31,8 @@ interface Row {
 /** Approved KPI rows only need created_at/reviewed_at (no id). */
 type ApprovedRow = { created_at: string; reviewed_at: string | null };
 
+// Supabase chainable mock is shared (tests/helpers/supabase-mock.ts, RED-04);
+// KPI-approved rows reach it through the shared .eq('status','aprobado') routing.
 function makeSupabase(fixture: {
   characters?: Row[];
   stories?: Row[];
@@ -35,46 +41,14 @@ function makeSupabase(fixture: {
   // status ⇒ rows for KPI-approved queries (status='aprobado')
   approved?: { characters?: ApprovedRow[]; stories?: ApprovedRow[]; skill_requests?: ApprovedRow[] };
   rpc?: Record<string, Mock>;
-}) {
-  const rpc = fixture.rpc ?? {};
-  const approved = fixture.approved ?? {};
-  const from = (table: string) => {
-    const b: Record<string, unknown> = {
-      select: () => b,
-      eq: (col: string, val: string) => {
-        if (col === 'status' && val === 'aprobado') {
-          // approved KPI rows come from the approved fixture
-          b.data = approved[table as 'characters'] ?? [];
-        }
-        return b;
-      },
-      not: () => b,
-      order: () => b,
-      limit: () => b,
-      then: (res: Handler, rej: Handler) => {
-        let data: unknown = b.data;
-        if (data === undefined) {
-          if (table === 'characters') data = fixture.characters ?? [];
-          else if (table === 'stories') data = fixture.stories ?? [];
-          else if (table === 'events') data = fixture.events ?? [];
-          else data = fixture.skill_requests ?? [];
-        }
-        return Promise.resolve({ data, error: null }).then(res, rej);
-      },
-    };
-    return b;
-  };
-  return {
-    from,
-    rpc: (name: string, params: unknown) => {
-      const mock = rpc[name];
-      if (mock) mock(params);
-      return { error: rpc[name] ? null : { message: `no rpc ${name}` } };
-    },
-  };
+}): SupabaseMock {
+  const tables: Record<string, unknown[] | null> = {};
+  if (fixture.characters !== undefined) tables.characters = fixture.characters;
+  if (fixture.stories !== undefined) tables.stories = fixture.stories;
+  if (fixture.events !== undefined) tables.events = fixture.events;
+  if (fixture.skill_requests !== undefined) tables.skill_requests = fixture.skill_requests;
+  return makeSupabaseMock({ tables, approved: fixture.approved, rpc: fixture.rpc });
 }
-
-type Handler = (...args: unknown[]) => void;
 
 const row = (p: Partial<Row> & { id: string }): Row => ({
   created_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),

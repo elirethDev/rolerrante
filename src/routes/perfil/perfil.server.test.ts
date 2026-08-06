@@ -1,17 +1,14 @@
 /* eslint-disable no-unused-vars, @typescript-eslint/no-explicit-any -- mock helper types intentionally loose */
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { RequestEvent } from '@sveltejs/kit';
 import { load } from './+page.server';
+import { makeSupabase as makeSupabaseMock } from '../../../tests/helpers/supabase-mock';
 
 const loadFn = load as unknown as (...args: unknown[]) => Promise<any>;
 
-// Minimal chainable supabase mock for the /perfil load. One query per table:
-//  characters:     .select().eq('player_id').order('updated_at')
-//  events:         .select().eq('creator_id').order('created_at')
-//  stories:        .select().in('character_id').order('updated_at')  (skipped when no characters)
-//  notifications:  .select().eq('user_id').order('created_at').limit(5)
-// The fixture map resolves the same table to the same data regardless of the
-// builder chain, which is all the load needs.
+// Supabase chainable mock is shared (tests/helpers/supabase-mock.ts, RED-04):
+// the shared .then() resolves each table via the `tables` fixture below, exactly
+// what this loader needs (one query per table; the load does its own filtering).
 interface ProfileFixture {
   characters?: unknown[] | null;
   events?: unknown[] | null;
@@ -20,43 +17,14 @@ interface ProfileFixture {
 }
 
 function makeSupabase(fixture: ProfileFixture = {}) {
-  const tables: Record<string, unknown[] | null> = {
-    characters: fixture.characters ?? [],
-    events: fixture.events ?? [],
-    stories: fixture.stories ?? [],
-    notifications: fixture.notifications ?? [],
-  };
-  const calls: { table: string; method: string; args: unknown[] }[] = [];
-  const from = vi.fn((table: string) => {
-    const chain: Record<string, unknown> = {
-      select: (...a: unknown[]) => {
-        calls.push({ table, method: 'select', args: a });
-        return chain;
-      },
-      eq: (...a: unknown[]) => {
-        calls.push({ table, method: 'eq', args: a });
-        return chain;
-      },
-      in: (...a: unknown[]) => {
-        calls.push({ table, method: 'in', args: a });
-        return chain;
-      },
-      order: (...a: unknown[]) => {
-        calls.push({ table, method: 'order', args: a });
-        return chain;
-      },
-      limit: (...a: unknown[]) => {
-        calls.push({ table, method: 'limit', args: a });
-        return chain;
-      },
-      then: (res: (r: unknown) => void, rej: (r: unknown) => void) => {
-        if (tables[table] === undefined) return rej(new Error(`no fixture for ${table}`));
-        return res({ data: tables[table], error: null });
-      },
-    };
-    return chain;
+  return makeSupabaseMock({
+    tables: {
+      characters: fixture.characters ?? [],
+      events: fixture.events ?? [],
+      stories: fixture.stories ?? [],
+      notifications: fixture.notifications ?? [],
+    },
   });
-  return { from, calls, tables };
 }
 
 const makeProfile = (over: Record<string, unknown> = {}) => ({
