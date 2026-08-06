@@ -32,7 +32,9 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile } }) =>
     supabase
       .from('events')
       .select('*, creator:creator_id!inner(display_name, username)')
-      .eq('status', 'finalizacion_pendiente')
+      // Events pending finalization are those auto-published upon creation
+      // (no RPC ever sets 'finalizacion_pendiente').
+      .eq('status', 'publicado')
       .order('created_at', { ascending: false })
       .limit(50),
     supabase
