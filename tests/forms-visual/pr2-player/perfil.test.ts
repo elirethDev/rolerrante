@@ -37,11 +37,11 @@ describe("perfil page (forms-visual-pass / PR 2)", () => {
     );
   });
 
-  it("renders 2 fieldset-legend Field groups at md density inside max-w-3xl", () => {
+  it("renders 5 fieldset-legend Field groups at md density inside max-w-3xl", () => {
     const { container } = render(Page, {
       data: { profile } as unknown as PageData,
       form: {} as unknown as ActionData,
     });
-    expectRenderedPlayerForm(container, "max-w-3xl", 2);
+    expectRenderedPlayerForm(container, "max-w-3xl", 5);
   });
 });

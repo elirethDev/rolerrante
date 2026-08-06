@@ -59,6 +59,23 @@
       {/snippet}
     </Field>
 
+    <Field label="Confirmar contraseña" required error={form?.errors?.confirm_password ?? null}>
+      {#snippet ctrl()}
+        <input id="confirm_password" name="confirm_password" type="password" class="input" autocomplete="new-password" required minlength="6" />
+      {/snippet}
+    </Field>
+
+    <label
+      class="flex items-start gap-2 text-sm text-azeroth-muted cursor-pointer"
+      data-error={form?.errors?.terms ? 'true' : undefined}
+    >
+      <input id="terms" name="terms" type="checkbox" value="on" class="checkbox checkbox-sm mt-0.5" required />
+      <span>Acepto la normativa de la comunidad</span>
+    </label>
+    {#if form?.errors?.terms}
+      <p class="text-error text-sm" id="terms-error" role="alert">{form.errors.terms}</p>
+    {/if}
+
     <div class="flex justify-center">
       <Turnstile bind:this={turnstileRef} bind:token={turnstileToken} theme="dark" />
     </div>

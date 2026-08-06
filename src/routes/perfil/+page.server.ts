@@ -168,4 +168,30 @@ export const actions: Actions = {
     if (error) return fail(400, { message: error.message });
     return { success: true };
   },
+
+  changePassword: async ({ request, locals: { supabase, user, profile } }: RequestEvent) => {
+    requireAuth({ user, profile });
+    const form = await request.formData();
+    const currentPassword = String(form.get('current_password') ?? '');
+    const newPassword = String(form.get('new_password') ?? '');
+    const confirmPassword = String(form.get('confirm_password') ?? '');
+
+    if (!newPassword || newPassword.length < 6) {
+      return fail(400, { message: 'Mínimo 6 caracteres para la nueva contraseña' });
+    }
+    if (newPassword !== confirmPassword) {
+      return fail(400, { message: 'Las contraseñas no coinciden' });
+    }
+    if (currentPassword) {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: user?.email ?? '',
+        password: currentPassword,
+      });
+      if (error) return fail(400, { message: 'La contraseña actual es incorrecta' });
+    }
+
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+    if (updateError) return fail(400, { message: updateError.message });
+    return { success: true, message: 'Contraseña actualizada' };
+  },
 };

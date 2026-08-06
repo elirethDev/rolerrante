@@ -55,9 +55,9 @@
 />
 
 {#if form?.success}
-  <div class="alert alert-success mb-4">Perfil actualizado.</div>
+  <div class="alert alert-success mb-4">{form.message ?? 'Perfil actualizado.'}</div>
 {/if}
-{#if form?.message}
+{#if form?.message && !form?.success}
   <div class="alert alert-error mb-4">{form.message}</div>
 {/if}
 
@@ -196,6 +196,34 @@
       </Field>
 
       <button type="submit" class="btn btn-primary font-cinzel">Guardar cambios</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Cambiar contraseña</h2></div>
+    <form method="POST" action="?/changePassword" use:enhance class="p-6 space-y-4">
+      <Field
+        label="Contraseña actual (opcional)"
+        hint="Solo necesaria si querés confirmar tu identidad antes de cambiar la contraseña."
+      >
+        {#snippet ctrl()}
+          <input id="current_password" name="current_password" type="password" class="input" autocomplete="current-password" />
+        {/snippet}
+      </Field>
+
+      <Field label="Nueva contraseña" required>
+        {#snippet ctrl()}
+          <input id="new_password" name="new_password" type="password" class="input" autocomplete="new-password" required minlength="6" />
+        {/snippet}
+      </Field>
+
+      <Field label="Confirmar nueva contraseña" required>
+        {#snippet ctrl()}
+          <input id="confirm_password" name="confirm_password" type="password" class="input" autocomplete="new-password" required minlength="6" />
+        {/snippet}
+      </Field>
+
+      <button type="submit" class="btn btn-primary font-cinzel">Actualizar contraseña</button>
     </form>
   </div>
 </div>

@@ -28,9 +28,9 @@ describe("registro page (forms-visual-pass / PR 2)", () => {
     );
   });
 
-  it("renders 4 fieldset-legend Field groups at md density inside the auth container", () => {
+  it("renders 5 fieldset-legend Field groups at md density inside the auth container", () => {
     const { container } = render(Page, { form: {} as unknown as ActionData });
-    expectRenderedPlayerForm(container, "max-w-[440px]", 4);
+    expectRenderedPlayerForm(container, "max-w-[440px]", 5);
   });
 
   it("passes inline error spans through the Field error prop (REQ-PF-02)", () => {

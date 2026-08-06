@@ -73,8 +73,8 @@ describe('perfil page — rich profile (KPIs + activity + avatar affordance)', (
     const fileInput = container.querySelector('input[type="file"]');
     expect(fileInput).not.toBeNull();
     expect(fileInput!.getAttribute('accept')).toBe('image/*');
-    // exactly the two identity Fields are rendered (KPIs/feed add no fieldsets)
-    expect(container.querySelectorAll('fieldset')).toHaveLength(2);
+    // identity Fields + the three change-password Fields (KPIs/feed add none)
+    expect(container.querySelectorAll('fieldset')).toHaveLength(5);
   });
 
   it('renders an empty state when there is no activity', () => {
@@ -83,5 +83,30 @@ describe('perfil page — rich profile (KPIs + activity + avatar affordance)', (
       form: {} as unknown as ActionData,
     });
     expect(container.textContent).toContain('Todavía no hay actividad registrada.');
+  });
+
+  it('renders the change-password section posting to ?/changePassword', () => {
+    const { container } = render(Page, {
+      data: makeData(),
+      form: {} as unknown as ActionData,
+    });
+
+    expect(container.textContent).toContain('Cambiar contraseña');
+    const pwdForm = Array.from(container.querySelectorAll('form')).find(
+      (f) => f.getAttribute('action') === '?/changePassword',
+    );
+    expect(pwdForm).not.toBeUndefined();
+    const inputs = Array.from(pwdForm!.querySelectorAll('input')).map((i) => i.getAttribute('name'));
+    expect(inputs).toEqual(
+      expect.arrayContaining(['current_password', 'new_password', 'confirm_password']),
+    );
+  });
+
+  it('shows the change-password success message from the action response', () => {
+    const { container } = render(Page, {
+      data: makeData(),
+      form: { success: true, message: 'Contraseña actualizada' } as unknown as ActionData,
+    });
+    expect(container.textContent).toContain('Contraseña actualizada');
   });
 });
