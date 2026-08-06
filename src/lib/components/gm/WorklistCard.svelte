@@ -1,6 +1,6 @@
 <script lang="ts">
   import { formatRelativeTime } from '$lib/utils';
-  import { Award, BookOpen, CalendarDays, User } from '@lucide/svelte';
+  import { Award, BookOpen, CalendarDays, CircleCheck, User } from '@lucide/svelte';
   import type { Component } from 'svelte';
   import { TYPE_LABELS, type WorklistItem, type WorklistItemType } from './types';
 
@@ -17,12 +17,14 @@
     onReview,
     onApprove,
     busy = false,
+    done = false,
   }: {
     item: WorklistItem;
     onReject?: (item: WorklistItem, notes?: string) => void;
     onReview?: (item: WorklistItem) => void;
     onApprove?: (item: WorklistItem, notes?: string) => void;
     busy?: boolean;
+    done?: boolean;
   } = $props();
 
   const age = $derived(formatRelativeTime(item.createdAt));
@@ -42,7 +44,11 @@
   }
 </script>
 
-<article data-testid="wl-card" class="card bg-base-200 border border-azeroth-border mb-2">
+<article
+  data-testid="wl-card"
+  data-done={done || undefined}
+  class="card bg-base-200 border border-azeroth-border mb-2 {done ? 'opacity-80' : ''}"
+>
   <div class="card-body py-3">
     <div class="flex flex-row items-center gap-3">
       <span data-testid="wl-icon" class="text-azeroth-gold shrink-0">
@@ -62,46 +68,56 @@
         <span data-testid="wl-stale" class="badge badge-warning badge-outline">Antigua</span>
       {/if}
       <div class="flex flex-row gap-1 shrink-0">
-        {#if item.type !== 'evento'}
-          <button
-            type="button"
-            class="btn btn-xs btn-error"
-            data-testid="wl-reject"
-            disabled={busy}
-            onclick={() => emit(onReject)}
-          >
-            Rechazar
-          </button>
-        {/if}
-        <button
-          type="button"
-          class="btn btn-xs btn-ghost"
-          data-testid="wl-review"
-          onclick={() => onReview?.(item)}
-        >
-          Revisar
-        </button>
-        {#if item.type !== 'evento'}
+        {#if done}
+          <span data-testid="wl-done" class="badge badge-success gap-1">
+            <CircleCheck size={14} aria-hidden="true" />
+            Aprobado
+          </span>
+        {:else}
+          {#if item.type !== 'evento'}
+            <button
+              type="button"
+              class="btn btn-xs btn-error"
+              data-testid="wl-reject"
+              disabled={busy}
+              onclick={() => emit(onReject)}
+            >
+              Rechazar
+            </button>
+          {/if}
           <button
             type="button"
             class="btn btn-xs btn-ghost"
-            data-testid="wl-comment"
-            aria-expanded={commentOpen}
-            disabled={busy}
-            onclick={() => (commentOpen = !commentOpen)}
+            data-testid="wl-review"
+            onclick={() => onReview?.(item)}
           >
-            {commentOpen ? 'Cerrar comentario' : 'Comentar'}
+            Revisar
+          </button>
+          <a data-testid="wl-preview" href={item.detailHref} class="btn btn-xs btn-ghost">
+            Vista previa
+          </a>
+          {#if item.type !== 'evento'}
+            <button
+              type="button"
+              class="btn btn-xs btn-ghost"
+              data-testid="wl-comment"
+              aria-expanded={commentOpen}
+              disabled={busy}
+              onclick={() => (commentOpen = !commentOpen)}
+            >
+              {commentOpen ? 'Cerrar comentario' : 'Comentar'}
+            </button>
+          {/if}
+          <button
+            type="button"
+            class="btn btn-xs btn-success"
+            data-testid="wl-approve"
+            disabled={busy}
+            onclick={() => emit(onApprove)}
+          >
+            Aprobar
           </button>
         {/if}
-        <button
-          type="button"
-          class="btn btn-xs btn-success"
-          data-testid="wl-approve"
-          disabled={busy}
-          onclick={() => emit(onApprove)}
-        >
-          Aprobar
-        </button>
       </div>
     </div>
 

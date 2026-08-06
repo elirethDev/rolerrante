@@ -21,8 +21,11 @@ export default defineConfig({
       "$app/navigation": fileURLToPath(
         new URL("./src/test/app-navigation.ts", import.meta.url),
       ),
-      "$app/paths": fileURLToPath(
+"$app/paths": fileURLToPath(
         new URL("./src/test/app-paths.ts", import.meta.url),
+      ),
+      "$app/state": fileURLToPath(
+        new URL("./src/test/app-state.ts", import.meta.url),
       ),
     },
   },
@@ -42,3 +45,4 @@ export default defineConfig({
     },
   },
 });
+

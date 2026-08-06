@@ -5,6 +5,7 @@
   import { resolve } from '$app/paths';
   import { formatDateTime } from '$lib/utils';
   import { Bell, MessageSquare, CheckCheck } from '@lucide/svelte';
+  import type { Component } from 'svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import type { PageData } from './$types';
@@ -21,6 +22,32 @@
   onMount(() => {
     markReadForm?.requestSubmit();
   });
+
+  // Explicit "Marcar todas" affordance: mirrors the auto mark-on-visit but with
+  // visible feedback. Set optimistically; the row "Nuevo" badge drops at once.
+  let marcadas = $state(false);
+  function marcarTodas() {
+    marcadas = true;
+    markReadForm?.requestSubmit();
+  }
+
+  // Per-type icon + label (type is CHECK-constrained to 'new_reply'; unknown
+  // types fall back to the generic template so future kinds degrade gracefully).
+  type NotifVariant = { icon: Component; label: string; message: (n: PageData['notifications'][number]) => string };
+  const VARIANTS: Record<string, NotifVariant> = {
+    new_reply: {
+      icon: MessageSquare,
+      label: 'Respuesta',
+      message: (n) =>
+        `${n.actor?.display_name ?? n.actor?.username ?? 'Alguien'} respondió en ${n.thread?.title ?? 'un hilo'}`,
+    },
+  };
+  const GENERIC: NotifVariant = {
+    icon: Bell,
+    label: 'Notificación',
+    message: () => 'Tienes una notificación de la hermandad',
+  };
+  const variantFor = (type: string): NotifVariant => VARIANTS[type] ?? GENERIC;
 </script>
 
 <svelte:head>
@@ -54,32 +81,45 @@
         <Bell size={18} />
         <h2>Recientes <span class="text-azeroth-faint font-medium">({data.notifications.length})</span></h2>
         <span class="meta">se marcan como leídas al visitar</span>
+        {#if data.notifications.some((n) => !n.read_at)}
+          <button
+            type="button"
+            class="btn btn-sm btn-ghost"
+            data-testid="mark-all"
+            onclick={marcarTodas}
+          >
+            Marcar todas
+          </button>
+        {/if}
       </div>
       <div class="panel-body py-0">
         {#each data.notifications as n (n.id)}
-          <a
-            href={resolve(`/foro/${n.thread_id}` as any)}
-            class="notif-row {n.read_at ? '' : 'unread'}"
-          >
-            <MessageSquare size={18} />
+          {@const variant = variantFor(n.type)}
+          {@const read = marcadas || Boolean(n.read_at)}
+          <a href={resolve(`/foro/${n.thread_id}` as any)} class="notif-row {read ? '' : 'unread'}">
+            <span data-testid="notif-type-label" class="badge badge-ghost badge-sm shrink-0">
+              {variant.label}
+            </span>
+            <variant.icon size={18} />
             <div class="min-w-0 flex-1">
-              <p class="text-sm text-azeroth-text-soft">
-                <span class="font-semibold text-azeroth-text-high">
-                  {n.actor?.display_name ?? n.actor?.username ?? 'Alguien'}
-                </span>
-                respondió en <span class="font-semibold">{n.thread?.title ?? 'un hilo'}</span>
-              </p>
+              <p class="text-sm text-azeroth-text-soft">{variant.message(n)}</p>
               <p class="text-xs text-azeroth-muted mt-0.5">{formatDateTime(n.created_at)}</p>
             </div>
-            {#if !n.read_at}
+            {#if !read}
               <span class="badge badge-error badge-sm shrink-0">Nuevo</span>
             {/if}
           </a>
         {/each}
       </div>
     </div>
-    <p class="text-xs text-azeroth-faint mt-4 flex items-center gap-1.5">
-      <CheckCheck size={14} /> Todas las notificaciones se marcan como leídas al abrir esta página.
-    </p>
+    {#if marcadas}
+      <p data-testid="mark-all-done" class="text-xs text-azeroth-faint mt-4 flex items-center gap-1.5">
+        <CheckCheck size={14} /> Todas las notificaciones se marcaron como leídas.
+      </p>
+    {:else}
+      <p class="text-xs text-azeroth-faint mt-4 flex items-center gap-1.5">
+        <CheckCheck size={14} /> Todas las notificaciones se marcan como leídas al abrir esta página.
+      </p>
+    {/if}
   </div>
 {/if}

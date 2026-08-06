@@ -25,5 +25,8 @@
     {/if}
   </p>
   <p class="text-azeroth-muted mb-8">{page.error?.message ?? 'Algo salió mal.'}</p>
-  <a href={resolve('/')} class="btn btn-primary font-cinzel">Volver al inicio</a>
+  <div class="flex flex-wrap items-center justify-center gap-3">
+    <a href={resolve('/')} class="btn btn-primary font-cinzel">Volver al inicio</a>
+    <a href={resolve('/foro')} class="btn btn-ghost font-cinzel">Ir a los foros</a>
+  </div>
 </section>
