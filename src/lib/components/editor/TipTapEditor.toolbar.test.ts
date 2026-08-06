@@ -91,17 +91,19 @@ describe('TipTapEditor toolbar extensions (REQ-FC-05)', () => {
     expect(Number.isInteger(last)).toBe(true);
   });
 
-  it('renders spoiler button as a disabled no-op placeholder', async () => {
+  it('renders the spoiler toolbar button enabled and wired (not a disabled placeholder)', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    const { container } = render(TipTapEditor, { content: '<p>hi</p>', onChange });
+    const { container } = render(TipTapEditor, { content: '<p>hola</p>', onChange });
     const editorEl = getEditorEl(container);
     editorEl.focus();
     const spoilerBtn = findToolbarButton(container, 11); // after link (10)
-    expect(spoilerBtn).toHaveAttribute('aria-disabled', 'true');
+    expect(spoilerBtn).not.toHaveAttribute('aria-disabled');
+    expect(spoilerBtn).not.toHaveAttribute('disabled');
     expect(spoilerBtn).toHaveAttribute('title');
+    // clicking the wired button does not throw (node toggling is exercised in
+    // Spoiler tests; jsdom fragments multi-block selections, so we only assert
+    // the button is enabled and free of errors here).
     await user.click(spoilerBtn);
-    // no formatting applied, no error
-    expect(editorEl.textContent).toContain('hi');
   });
 });

@@ -1,4 +1,14 @@
 import { Node, mergeAttributes } from '@tiptap/core';
+import type { CommandProps } from '@tiptap/core';
+
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    spoiler: {
+      setSpoiler: () => ReturnType;
+      toggleSpoiler: () => ReturnType;
+    };
+  }
+}
 
 /**
  * Custom TipTap Spoiler Node (REQ-SPOIL-01.1).
@@ -18,6 +28,36 @@ export const Spoiler = Node.create({
 
   parseHTML() {
     return [{ tag: 'span[data-type="spoiler"]' }];
+  },
+
+  // REQ-FC-05: expose set/toggle commands so TipTapEditor can wire the Spoiler
+  // toolbar button. With a selection it wraps the selected text in the spoiler
+  // span; on an empty selection it inserts an empty spoiler node.
+  addCommands() {
+    return {
+      setSpoiler: () => ({ commands, editor }: CommandProps) => {
+        const { from, to, empty } = editor.state.selection;
+
+        if (empty) {
+          return commands.insertContent({
+            type: 'spoiler',
+            content: [],
+          });
+        }
+
+        const text = editor.state.doc.textBetween(from, to, ' ');
+        return commands.insertContent({
+          type: 'spoiler',
+          content: [{ type: 'text', text }],
+        });
+      },
+      toggleSpoiler: () => ({ commands, editor }: CommandProps) => {
+        if (editor.isActive('spoiler')) {
+          return commands.setNode('paragraph', {});
+        }
+        return commands.setSpoiler();
+      },
+    };
   },
 
   renderHTML({ HTMLAttributes }) {

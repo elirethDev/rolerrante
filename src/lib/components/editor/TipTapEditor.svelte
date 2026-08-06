@@ -7,6 +7,7 @@
   import Image from '@tiptap/extension-image';
   import { TextStyle } from '@tiptap/extension-text-style';
   import Color from '@tiptap/extension-color';
+  import { Spoiler } from './Spoiler';
   import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, List, ListOrdered, Quote, Image as ImageIcon, Heading1, Heading2, Link as LinkIcon } from '@lucide/svelte';
 
   export let content = '';
@@ -40,6 +41,7 @@
         Image,
         TextStyle,
         Color,
+        Spoiler,
       ],
       onUpdate: ({ editor }) => {
         onChange(editor.getHTML());
@@ -98,8 +100,8 @@
     <div class="divider divider-horizontal mx-1"></div>
     <button type="button" class="btn btn-xs btn-ghost" on:click={addImage}><ImageIcon size={14} /></button>
     <button type="button" class="btn btn-xs btn-ghost" on:click={addLink} class:btn-active={editor?.isActive('link')}><LinkIcon size={14} /></button>
-    <!-- Spoiler node is owned by forum-social (S3), out of scope: disabled placeholder (REQ-FC-05). -->
-    <button type="button" class="btn btn-xs btn-ghost" aria-disabled="true" title="Spoiler pronto" disabled>Spoiler</button>
+    <!-- REQ-FC-05: Spoiler is an inline TipTap Node; TipTap auto-generates toggleSpoiler. -->
+    <button type="button" class="btn btn-xs btn-ghost" title="Spoiler" aria-label="Spoiler" on:click={() => editor?.chain().focus().toggleSpoiler().run()} class:btn-active={editor?.isActive('spoiler')}>Spoiler</button>
   </div>
 {/if}
 <div bind:this={element} class="border border-azeroth-border {editable ? 'rounded-b-lg' : 'rounded-lg'} bg-base-100"></div>
