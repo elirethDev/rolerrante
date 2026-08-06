@@ -1,6 +1,12 @@
 /* eslint-disable no-unused-vars -- mock helper types intentionally loose */
 import { describe, expect, it, type Mock } from 'vitest';
 import { load } from './+page.server';
+import {
+  makeEvent,
+  makeLocals,
+  makeSupabase as makeSupabaseMock,
+  type SupabaseMock,
+} from '../../../tests/helpers/supabase-mock';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const loadFn = load as unknown as (...args: unknown[]) => Promise<any>;
@@ -16,8 +22,8 @@ interface CategoryFixture {
   requires_approval?: boolean;
 }
 
-// Fluent supabase mock: categories list, section_permissions list, threads list,
-// posts list, and (search) characters + linked/character thread variants.
+// Supabase chainable mock is shared (tests/helpers/supabase-mock.ts, RED-04);
+// only the /foro query-shape resolution stays fixture-local.
 function makeSupabase(fixture: {
   categories?: CategoryFixture[];
   perms?: unknown[];
@@ -28,66 +34,39 @@ function makeSupabase(fixture: {
   charThreads?: unknown[]; // threads matched via linked_entity (character)
   threadsOrder?: Mock;
   sanction?: { kind: string; active_until: string | null } | null;
-}) {
-  const from = (table: string) => {
-    const orders: string[] = [];
-    const marks: string[] = [];
-    const inSet: Record<string, string[]> = {};
-    const b: Record<string, unknown> = {
-      select: () => b,
-      order: (col: string) => {
-        orders.push(col);
-        return b;
-      },
-      ilike: (col: string) => {
-        marks.push(`ilike:${col}`);
-        return b;
-      },
-      in: (col: string, values: unknown[]) => {
-        marks.push(`in:${col}`);
-        inSet[col] = (values ?? []).map(String);
-        return b;
-      },
-      eq: () => b,
-      or: () => b,
-      maybeSingle: () =>
-        table === 'user_sanctions'
-          ? Promise.resolve({ data: fixture.sanction ?? null, error: null })
-          : Promise.resolve({ data: null, error: null }),
-      then: (res: Handler, rej: Handler) => {
-        let data: unknown;
-        const error: unknown = null;
-        if (table === 'categories') data = fixture.categories ?? [];
-        else if (table === 'section_permissions') data = fixture.perms ?? [];
-        else if (table === 'characters') data = fixture.charNames ?? [];
-        else if (table === 'threads') {
-          if (marks.includes('ilike:title')) data = fixture.searchTitle ?? [];
-          else if (marks.includes('in:linked_entity_id')) data = fixture.charThreads ?? [];
-          else {
-            let list = fixture.threads ?? [];
-            if (inSet['category_id']) {
-              list = list.filter((t) => inSet['category_id'].includes(String((t as { category_id: string | null }).category_id)));
-            }
-            if (inSet['status']) {
-              list = list.filter((t) => inSet['status'].includes(String((t as { status: string }).status)));
-            }
-            data = list;
-          }
-        } else if (table === 'posts') {
-          if (inSet['thread_id']) {
-            data = (fixture.posts ?? []).filter((p) => inSet['thread_id'].includes(String(p.thread_id)));
-          } else data = fixture.posts ?? [];
-        } else data = [];
-        const result = { data, error };
-        if (fixture.threadsOrder && table === 'threads') fixture.threadsOrder(orders);
-        return Promise.resolve(result).then(res, rej);
-      },
-    };
-    return b;
-  };
-  return { from };
+}): SupabaseMock {
+  const tables: Record<string, unknown[] | null> = {};
+  if (fixture.categories !== undefined) tables.categories = fixture.categories;
+  if (fixture.perms !== undefined) tables.section_permissions = fixture.perms;
+  if (fixture.charNames !== undefined) tables.characters = fixture.charNames;
+  if (fixture.posts !== undefined) tables.posts = fixture.posts;
+  return makeSupabaseMock({
+    tables,
+    single: { user_sanctions: fixture.sanction ?? null },
+    threadsOrder: fixture.threadsOrder ? (orders: string[]) => fixture.threadsOrder?.(orders) : undefined,
+    resolve: (table, { marks, inSet }) => {
+      if (table === 'threads') {
+        if (marks.includes('ilike:title')) return fixture.searchTitle ?? [];
+        if (marks.includes('in:linked_entity_id')) return fixture.charThreads ?? [];
+        let list = fixture.threads ?? [];
+        if (inSet.category_id) {
+          list = list.filter((t) => inSet.category_id.includes(String((t as { category_id: string | null }).category_id)));
+        }
+        if (inSet.status) {
+          list = list.filter((t) => inSet.status.includes(String((t as { status: string }).status)));
+        }
+        return list;
+      }
+      if (table === 'posts') {
+        if (inSet.thread_id) {
+          return (fixture.posts ?? []).filter((p) => inSet.thread_id.includes(String(p.thread_id)));
+        }
+        return fixture.posts ?? [];
+      }
+      return undefined;
+    },
+  });
 }
-type Handler = (...args: unknown[]) => void;
 
 const cat = (p: Partial<CategoryFixture>): CategoryFixture => ({
   id: 'c-root',
@@ -100,12 +79,6 @@ const cat = (p: Partial<CategoryFixture>): CategoryFixture => ({
   requires_approval: false,
   ...p,
 });
-
-const makeLocals = (supabase: ReturnType<typeof makeSupabase>, role: string = 'pendiente') =>
-  ({ supabase, user: role === 'pendiente' ? null : { id: 'u1' }, profile: { id: 'u1', role } }) as never;
-
-const makeEvent = (locals: ReturnType<typeof makeLocals>, query: string = '') =>
-  ({ locals, url: new URL(`http://localhost/foro${query}`), params: {} }) as never;
 
 describe('foro landing load()', () => {
   it('guest (pendiente) sees only visible categories with can_view from section perms', async () => {
