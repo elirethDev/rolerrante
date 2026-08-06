@@ -73,8 +73,8 @@
     });
   });
 
-  const characterHref = (id: string) => resolve(`/personajes/${id}` as any) as string;
-  const threadHref = (id: string) => resolve(`/foro/${id}` as any) as string;
+  const characterHref = (id: string) => resolve(`/personajes/${id}`);
+  const threadHref = (id: string) => resolve(`/foro/${id}`);
 </script>
 
 <svelte:head>
@@ -266,7 +266,7 @@
   {#if data.eventos.length > 0}
     <div class="media-grid">
       {#each data.eventos as ev (ev.id)}
-        <a class="media-card" href={resolve(`/eventos/${ev.id}` as any) as string}>
+        <a class="media-card" href={resolve(`/eventos/${ev.id}`)}>
           <div class="event-media">
             <div class="event-date" aria-hidden="true">
               <b>{ev.day}</b>
