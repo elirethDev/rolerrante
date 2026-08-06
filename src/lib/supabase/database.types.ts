@@ -511,6 +511,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "posts_reply_to_post_id_fkey"
+            columns: ["reply_to_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "posts_thread_id_fkey"
             columns: ["thread_id"]
             isOneToOne: false
