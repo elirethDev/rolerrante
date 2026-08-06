@@ -102,7 +102,7 @@ describe("SEC-06 characters rp_points mint", () => {
     // The loose 1000-point mint must be gone from the ALTER POLICY body (the
     // SEC-06 comment may still name the old check for documentation).
     const policy = sql.match(
-      /ALTER POLICY "Jugadores crean personajes en borrador" ON public\.characters[\s\S]*?\n  \);/,
+      /ALTER POLICY "Jugadores crean personajes en borrador" ON public\.characters[\s\S]*?\n {2}\);/,
     )![0];
     expect(policy).not.toMatch(/rp_points BETWEEN 0 AND 1000/);
     expect(policy).not.toMatch(/BETWEEN 0 AND 1000/);
