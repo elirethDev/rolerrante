@@ -1190,7 +1190,7 @@ export type Database = {
         Returns: undefined
       }
       finalize_event: {
-        Args: { p_event_id: string; p_xp_per_participant: number }
+        Args: { p_event_id: string; p_xp_per_participant: number; p_notes?: string }
         Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }
