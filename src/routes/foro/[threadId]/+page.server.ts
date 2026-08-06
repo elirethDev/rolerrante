@@ -219,10 +219,16 @@ export const actions: Actions = {
     const hrefCheck = validateForumHrefs(body);
     if (!hrefCheck.valid) return fail(400, { message: `Enlace no permitido: ${hrefCheck.rejected.join(', ')}` });
 
-    // next post_number = max + 1 (posts ordered ascending)
-    const { data: existingPosts } = await supabase.from('posts').select('post_number').eq('thread_id', t.id);
-    const posts = (existingPosts ?? []) as unknown as { post_number: number }[];
-    const nextNumber = posts.length === 0 ? 1 : Math.max(...posts.map((p) => p.post_number)) + 1;
+    // next post_number = last + 1: fetch only the newest row (ORDER DESC LIMIT 1)
+    // instead of every post_number in the thread (PERF-03).
+    const { data: lastPost } = await supabase
+      .from('posts')
+      .select('post_number')
+      .eq('thread_id', t.id)
+      .order('post_number', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const nextNumber = ((lastPost as { post_number?: number } | null)?.post_number ?? 0) + 1;
 
     const { error: insertError } = await supabase.from('posts').insert({
       thread_id: t.id,

@@ -79,6 +79,7 @@ function makeSupabase(f: Fixture) {
         return builder;
       },
       order: () => builder,
+      limit: () => builder,
       range: (a: number, b: number) => {
         rangeBounds = [a, b];
         return builder;
@@ -92,6 +93,12 @@ function makeSupabase(f: Fixture) {
         if (table === 'posts') {
           // like action selects the thread join -> serve postForLike
           if (selection.includes('thread:')) return Promise.resolve({ data: f.postForLike ?? null, error: null });
+          // PERF-03: reply computes next post_number from the LAST post (desc limit 1)
+          if (selection === 'post_number') {
+            const current = Array.isArray(f.posts) ? (f.posts as Array<{ post_number?: number }>) : [];
+            const max = current.reduce((m, p) => Math.max(m, Number(p.post_number) || 0), 0);
+            return Promise.resolve({ data: max > 0 ? { post_number: max } : null, error: null });
+          }
           // quote compose `.eq('id', quotePostId)`: return the matching post if present
           const ids = Array.isArray(f.posts) ? (f.posts as Array<{ id: string }>).map((p) => p.id) : [];
           const target = f.quoteSearchId ?? (ids.length ? ids[0] : null);
@@ -468,6 +475,22 @@ describe('thread detail reply action', () => {
     expect(inserted[0].post_number).toBe(3);
     expect(inserted[0].thread_id).toBe('t1');
     expect(inserted[0].author_id).toBe('u1');
+  });
+
+  it('numbers the first reply 1 on an empty thread (desc limit-1 returns null)', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread({ is_locked: false }),
+      posts: [],
+      insertedPosts: inserted,
+    });
+    const err = await replyFn(makeReplyEvent(makeLocals(supabase))).then(
+      () => null,
+      (e: { status?: number }) => e,
+    );
+    expect(err?.status).toBe(303);
+    expect(inserted).toHaveLength(1);
+    expect(inserted[0].post_number).toBe(1);
   });
 
   it('blocks a reply on a locked thread with 403 even for the owner', async () => {
