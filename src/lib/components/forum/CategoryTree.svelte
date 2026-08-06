@@ -1,70 +1,143 @@
 <script lang="ts">
-  import { FolderOpen, ChevronRight } from '@lucide/svelte';
-  import type { CategoryNode } from '$lib/forum';
-  import type { LastPostInfo } from '$lib/forum';
+  /* eslint-disable @typescript-eslint/no-explicit-any -- resolve() is typed for literal routes; forum hrefs are runtime strings */
+  import { FolderOpen } from '@lucide/svelte';
+  import { resolve } from '$app/paths';
+  import type { CategoryNode, LastPostInfo } from '$lib/forum';
+  import { formatRelativeTime } from '$lib/utils';
 
   let { categories }: { categories: CategoryNode[] } = $props();
+
+  function visibleChildren(cat: CategoryNode): CategoryNode[] {
+    return cat.children.filter((c) => c.flags.can_view);
+  }
+
+  // OD row counts use compact forms ("1.1k").
+  function compact(n: number): string {
+    if (n >= 1000) {
+      const k = n / 1000;
+      const fixed = Number.isInteger(k) ? String(k) : k.toFixed(1).replace('.', ',');
+      return `${fixed}k`;
+    }
+    return String(n);
+  }
 
   function lastPostBlock(last: LastPostInfo | null | undefined) {
     if (!last?.author_display_name) return null;
     return {
       author: last.author_display_name,
       avatar: last.avatar_url ?? '',
+      title: last.thread_title ?? '',
+      threadId: last.thread_id ?? '',
+      timeAgo: last.created_at ? formatRelativeTime(last.created_at) : '',
       alt: `Último mensaje de ${last.author_display_name}`,
     };
   }
 </script>
 
-<div class="grid gap-4 md:grid-cols-2">
-  {#each categories as cat (cat.id)}
-    <div
-      class="card bg-base-200 border border-azeroth-border"
-      data-category-hidden={cat.flags.can_view ? undefined : 'true'}
-    >
-      <div class="card-body">
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <h3 class="card-title font-cinzel text-azeroth-gold text-lg">
-              <FolderOpen size={18} class="text-azeroth-gold" />
-              {cat.name}
-            </h3>
-            {#if cat.description}
-              <p class="text-sm text-azeroth-muted mt-1">{cat.description}</p>
-            {/if}
-          </div>
+{#snippet lastpost(last: ReturnType<typeof lastPostBlock>)}
+  <div class="lastpost">
+    {#if last}
+      {#if last.avatar}
+        <img
+          src={last.avatar}
+          alt={last.alt}
+          class="w-9 h-9 rounded-full object-cover bg-azeroth-surface ring-2 ring-azeroth-border"
+        />
+      {:else}
+        <span
+          class="lastpost-init"
+          aria-hidden="true"
+        >
+          {last.author.charAt(0).toUpperCase()}
+        </span>
+      {/if}
+      <div class="lp-t">
+        {#if last.threadId}
+          <a href={resolve(`/foro/${last.threadId}` as any)} data-testid="last-thread-link">
+            {last.title || 'Último mensaje'}
+          </a>
+        {:else}
+          <span class="lp-title">{last.title || 'Último mensaje'}</span>
+        {/if}
+        <div class="lp-meta">
+          por <b>{last.author}</b>
+          {#if last.timeAgo}· {last.timeAgo}{/if}
         </div>
+      </div>
+    {:else}
+      <span class="lp-empty">Sin actividad</span>
+    {/if}
+  </div>
+{/snippet}
 
-        {#if cat.children.length > 0}
-          <ul class="menu bg-base-100 rounded-box border border-azeroth-border mt-3 w-full">
-            {#each cat.children.filter((c) => c.flags.can_view) as child (child.id)}
-              {@const last = lastPostBlock(child.lastPost)}
-              <li>
-                <span class="flex items-center gap-2 w-full">
-                  <ChevronRight size={14} class="text-azeroth-faint shrink-0" />
-                  <span class="font-medium">{child.name}</span>
-                  <span class="ml-auto text-xs text-azeroth-muted">
-                    Temas {child.threads_count ?? 0}
-                  </span>
-                  <span class="text-xs text-azeroth-muted">Mensajes {child.posts_count ?? 0}</span>
-                  {#if last}
-                    <span
-                      class="flex items-center gap-1 text-xs text-azeroth-text-soft"
-                      title={`Último mensaje: ${last.author}`}
-                    >
-                      <img
-                        src={last.avatar}
-                        alt={last.alt}
-                        class="w-5 h-5 rounded-full object-cover bg-azeroth-border"
-                      />
-                      {last.author}
-                    </span>
+{#each categories as cat (cat.id)}
+  {@const rows = visibleChildren(cat)}
+  {@const leafReachable = cat.children.length === 0 && cat.flags.can_view}
+  {#if rows.length > 0 || leafReachable}
+    <section class="forum-group" data-forum-group>
+      <h2 class="forum-group-title">
+        {#if leafReachable}
+          <a href={resolve(`/foro/categoria/${cat.id}` as any)}>{cat.name}</a>
+        {:else}
+          {cat.name}
+        {/if}
+      </h2>
+      <div class="forum-panel">
+        {#if rows.length > 0}
+          <div class="forum-cat" data-testid="forum-cat">
+            <FolderOpen size={18} />
+            <span class="forum-cat-name">{cat.description ?? cat.name}</span>
+            <span class="meta">
+              <span>
+                <b>{compact(rows.reduce((n, r) => n + (r.threads_count ?? 0), 0))}</b>temas
+              </span>
+              <span>
+                <b>{compact(rows.reduce((n, r) => n + (r.posts_count ?? 0), 0))}</b>mensajes
+              </span>
+            </span>
+          </div>
+        {/if}
+
+        {#if rows.length > 0}
+          {#each rows as child (child.id)}
+            {@const last = lastPostBlock(child.lastPost)}
+            <article class="forum-row" data-testid="forum-row">
+              <a href={resolve(`/foro/categoria/${child.id}` as any)} class="forum-main">
+                <span class="ico"><FolderOpen size={20} /></span>
+                <span class="forum-row-text">
+                  <span class="forum-title">{child.name}</span>
+                  {#if child.description}
+                    <span class="forum-desc">{child.description}</span>
                   {/if}
                 </span>
-              </li>
-            {/each}
-          </ul>
+              </a>
+              <div class="forum-stats" data-testid="forum-stats">
+                <b>{compact(child.threads_count ?? 0)}</b><span>temas</span>
+                <b>{compact(child.posts_count ?? 0)}</b><span>mensajes</span>
+              </div>
+              {@render lastpost(last)}
+            </article>
+          {/each}
+        {:else}
+          {@const last = lastPostBlock(cat.lastPost)}
+          <article class="forum-row" data-testid="forum-row">
+            <a href={resolve(`/foro/categoria/${cat.id}` as any)} class="forum-main">
+              <span class="ico"><FolderOpen size={20} /></span>
+              <span class="forum-row-text">
+                <span class="forum-title">Ver hilos</span>
+                {#if cat.description}
+                  <span class="forum-desc">{cat.description}</span>
+                {/if}
+              </span>
+            </a>
+            <div class="forum-stats" data-testid="forum-stats">
+              <b>{compact(cat.threads_count ?? 0)}</b><span>temas</span>
+              <b>{compact(cat.posts_count ?? 0)}</b><span>mensajes</span>
+            </div>
+            {@render lastpost(last)}
+          </article>
         {/if}
       </div>
-    </div>
-  {/each}
-</div>
+    </section>
+  {/if}
+{/each}

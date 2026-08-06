@@ -437,6 +437,255 @@ h1, h2, h3, h4, h5, h6, .font-cinzel {
 }
 
 /* ============================================================================
+   FORO — índice de secciones (forum-group / forum-row, OD forum-index)
+   ============================================================================ */
+.forum-group {
+  margin-bottom: 2rem;
+}
+.forum-group-title {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-family: var(--font-cinzel);
+  font-size: 1.14rem;
+  font-weight: 700;
+  color: var(--color-azeroth-gold-bright);
+  margin: 0 0 12px;
+}
+/* rombo dorado del grupo (OD forum-index) */
+.forum-group-title::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  flex: none;
+  transform: rotate(45deg);
+  background: linear-gradient(135deg, var(--color-azeroth-gold-bright), var(--color-azeroth-gold-dim));
+  box-shadow:
+    inset 0 0 0 1px rgba(248, 183, 0, 0.35),
+    0 0 8px rgba(248, 183, 0, 0.35);
+}
+.forum-group-title a {
+  color: inherit;
+  text-decoration: none;
+}
+.forum-group-title a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.forum-panel {
+  border: 1px solid var(--color-azeroth-border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--color-azeroth-surface-2), var(--color-azeroth-surface));
+  overflow: hidden;
+  box-shadow: var(--shadow-1);
+}
+.forum-cat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--color-azeroth-border);
+  background: linear-gradient(90deg, rgba(248, 183, 0, 0.05), rgba(248, 183, 0, 0) 70%);
+  font-size: 0.88rem;
+  color: var(--color-azeroth-muted);
+}
+.forum-cat > svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  color: var(--color-azeroth-gold-dim);
+}
+.forum-cat-name {
+  font-weight: 600;
+  color: var(--color-azeroth-text-soft);
+}
+.forum-cat .meta {
+  margin-left: auto;
+  display: flex;
+  gap: 16px;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--color-azeroth-faint);
+}
+.forum-cat .meta b {
+  color: var(--color-azeroth-gold);
+  font-weight: 700;
+  margin-right: 5px;
+}
+.forum-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(150px, 1fr);
+  gap: 18px;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--color-azeroth-border);
+  transition: background 0.12s;
+}
+.forum-row:last-child {
+  border-bottom: 0;
+}
+.forum-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.forum-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+.ico {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-azeroth-border-strong);
+  background: var(--color-azeroth-sunken);
+  color: var(--color-azeroth-gold);
+}
+.ico svg {
+  width: 20px;
+  height: 20px;
+}
+.forum-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.forum-title {
+  font-family: var(--font-cinzel);
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--color-base-content);
+  line-height: 1.25;
+}
+.forum-main:hover .forum-title {
+  color: var(--color-azeroth-gold-bright);
+}
+.forum-desc {
+  font-size: 0.82rem;
+  color: var(--color-azeroth-muted);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.forum-stats {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--color-azeroth-faint);
+  white-space: nowrap;
+}
+.forum-stats b {
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--color-azeroth-gold-bright);
+}
+.lastpost {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
+  font-size: 0.8rem;
+  color: var(--color-azeroth-muted);
+}
+.lastpost-init {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 2px solid var(--color-azeroth-border);
+  background: var(--color-azeroth-surface);
+  font-family: var(--font-cinzel);
+  font-weight: 700;
+  color: var(--color-azeroth-gold-dim);
+}
+.lp-t {
+  min-width: 0;
+  text-align: right;
+  line-height: 1.45;
+}
+.lp-t a,
+.lp-title {
+  display: inline-block;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-azeroth-text-soft);
+  font-weight: 600;
+  text-decoration: none;
+}
+.lp-t a:hover {
+  color: var(--color-azeroth-gold-bright);
+}
+.lp-meta {
+  color: var(--color-azeroth-faint);
+  font-size: 0.76rem;
+}
+.lp-meta b {
+  color: var(--color-azeroth-gold);
+  font-weight: 600;
+}
+.lp-empty {
+  color: var(--color-azeroth-faint);
+  font-size: 0.76rem;
+}
+@media (max-width: 700px) {
+  .forum-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 10px;
+  }
+  .lastpost {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    border-top: 1px dashed var(--color-azeroth-border);
+    padding-top: 8px;
+  }
+  .lp-t {
+    text-align: left;
+  }
+}
+
+/* ============================================================================
+   CTA dorado (OD .btn / .btn-primary): daisyUI enseña el dorado plano; el OD
+   usa gradiente oro + glow. Reglas sin capa para ganar al daisyUI (en capas).
+   ============================================================================ */
+.btn.btn-primary {
+  color: #1a1508;
+  border-color: transparent;
+  background-image: linear-gradient(180deg, var(--color-azeroth-gold-bright), var(--color-azeroth-gold));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 8px 22px -10px rgba(248, 183, 0, 0.55);
+}
+.btn.btn-primary:hover {
+  translate: 0 -1px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 12px 30px -10px rgba(248, 183, 0, 0.7);
+}
+.btn.btn-primary:is(:disabled, [disabled], [aria-disabled='true']) {
+  background-image: none;
+  background-color: color-mix(in oklab, var(--color-azeroth-gold) 14%, transparent);
+  box-shadow: none;
+  translate: none;
+}
+
+/* ============================================================================
    FORMULARIO — tarjetas de pasos + campos (nueva ficha, nuevo evento, etc.)
    ============================================================================ */
 .form-card {
