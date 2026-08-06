@@ -14,6 +14,16 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, profile
   const canView = story.status === 'aprobado' || profile?.role === 'admin' || profile?.role === 'gm' || story.character?.player_id === profile?.id;
   if (!canView) throw error(403, 'No puedes ver esta historia');
 
+  // SEC-16: never leak GM review fields to public viewers of approved stories.
+  // The author keeps them (rejection feedback) and staff see them for review.
+  const isOwner = story.character?.player_id === profile?.id;
+  const isStaff = isGMOrAdmin(profile?.role ?? null);
+  if (!isOwner && !isStaff) {
+    const safe = story as unknown as Record<string, unknown>;
+    delete safe.review_notes;
+    delete safe.reviewed_by;
+  }
+
   return { story, profile };
 };
 
