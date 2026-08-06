@@ -274,10 +274,14 @@ describe('foro category counts + last-post (REQ-FORUM-02.1/02.2)', () => {
     const sub = root.children.find((c: { id: string }) => c.id === 'sub1');
     expect(sub.threads_count).toBe(3);
     expect(sub.posts_count).toBe(12);
-    // lastPost is the most recent visible post: p12 by "Doce" with an avatar.
+    // lastPost is the most recent visible post: p12 by "Doce" with an avatar,
+    // enriched with its parent thread title + the post's own timestamp (OD row).
     expect(sub.lastPost).toEqual({
       avatar_url: 'https://x/avatar.png',
       author_display_name: 'Doce',
+      thread_title: 'Hilo t3',
+      thread_id: 't3',
+      created_at: '2026-08-03T06:00:00Z',
     });
   });
 
@@ -336,7 +340,13 @@ describe('foro category counts + last-post (REQ-FORUM-02.1/02.2)', () => {
     const sub = root.children.find((c: { id: string }) => c.id === 'sub');
     expect(sub.threads_count).toBe(1);
     expect(sub.posts_count).toBe(1);
-    expect(sub.lastPost).toEqual({ avatar_url: null, author_display_name: 'Pub' });
+    expect(sub.lastPost).toEqual({
+      avatar_url: null,
+      author_display_name: 'Pub',
+      thread_title: 'Hilo t-pub',
+      thread_id: 't-pub',
+      created_at: '2026-08-01T01:00:00Z',
+    });
   });
 });
 

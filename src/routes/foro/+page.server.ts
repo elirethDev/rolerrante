@@ -7,7 +7,7 @@ import {
   validateForumHrefs,
   type PermissionFlags,
 } from '$lib/auth';
-import { searchThreads, minReadRoleSatisfied, type CategoryNode, type LastPostInfo, type ThreadListItem } from '$lib/forum';
+import { searchThreads, minReadRoleSatisfied, enrichThreadsWithPosts, type CategoryNode, type PostActivityRow, type ThreadListItem } from '$lib/forum';
 import type { UserRole } from '$lib/types';
 import type { Database } from '$lib/supabase/database.types';
 import type { Actions, PageServerLoad } from './$types';
@@ -90,54 +90,34 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile }, url 
   // Category counts + last-post (REQ-FORUM-02.1/02.2): fetch posts for the
   // visible threads (already status/category filtered above), group by thread,
   // and derive per-category totals and the most recent visible post metadata.
-  type PostWithAuthor = {
-    id: string;
-    thread_id: string;
-    created_at: string;
-    author: { id: string; display_name: string | null; username?: string; avatar_url?: string | null } | null;
-  };
-  const postsByThread = new Map<string, PostWithAuthor[]>();
   const threadIds = threadList.map((t) => t.id);
+  let posts: PostActivityRow[] = [];
   if (threadIds.length > 0) {
-    const { data: posts } = await supabase
+    const { data } = await supabase
       .from('posts')
       .select('id, thread_id, created_at, author:author_id(id, display_name, username, avatar_url)')
       .in('thread_id', threadIds)
       .order('created_at', { ascending: false });
-    for (const p of (posts ?? []) as PostWithAuthor[]) {
-      const arr = postsByThread.get(p.thread_id) ?? [];
-      arr.push(p);
-      postsByThread.set(p.thread_id, arr);
-    }
+    posts = (data ?? []) as PostActivityRow[];
   }
 
-  const toLastPost = (p: PostWithAuthor | undefined): LastPostInfo | null =>
-    p
-      ? {
-          avatar_url: p.author?.avatar_url ?? null,
-          author_display_name: p.author?.display_name ?? p.author?.username ?? null,
-        }
-      : null;
-
-  // Posts arrive grouped per thread (created_at desc); pick the newest defensively.
-  const newestOf = (posts: PostWithAuthor[]) =>
-    [...posts].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
-
-  const enrichThread = (t: ThreadListItem): ThreadListItem => {
-    const ps = postsByThread.get(t.id) ?? [];
-    return { ...t, posts_count: ps.length, lastPost: toLastPost(newestOf(ps)) };
-  };
+  const enriched = enrichThreadsWithPosts(threadList, posts);
 
   const withFlags = (c: CategoryRow): CategoryNode => {
     const flags =
       (permByCat.get(c.id) as PermissionFlags | undefined) ??
       resolveEffectivePermissions({ section: null, thread: null, role });
-    const own = threadList.filter((t) => t.category_id === c.id).map(enrichThread);
-    const ownPosts = own.flatMap((t) => postsByThread.get(t.id) ?? []);
+    const own = enriched.filter((t) => t.category_id === c.id);
     const children = cats
       .filter((k) => k.parent_id === c.id)
       .sort((a, b) => a.sort_order - b.sort_order)
       .map(withFlags);
+    // The category's newest activity is its own latest post across its threads.
+    const newestThread = own
+      .filter((t) => t.lastPost?.created_at)
+      .sort((a, b) =>
+        String(b.lastPost?.created_at ?? '').localeCompare(String(a.lastPost?.created_at ?? '')),
+      )[0];
     return {
       id: c.id,
       name: c.name,
@@ -149,8 +129,8 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile }, url 
       children,
       threads: children.length ? [] : own,
       threads_count: own.length,
-      posts_count: ownPosts.length,
-      lastPost: toLastPost(newestOf(ownPosts)),
+      posts_count: own.reduce((n, t) => n + t.posts_count, 0),
+      lastPost: newestThread?.lastPost ?? null,
     };
   };
 

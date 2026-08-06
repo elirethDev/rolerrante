@@ -61,11 +61,11 @@ function makeSupabase(f: Fixture) {
 const makeLocals = (supabase: ReturnType<typeof makeSupabase>, role = 'rolero') =>
   ({ supabase, user: { id: 'u1' }, profile: { id: 'u1', role } }) as never;
 
-const makeEvent = (locals: ReturnType<typeof makeLocals>, body = '') =>
+const makeEvent = (locals: ReturnType<typeof makeLocals>, body = '', query = '') =>
   ({
     locals,
     params: {},
-    url: new URL('http://localhost/foro/nuevo'),
+    url: new URL(`http://localhost/foro/nuevo${query}`),
     request: new Request('http://localhost/foro/nuevo', {
       method: 'POST',
       body,
@@ -93,6 +93,14 @@ describe('foro/nuevo load()', () => {
       caught = e as { status?: number };
     }
     expect(caught?.status).toBe(303);
+  });
+
+  it('preselects a valid ?categoria= section and ignores unknown ids', async () => {
+    const supabase = makeSupabase({ categories: [{ id: 'c1', name: 'General' }, { id: 'c2', name: 'Hogar' }] });
+    const seeded = await loadFn(makeEvent(makeLocals(supabase), '', '?categoria=c2'));
+    expect(seeded.preselectedCategory).toBe('c2');
+    const bogus = await loadFn(makeEvent(makeLocals(supabase), '', '?categoria=nope'));
+    expect(bogus.preselectedCategory).toBe('');
   });
 });
 

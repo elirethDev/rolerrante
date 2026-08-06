@@ -2,14 +2,17 @@ import { fail, redirect } from '@sveltejs/kit';
 import { requireAuth, validateForumImageUrls, validateForumHrefs, forumAccessAllowed } from '$lib/auth';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals: { supabase, user, profile } }) => {
+export const load: PageServerLoad = async ({ url, locals: { supabase, user, profile } }) => {
   requireAuth({ user, profile });
   // Suspended/banned users are denied forum access (REQ-MOD-ENF-03.2).
   if (profile && !(await forumAccessAllowed(supabase, profile))) {
     throw redirect(303, '/');
   }
   const { data: categories } = await supabase.from('categories').select('*').order('sort_order', { ascending: true });
-  return { categories: categories ?? [] };
+  // Preselect the section passed from the category page (?categoria=id) when it exists.
+  const seed = String(url.searchParams.get('categoria') ?? '').trim();
+  const seeded = (categories ?? []).some((c) => c.id === seed) ? seed : '';
+  return { categories: categories ?? [], preselectedCategory: seeded };
 };
 
 export const actions: Actions = {

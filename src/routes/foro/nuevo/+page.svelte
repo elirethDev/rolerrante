@@ -49,6 +49,8 @@
       if (draft.content) content = draft.content;
       if (draft.content || draft.title) savedIndicator = true;
     }
+    // Preselect the section when arriving from a forum category (?categoria=id).
+    if (data.preselectedCategory) categoryId = data.preselectedCategory;
   });
 
   onDestroy(() => {
