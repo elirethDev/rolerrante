@@ -668,6 +668,38 @@ describe('thread detail reply action', () => {
     expect(res.status).toBe(400);
     expect(inserted).toHaveLength(0);
   });
+
+  // OD alignment: the OP is the thread body (not a posts row), so quoting it sends
+  // quote_post_id = thread.id. The server must accept that as "belongs to this
+  // thread" and build the authoritative blockquote (REQ-FC-04 / REQ-FORUM-02.5).
+  it('accepts a quote of the OP (quote_post_id = thread.id) and prepends the blockquote once', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread({ is_locked: false }),
+      posts: [],
+      insertedPosts: inserted,
+    });
+    const err = await replyFn(
+      makeReplyEvent(makeLocals(supabase), {
+        content: '<p>mi respuesta</p>',
+        quote_author: 'Autor',
+        quote_excerpt: 'apertura del hilo',
+        quote_post_id: 't1',
+      }),
+    ).then(
+      () => null,
+      (e: { status?: number }) => e,
+    );
+    expect(err?.status).toBe(303);
+    expect(inserted).toHaveLength(1);
+    const body = String(inserted[0].body);
+    const blocks = body.match(/<blockquote>/g) ?? [];
+    expect(blocks).toHaveLength(1);
+    expect(body.startsWith('<blockquote>')).toBe(true);
+    expect(body).toContain('Autor');
+    expect(body).toContain('apertura del hilo');
+    expect(body).toContain('mi respuesta');
+  });
 });
 
 describe('thread detail report action (REQ-MOD-REP-01)', () => {
@@ -736,6 +768,29 @@ describe('thread detail report action (REQ-MOD-REP-01)', () => {
     const res = await reportFn(makeReportEvent(makeLocals(supabase, 'rolero', 'u1')));
     expect(res.status).toBe(400);
     expect(inserted).toHaveLength(0);
+  });
+
+  // OD alignment: the OP (thread body) is not a posts row; posting ?/report with
+  // post_id = thread.id must get a clean 400 instead of a raw reports FK error.
+  it('guards a report of the OP (post_id = thread.id) with a clean 400 and no insert', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      insertRows: inserted,
+    });
+    const res = await reportFn({
+      locals: makeLocals(supabase, 'rolero', 'u1'),
+      params: { threadId: 't1' },
+      url: new URL('http://localhost/foro/t1'),
+      request: new Request('http://localhost/foro/t1', {
+        method: 'POST',
+        body: new URLSearchParams({ post_id: 't1', reason: 'Spam' }).toString(),
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      }),
+    } as never);
+    expect(res.status).toBe(400);
+    expect(inserted).toHaveLength(0);
+    expect((res as { data: { message: string } }).data.message).toContain('reportar');
   });
 });
 

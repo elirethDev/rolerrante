@@ -40,6 +40,8 @@ interface DetailProps {
   isSticky: boolean;
   isOwner: boolean;
   isStaff: boolean;
+  // eslint-disable-next-line no-unused-vars -- type-only param name
+  onCitar?: (payload: { author_display_name: string; body_excerpt: string; post_id: string }) => void;
 }
 
 const makeProps = (p: Partial<DetailProps> = {}): DetailProps => ({
@@ -83,5 +85,32 @@ describe('ThreadDetail', () => {
   it('does not show a pin toggle for non-staff users', () => {
     render(ThreadDetail, makeProps({ isStaff: false, isSticky: true }));
     expect(screen.queryByRole('button', { name: /fijar/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('ThreadDetail OP (first post) action bar', () => {
+  it('renders the OP with the same reply action bar: Citar, Gracias chip and Reportar', () => {
+    render(ThreadDetail, makeProps({ threadBody: '<p>apertura del hilo</p>' }));
+    expect(screen.getByRole('button', { name: /Citar/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Reportar/i })).toBeInTheDocument();
+    // OP is not a replies row: the Gracias chip renders read-only (guests' neutral state)
+    expect(screen.getByText(/Gracias/i)).toBeInTheDocument();
+  });
+
+  it('forwards a Citar click on the OP into the reply-quote prefill flow', async () => {
+    const user = userEvent.setup();
+    const onCitar = vi.fn();
+    render(ThreadDetail, makeProps({ threadBody: '<p>apertura</p>', onCitar }));
+    await user.click(screen.getByRole('button', { name: /Citar/i }));
+    expect(onCitar).toHaveBeenCalledTimes(1);
+    const payload = onCitar.mock.calls[0][0] as { author_display_name: string; body_excerpt: string; post_id: string };
+    expect(payload.author_display_name).toBe('Autor');
+    expect(payload.body_excerpt).toContain('apertura');
+    expect(payload.post_id).toBe('t1'); // the OP is identified by the thread id
+  });
+
+  it('shows a Compartir action on the OP too', () => {
+    render(ThreadDetail, makeProps({ threadBody: '<p>apertura</p>' }));
+    expect(screen.getByRole('button', { name: /Compartir/i })).toBeInTheDocument();
   });
 });

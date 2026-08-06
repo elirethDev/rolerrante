@@ -232,14 +232,18 @@ export const actions: Actions = {
       if (quoteExcerpt.length > EXCERPT_MAX_LENGTH) {
         return fail(400, { message: `La cita excede los ${EXCERPT_MAX_LENGTH} caracteres` });
       }
-      // The quoted post must live in this thread.
-      const { data: quotedRows } = await supabase
-        .from('posts')
-        .select('id')
-        .eq('id', quotePostId)
-        .eq('thread_id', t.id)
-        .maybeSingle();
-      if (!quotedRows) return fail(400, { message: 'El mensaje citado no pertenece a este hilo' });
+      // The quoted post must live in this thread. The OP is the thread body itself,
+      // not a posts row, so quoting it uses quote_post_id = thread.id (OD alignment):
+      // the OP always "belongs to this thread" by definition.
+      if (quotePostId !== t.id) {
+        const { data: quotedRows } = await supabase
+          .from('posts')
+          .select('id')
+          .eq('id', quotePostId)
+          .eq('thread_id', t.id)
+          .maybeSingle();
+        if (!quotedRows) return fail(400, { message: 'El mensaje citado no pertenece a este hilo' });
+      }
       body = applyQuoteToBody(content, {
         author_display_name: quoteAuthor,
         body_excerpt: quoteExcerpt,
@@ -456,6 +460,13 @@ export const actions: Actions = {
     if (!postId) return fail(400, { message: 'Mensaje obligatorio' });
     if (!reason) return fail(400, { message: 'El motivo del reporte es obligatorio' });
     if (reason.length > 500) return fail(400, { message: 'El motivo no puede superar 500 caracteres' });
+
+    // OD alignment: the OP is the thread body, not a posts row, so a report sent
+    // with post_id = thread.id cannot persist (reports.post_id FK → posts). Guard
+    // it with a clear message instead of a raw foreign-key error.
+    if (postId === params.threadId) {
+      return fail(400, { message: 'El primer mensaje del hilo no se puede reportar todavía' });
+    }
 
     // Dedupe/rate-limit: a reporter cannot open the same post report twice
     // (REP-01 same-user same-post scenario). RLS lets the reporter read their
