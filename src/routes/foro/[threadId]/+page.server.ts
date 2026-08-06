@@ -232,14 +232,18 @@ export const actions: Actions = {
       if (quoteExcerpt.length > EXCERPT_MAX_LENGTH) {
         return fail(400, { message: `La cita excede los ${EXCERPT_MAX_LENGTH} caracteres` });
       }
-      // The quoted post must live in this thread.
-      const { data: quotedRows } = await supabase
-        .from('posts')
-        .select('id')
-        .eq('id', quotePostId)
-        .eq('thread_id', t.id)
-        .maybeSingle();
-      if (!quotedRows) return fail(400, { message: 'El mensaje citado no pertenece a este hilo' });
+      // The quoted post must live in this thread. The OP is the thread body itself,
+      // not a posts row, so quoting it uses quote_post_id = thread.id (OD alignment):
+      // the OP always "belongs to this thread" by definition.
+      if (quotePostId !== t.id) {
+        const { data: quotedRows } = await supabase
+          .from('posts')
+          .select('id')
+          .eq('id', quotePostId)
+          .eq('thread_id', t.id)
+          .maybeSingle();
+        if (!quotedRows) return fail(400, { message: 'El mensaje citado no pertenece a este hilo' });
+      }
       body = applyQuoteToBody(content, {
         author_display_name: quoteAuthor,
         body_excerpt: quoteExcerpt,
@@ -418,6 +422,63 @@ export const actions: Actions = {
     return { success: true };
   },
 
+  // Lock / reopen from the public thread page (REQ-FORUM-04.3). GM/admin only;
+  // the author can never block their own thread. Mirrors admin/foro/hilos/
+  // [threadId] but gated with fail(403) like the other thread-page staff actions.
+  lock: async ({ params, locals: { supabase, user, profile } }) => {
+    requireAuth({ user, profile });
+    if (!profile?.role || !isGMOrAdmin(profile.role)) return fail(403, { message: 'Acceso denegado' });
+    const threadId = params.threadId;
+
+    const { data: thread } = await supabase.from('threads').select('*').eq('id', threadId).single();
+    if (!thread) throw error(404, 'Hilo no encontrado');
+    if ((thread as unknown as { author_id?: string }).author_id === user?.id) {
+      return fail(403, { message: 'El autor no puede bloquear su propio hilo' });
+    }
+    if ((thread as unknown as { is_locked: boolean }).is_locked) return { success: true };
+
+    const { error: dbError } = await supabase
+      .from('threads')
+      .update({ is_locked: true, locked_by: user!.id, locked_at: new Date().toISOString() })
+      .eq('id', threadId);
+    if (dbError) return fail(400, { message: dbError.message });
+
+    await supabase.rpc('log_audit', {
+      p_action: 'bloquear_hilo',
+      p_entity_type: 'thread',
+      p_entity_id: threadId,
+      p_details: { thread_id: threadId },
+    });
+    return { success: true };
+  },
+
+  unlock: async ({ params, locals: { supabase, user, profile } }) => {
+    requireAuth({ user, profile });
+    if (!profile?.role || !isGMOrAdmin(profile.role)) return fail(403, { message: 'Acceso denegado' });
+    const threadId = params.threadId;
+
+    const { data: thread } = await supabase.from('threads').select('*').eq('id', threadId).single();
+    if (!thread) throw error(404, 'Hilo no encontrado');
+    if ((thread as unknown as { author_id?: string }).author_id === user?.id) {
+      return fail(403, { message: 'El autor no puede desbloquear su propio hilo' });
+    }
+    if (!(thread as unknown as { is_locked: boolean }).is_locked) return { success: true };
+
+    const { error: dbError } = await supabase
+      .from('threads')
+      .update({ is_locked: false, locked_by: null, locked_at: null })
+      .eq('id', threadId);
+    if (dbError) return fail(400, { message: dbError.message });
+
+    await supabase.rpc('log_audit', {
+      p_action: 'desbloquear_hilo',
+      p_entity_type: 'thread',
+      p_entity_id: threadId,
+      p_details: { thread_id: threadId },
+    });
+    return { success: true };
+  },
+
   // Slice 2 — follow/unfollow + in-app preference (REQ-FOLLOW-01/02).
   follow: async ({ params, locals: { supabase, user, profile } }) => {
     requireAuth({ user, profile });
@@ -456,6 +517,13 @@ export const actions: Actions = {
     if (!postId) return fail(400, { message: 'Mensaje obligatorio' });
     if (!reason) return fail(400, { message: 'El motivo del reporte es obligatorio' });
     if (reason.length > 500) return fail(400, { message: 'El motivo no puede superar 500 caracteres' });
+
+    // OD alignment: the OP is the thread body, not a posts row, so a report sent
+    // with post_id = thread.id cannot persist (reports.post_id FK → posts). Guard
+    // it with a clear message instead of a raw foreign-key error.
+    if (postId === params.threadId) {
+      return fail(400, { message: 'El primer mensaje del hilo no se puede reportar todavía' });
+    }
 
     // Dedupe/rate-limit: a reporter cannot open the same post report twice
     // (REP-01 same-user same-post scenario). RLS lets the reporter read their

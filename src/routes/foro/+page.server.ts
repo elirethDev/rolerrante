@@ -1,9 +1,16 @@
-import { redirect } from '@sveltejs/kit';
-import { resolveEffectivePermissions, forumAccessAllowed, type PermissionFlags } from '$lib/auth';
+import { fail, redirect } from '@sveltejs/kit';
+import {
+  resolveEffectivePermissions,
+  forumAccessAllowed,
+  requireAuth,
+  validateForumImageUrls,
+  validateForumHrefs,
+  type PermissionFlags,
+} from '$lib/auth';
 import { searchThreads, minReadRoleSatisfied, type CategoryNode, type LastPostInfo, type ThreadListItem } from '$lib/forum';
 import type { UserRole } from '$lib/types';
 import type { Database } from '$lib/supabase/database.types';
-import type { PageServerLoad } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 
 // Categories now use the generated Supabase Row type (RED-05) — no hand-rolled
 // duplicate of the schema.
@@ -158,4 +165,102 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile }, url 
     isAdmin: isAdminUser,
     isStaff,
   };
+};
+
+export const actions: Actions = {
+  // Quick new-thread from the /foro modal (OD alignment). Mirrors
+  // foro/nuevo's default action but adds two flags: is_sticky (staff only) and
+  // allow_replies (unchecked ⇒ create locked).
+  quickCreate: async ({ request, locals: { supabase, user, profile } }) => {
+    requireAuth({ user, profile });
+    // Suspended/banned users are denied forum access (REQ-MOD-ENF-03.2).
+    if (profile && !(await forumAccessAllowed(supabase, profile))) {
+      throw redirect(303, '/');
+    }
+
+    const role: UserRole = profile?.role ?? 'pendiente';
+    const isStaff = role === 'gm' || role === 'admin';
+
+    const form = await request.formData();
+    const title = String(form.get('title') ?? '').trim();
+    const content = String(form.get('content') ?? '').trim();
+    const categoryId = String(form.get('category_id') ?? '');
+    // Only staff may pin; a smuggled is_sticky flag from a non-staff client is
+    // silently forced to false (the UI hides the checkbox for non-staff).
+    const isSticky = isStaff && form.get('is_sticky') === 'on';
+    // allow_replies is a checkbox: present ⇒ open thread; absent ⇒ locked.
+    const allowReplies = form.get('allow_replies') === 'on';
+
+    if (!title || !content || !categoryId) {
+      return fail(400, { message: 'Título, contenido y sección son obligatorios' });
+    }
+
+    const imgCheck = validateForumImageUrls(content);
+    if (!imgCheck.valid) {
+      return fail(400, { message: `Imagen no permitida: ${imgCheck.rejected.join(', ')}` });
+    }
+
+    const hrefCheck = validateForumHrefs(content);
+    if (!hrefCheck.valid) {
+      return fail(400, { message: `Enlace no permitido: ${hrefCheck.rejected.join(', ')}` });
+    }
+
+    const { data: category } = await supabase
+      .from('categories')
+      .select('id, parent_id')
+      .eq('id', categoryId)
+      .single();
+    if (!category) return fail(403, { message: 'Sección inválida' });
+
+    // Role must be allowed to post in the chosen section (same flag the load
+    // derives per category). Staff can always create.
+    if (!isStaff) {
+      const { data: sectionRows } = await supabase
+        .from('section_permissions')
+        .select('*')
+        .eq('role', role);
+      const sectionRow = (sectionRows ?? []).find(
+        (p) => (p as { category_id: string }).category_id === categoryId,
+      ) as PermissionFlags | undefined;
+      const flags = resolveEffectivePermissions({ section: sectionRow ?? null, thread: null, role });
+      if (!flags.can_post) return fail(403, { message: 'No tienes permiso para crear debates en esta sección' });
+    }
+
+    const { data: thread, error } = await supabase
+      .from('threads')
+      .insert({
+        category_id: categoryId,
+        content_type: 'debate',
+        title,
+        body: content,
+        author_id: user!.id,
+        status: 'abierto',
+        is_locked: !allowReplies,
+        is_sticky: isSticky,
+      })
+      .select('id')
+      .single();
+
+    if (error) return fail(400, { message: error.message });
+
+    const { error: auditError } = await supabase.rpc('log_audit', {
+      p_action: 'crear_hilo',
+      p_entity_type: 'thread',
+      p_entity_id: thread.id,
+      p_details: { title, category_id: categoryId },
+    });
+    if (auditError) console.error('log_audit falló para crear_hilo', thread.id, auditError);
+
+    if (isSticky) {
+      const { error: pinAuditError } = await supabase.rpc('log_audit', {
+        p_action: 'fijar_hilo',
+        p_entity_type: 'thread',
+        p_entity_id: thread.id,
+        p_details: { thread_id: thread.id },
+      });
+      if (pinAuditError) console.error('log_audit falló para fijar_hilo', thread.id, pinAuditError);
+    }
+
+    throw redirect(303, `/foro/${thread.id}`);
+  },
 };
