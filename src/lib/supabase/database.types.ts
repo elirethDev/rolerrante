@@ -1189,6 +1189,10 @@ export type Database = {
         Args: { p_event_id: string; p_notes?: string }
         Returns: undefined
       }
+      change_role: {
+        Args: { p_new_role: string; p_user_id: string }
+        Returns: undefined
+      }
       finalize_event: {
         Args: { p_event_id: string; p_xp_per_participant: number }
         Returns: undefined
