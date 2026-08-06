@@ -42,6 +42,7 @@ interface DetailProps {
   isStaff: boolean;
   // eslint-disable-next-line no-unused-vars -- type-only param name
   onCitar?: (payload: { author_display_name: string; body_excerpt: string; post_id: string }) => void;
+  totalPosts?: number;
 }
 
 const makeProps = (p: Partial<DetailProps> = {}): DetailProps => ({
@@ -85,6 +86,39 @@ describe('ThreadDetail', () => {
   it('does not show a pin toggle for non-staff users', () => {
     render(ThreadDetail, makeProps({ isStaff: false, isSticky: true }));
     expect(screen.queryByRole('button', { name: /fijar/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('ThreadDetail header meta line', () => {
+  const post: PostView = {
+    id: 'p1',
+    post_number: 1,
+    body: {},
+    author_id: 'u1',
+    created_at: '2026-08-01T00:00:00Z',
+    edited_at: null,
+    edited_by: null,
+    author: null,
+    like_count: 0,
+    viewer_has_liked: null,
+  };
+
+  it('renders the meta line with reply count, publish date and kicker', () => {
+    render(ThreadDetail, makeProps({ totalPosts: 7 }));
+    expect(screen.getByTestId('thread-meta-line')).toBeInTheDocument();
+    expect(screen.getByTestId('thread-replies')).toHaveTextContent('7 respuestas');
+    expect(screen.getByTestId('thread-published')).toHaveTextContent(/Publicado/);
+    expect(screen.getByTestId('thread-kicker')).toHaveTextContent('Debate');
+  });
+
+  it('uses the singular label for one reply', () => {
+    render(ThreadDetail, makeProps({ totalPosts: 1, posts: [] }));
+    expect(screen.getByTestId('thread-replies')).toHaveTextContent('1 respuesta');
+  });
+
+  it('falls back to the rendered posts count when totalPosts is absent', () => {
+    render(ThreadDetail, makeProps({ posts: [post] }));
+    expect(screen.getByTestId('thread-replies')).toHaveTextContent('1 respuesta');
   });
 });
 

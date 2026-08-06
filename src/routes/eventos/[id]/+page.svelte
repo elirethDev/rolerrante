@@ -8,6 +8,7 @@
   import SessionManager from '$lib/components/events/SessionManager.svelte';
   import Field from '$lib/components/ui/Field.svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import type { ActionData, PageData } from './$types';
 
   export let data: PageData;
@@ -27,6 +28,11 @@
 </svelte:head>
 
 <div class="max-w-3xl mx-auto">
+  <Breadcrumbs
+    items={[{ label: 'Eventos', href: '/eventos' }, { label: event.title }]}
+    class="mb-2"
+  />
+
   <PageHeader
     kicker="Evento"
     title={event.title}

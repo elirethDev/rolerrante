@@ -2,6 +2,7 @@
   import { enhance } from '$app/forms';
   import PermissionPanel from '$lib/components/forum/PermissionPanel.svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import type { ActionData, PageData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData | null } = $props();
@@ -13,6 +14,15 @@
 <svelte:head>
   <title>Hilo — Panel Admin</title>
 </svelte:head>
+
+<Breadcrumbs
+  items={[
+    { label: 'Admin', href: '/admin' },
+    { label: 'Foro', href: '/admin/foro' },
+    { label: (data.thread as { title: string }).title },
+  ]}
+  class="mb-2"
+/>
 
 <PageHeader kicker="Panel admin" title={`Hilo: {(data.thread as { title: string }).title}`} />
 

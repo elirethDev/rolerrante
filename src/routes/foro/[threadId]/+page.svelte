@@ -37,6 +37,7 @@
       isStaff={data.isStaff}
       currentPage={data.currentPage}
       totalPages={data.totalPages}
+      totalPosts={data.totalPosts}
       onCitar={(payload) => (replyTo = payload)}
     />
 

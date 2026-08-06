@@ -1,6 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import { formatDateTime } from '$lib/utils';
   import type { ActionData, PageData } from './$types';
 
@@ -53,6 +54,8 @@
 <svelte:head>
   <title>Moderación del foro — Panel Admin</title>
 </svelte:head>
+
+<Breadcrumbs items={[{ label: 'Admin', href: '/admin' }, { label: 'Moderación' }]} class="mb-2" />
 
 <PageHeader kicker="Panel admin" title="Moderación del foro" />
 

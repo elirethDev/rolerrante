@@ -17,6 +17,7 @@
   import Field from '$lib/components/ui/Field.svelte';
   import CombatValues from '$lib/components/sheets/CombatValues.svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import type { ActionData, PageData } from './$types';
   import type { Skill } from '$lib/types';
 
@@ -80,6 +81,8 @@
 </svelte:head>
 
 <section class="max-w-[1180px] mx-auto">
+  <Breadcrumbs items={[{ label: 'Personajes', href: '/personajes' }, { label: 'Nueva ficha' }]} class="mb-2" />
+
   <PageHeader kicker="Personajes" title="Nuevo personaje" />
 
   {#if form?.message}

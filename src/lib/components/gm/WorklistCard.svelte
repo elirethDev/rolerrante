@@ -1,14 +1,15 @@
 <script lang="ts">
   import { formatRelativeTime } from '$lib/utils';
-  import { Award, BookOpen, CalendarDays, CircleCheck, User } from '@lucide/svelte';
-  import type { Component } from 'svelte';
+  import { CircleCheck } from '@lucide/svelte';
+  import Avatar from '$lib/components/ui/Avatar.svelte';
   import { TYPE_LABELS, type WorklistItem, type WorklistItemType } from './types';
 
-  const ICONS: Record<WorklistItemType, Component> = {
-    ficha: User,
-    evento: CalendarDays,
-    cronica: BookOpen,
-    solicitud: Award,
+  // Per-type approve CTA (design gm.html): the label matches what the RPC does.
+  const APPROVE_LABELS: Record<WorklistItemType, string> = {
+    ficha: 'Aprobar ficha',
+    cronica: 'Aprobar crónica',
+    evento: 'Publicar evento',
+    solicitud: 'Aprobar habilidad',
   };
 
   let {
@@ -28,7 +29,6 @@
   } = $props();
 
   const age = $derived(formatRelativeTime(item.createdAt));
-  const Icon = $derived(ICONS[item.type]);
   const typeLabel = $derived(TYPE_LABELS[item.type]);
 
   // Inline review (design gm.html): the GM writes a comment and then approves
@@ -51,9 +51,7 @@
 >
   <div class="card-body py-3">
     <div class="flex flex-row items-center gap-3">
-      <span data-testid="wl-icon" class="text-azeroth-gold shrink-0">
-        <Icon size={18} strokeWidth={1.5} />
-      </span>
+      <Avatar name={item.author} alt={item.author || 'Autor'} size="lg" ring class="shrink-0" />
       <div class="min-w-0 flex-1">
         <a data-testid="wl-detail" href={item.detailHref} class="font-semibold hover:underline">
           {item.name}
@@ -65,11 +63,14 @@
         </div>
       </div>
       {#if item.stale}
-        <span data-testid="wl-stale" class="badge badge-warning badge-outline">Antigua</span>
+        <span data-testid="wl-stale" class="badge badge-warning badge-outline">Sin respuesta &gt; 48 h</span>
       {/if}
       <div class="flex flex-row gap-1 shrink-0">
         {#if done}
-          <span data-testid="wl-done" class="badge badge-success gap-1">
+          <span
+            data-testid="wl-done"
+            class="badge gap-1 border-azeroth-gold-dim bg-azeroth-sunken text-azeroth-gold-bright"
+          >
             <CircleCheck size={14} aria-hidden="true" />
             Aprobado
           </span>
@@ -115,7 +116,7 @@
             disabled={busy}
             onclick={() => emit(onApprove)}
           >
-            Aprobar
+            {APPROVE_LABELS[item.type] ?? 'Aprobar'}
           </button>
         {/if}
       </div>

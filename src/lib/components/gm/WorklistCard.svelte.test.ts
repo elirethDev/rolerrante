@@ -35,9 +35,9 @@ describe('WorklistCard', () => {
     expect(screen.getByTestId('wl-age')).toHaveTextContent('hace un momento');
   });
 
-  it('shows the stale mark when stale and hides it when fresh', () => {
+  it('shows the stale mark with the 48h wording when stale and hides it when fresh', () => {
     const { unmount } = render(WorklistCard, { item: item({ stale: true }) });
-    expect(screen.getByTestId('wl-stale')).toBeInTheDocument();
+    expect(screen.getByTestId('wl-stale')).toHaveTextContent('Sin respuesta > 48 h');
     unmount();
 
     render(WorklistCard, { item: item({ stale: false }) });
@@ -47,7 +47,7 @@ describe('WorklistCard', () => {
   it('does not render the reject button for events (reject is unsupported for events)', () => {
     render(WorklistCard, { item: item({ type: 'evento' }) });
     expect(screen.queryByRole('button', { name: 'Rechazar' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Aprobar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Publicar evento' })).toBeInTheDocument();
   });
 
   it('renders the reject button for ficha/cronica/solicitud', () => {
@@ -61,7 +61,7 @@ describe('WorklistCard', () => {
   it('disables approve/reject while busy and keeps review enabled', () => {
     render(WorklistCard, { item: item(), busy: true });
     expect(screen.getByRole('button', { name: 'Rechazar' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Aprobar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Aprobar ficha' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Revisar' })).not.toBeDisabled();
   });
 
@@ -75,11 +75,34 @@ describe('WorklistCard', () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: 'Rechazar' }));
     await user.click(screen.getByRole('button', { name: 'Revisar' }));
-    await user.click(screen.getByRole('button', { name: 'Aprobar' }));
+    await user.click(screen.getByRole('button', { name: 'Aprobar ficha' }));
 
     expect(onReject).toHaveBeenCalledWith(it);
     expect(onReview).toHaveBeenCalledWith(it);
     expect(onApprove).toHaveBeenCalledWith(it);
+  });
+
+  it('renders the author avatar initial in place of a generic icon', () => {
+    render(WorklistCard, { item: item({ author: 'Terencio' }) });
+    expect(screen.queryByTestId('wl-icon')).not.toBeInTheDocument();
+    expect(screen.getByText('T')).toBeInTheDocument();
+  });
+
+  it.each([
+    ['ficha', 'Aprobar ficha'],
+    ['cronica', 'Aprobar crónica'],
+    ['evento', 'Publicar evento'],
+    ['solicitud', 'Aprobar habilidad'],
+  ] as const)('uses a %s-specific approve label (%s)', (type, label) => {
+    const { unmount } = render(WorklistCard, { item: item({ type }) });
+    expect(screen.getByRole('button', { name: label })).toBeInTheDocument();
+    unmount();
+  });
+
+  it('renders a gold done badge instead of the action buttons when done', () => {
+    render(WorklistCard, { item: item(), done: true });
+    expect(screen.getByTestId('wl-done')).toHaveTextContent('Aprobado');
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
   it.each([
@@ -113,7 +136,7 @@ describe('WorklistCard', () => {
     const user = userEvent.setup();
     await user.click(screen.getByTestId('wl-comment'));
     await user.type(screen.getByTestId('wl-notes'), 'Falta contexto canónico');
-    await user.click(screen.getByRole('button', { name: 'Aprobar' }));
+    await user.click(screen.getByRole('button', { name: 'Aprobar ficha' }));
     expect(onApprove).toHaveBeenCalledWith(it, 'Falta contexto canónico');
 
     await user.clear(screen.getByTestId('wl-notes'));

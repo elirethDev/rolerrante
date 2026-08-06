@@ -686,6 +686,43 @@ h1, h2, h3, h4, h5, h6, .font-cinzel {
 }
 
 /* ============================================================================
+   ERROR — página de error (OD error.html:14-20): fondo radial dorado + código
+   degradado. Se restaura fuera de la columna de contenido del layout raíz.
+   ============================================================================ */
+.error-screen {
+  min-height: 100vh;
+  margin-inline: calc(50% - 50vw);
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 4rem 1rem;
+  background:
+    radial-gradient(ellipse 70% 45% at 50% -5%, rgba(248, 183, 0, 0.13), transparent 60%),
+    radial-gradient(ellipse 55% 38% at 50% 108%, rgba(248, 183, 0, 0.08), transparent 62%),
+    var(--color-azeroth-bg-deep);
+}
+.error-code {
+  font-family: var(--font-cinzel);
+  font-size: clamp(4rem, 12vw, 7rem);
+  line-height: 1;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  background: linear-gradient(
+    180deg,
+    var(--color-azeroth-gold-bright),
+    var(--color-azeroth-gold) 55%,
+    var(--color-azeroth-gold-text)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 28px rgba(248, 183, 0, 0.3));
+}
+
+/* ============================================================================
    FORMULARIO — tarjetas de pasos + campos (nueva ficha, nuevo evento, etc.)
    ============================================================================ */
 .form-card {

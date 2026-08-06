@@ -10,6 +10,7 @@
   import AuditBanner from '$lib/components/admin/AuditBanner.svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
 
   let { data }: { data: PageData } = $props();
   const queue = $derived(data.queue);
@@ -94,6 +95,8 @@
 <svelte:head>
   <title>Panel GM — RolErrante</title>
 </svelte:head>
+
+<Breadcrumbs items={[{ label: 'Panel GM' }]} class="mb-2" />
 
 <PageHeader
   kicker="Zona del consejo · GM"
