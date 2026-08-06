@@ -1,6 +1,7 @@
 <script lang="ts">
   /* eslint-disable @typescript-eslint/no-explicit-any -- resolve() is typed for literal routes; forum hrefs are runtime strings */
   import { resolve } from '$app/paths';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import ReplyComposer from '$lib/components/forum/ReplyComposer.svelte';
   import ThreadDetail from '$lib/components/forum/ThreadDetail.svelte';
   import type { QuotePayload } from '$lib/forum';
@@ -18,6 +19,11 @@
 </svelte:head>
 
 <section class="max-w-[1180px] mx-auto">
+  <Breadcrumbs
+    items={[{ label: 'Foro', href: '/foro' }, { label: data.thread.title }]}
+    class="mb-2"
+  />
+
   <div class="flex items-start justify-between gap-4">
     <ThreadDetail
       thread={data.thread}

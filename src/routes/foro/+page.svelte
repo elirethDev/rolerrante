@@ -7,6 +7,7 @@
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import Modal from '$lib/components/ui/Modal.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import Field from '$lib/components/ui/Field.svelte';
   import TipTapEditor from '$lib/components/editor/TipTapEditor.svelte';
   import { validateForumImageUrls } from '$lib/auth';
@@ -46,6 +47,8 @@
 </svelte:head>
 
 <div class="max-w-[1180px] mx-auto">
+  <Breadcrumbs items={[{ label: 'Foro' }]} class="mb-2" />
+
   <PageHeader
     kicker="El salón ahora"
     title="Foro"

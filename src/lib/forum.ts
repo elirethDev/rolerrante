@@ -31,6 +31,12 @@ export type ThreadStatus = Database['public']['Enums']['thread_status'];
 export interface LastPostInfo {
   avatar_url?: string | null;
   author_display_name?: string | null;
+  /** Title of the thread that holds the newest post (OD forum-row last-post). */
+  thread_title?: string | null;
+  /** Thread that holds the newest post, so the OD row can link to it. */
+  thread_id?: string | null;
+  /** Timestamp of the newest post itself (OD "hace X" time-ago). */
+  created_at?: string | null;
 }
 
 export interface ThreadListItem {
@@ -45,6 +51,57 @@ export interface ThreadListItem {
   category_id: string | null;
   posts_count: number;
   lastPost?: LastPostInfo | null;
+  /** OP author (embedded via `author:author_id(...)` select when requested). */
+  author?: AuthorRef | null;
+}
+
+/**
+ * A post row carrying its author, used to derive last-post metadata
+ * (REQ-FORUM-02.1/02.2). The route selects
+ * `id, thread_id, created_at, author:author_id(id, display_name, username, avatar_url)`.
+ */
+export interface PostActivityRow {
+  id: string;
+  thread_id: string;
+  created_at: string;
+  author: AuthorRef & { avatar_url?: string | null };
+}
+
+/**
+ * Derive per-thread reply counts and last-post metadata from a thread list and
+ * its newest-first posts (REQ-FORUM-02.1/02.2). Every thread receives posts_count
+ * plus a LastPostInfo carrying the newest post's author, its own timestamp, and
+ * the parent thread's title — the OD forum-index last-post column (avatar · title
+ * · author · "hace X").
+ */
+export function enrichThreadsWithPosts(
+  threads: ThreadListItem[],
+  posts: PostActivityRow[],
+): ThreadListItem[] {
+  const byThread = new Map<string, PostActivityRow[]>();
+  for (const p of posts) {
+    const arr = byThread.get(p.thread_id) ?? [];
+    arr.push(p);
+    byThread.set(p.thread_id, arr);
+  }
+  return threads.map((t) => {
+    const ps = byThread.get(t.id) ?? [];
+    // Posts arrive ordered by created_at desc; pick the newest defensively.
+    const newest = [...ps].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+    return {
+      ...t,
+      posts_count: ps.length,
+      lastPost: newest
+        ? {
+            avatar_url: newest.author?.avatar_url ?? null,
+            author_display_name: newest.author?.display_name ?? newest.author?.username ?? null,
+            thread_title: t.title,
+            thread_id: t.id,
+            created_at: newest.created_at,
+          }
+        : null,
+    };
+  });
 }
 
 export interface CategoryNode {
