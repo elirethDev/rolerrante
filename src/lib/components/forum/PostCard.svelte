@@ -108,7 +108,7 @@
 </script>
 
 <article class="card bg-base-100 border border-azeroth-border mb-4" id={postAnchorId}>
-  <div class="card-body">
+  <div class="card-body flex flex-col">
     <div class="flex items-center gap-3">
       <div class="w-9 h-9 rounded-full bg-base-300 flex items-center justify-center font-cinzel text-azeroth-gold">
         {authorName.charAt(0).toUpperCase()}
@@ -121,7 +121,7 @@
       </div>
     </div>
 
-    <div class="prose prose-invert max-w-none mt-3">
+    <div class="prose prose-invert max-w-none mt-3 flex-1 min-h-[6rem]">
       <TipTapViewer content={body} />
     </div>
 
