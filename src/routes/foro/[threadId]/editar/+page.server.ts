@@ -1,5 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { requireAuth, validateForumImageUrls, forumAccessAllowed } from '$lib/auth';
+import { requireAuth, validateForumImageUrls, validateForumHrefs, forumAccessAllowed } from '$lib/auth';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals: { supabase, user, profile } }) => {
@@ -48,6 +48,9 @@ export const actions: Actions = {
 
     const imgCheck = validateForumImageUrls(content);
     if (!imgCheck.valid) return fail(400, { message: `Imagen no permitida: ${imgCheck.rejected.join(', ')}` });
+
+    const hrefCheck = validateForumHrefs(content);
+    if (!hrefCheck.valid) return fail(400, { message: `Enlace no permitido: ${hrefCheck.rejected.join(', ')}` });
 
     const { error: updateError } = await supabase
       .from('threads')
