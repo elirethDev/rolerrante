@@ -1,20 +1,15 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
   import type { PageData } from './$types';
-  import { statusLabel, statusColor } from '$lib/utils';
   import { Plus, Search } from '@lucide/svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import FilterTabs from '$lib/components/ui/FilterTabs.svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
+  import CharacterCard from '$lib/components/characters/CharacterCard.svelte';
 
   let { data }: { data: PageData } = $props();
 
   let filterForm = $state<HTMLFormElement | null>(null);
-
-  const playerName = (p: unknown): string =>
-    (p as { display_name?: string | null; username?: string })?.display_name ??
-    (p as { display_name?: string | null; username?: string })?.username ??
-    'Anónimo';
 
   let ownFilter = $state('todas');
 
@@ -101,15 +96,7 @@
 
   <div class="char-grid">
     {#each data.characters as char (char.id)}
-      <a href={resolve(`/personajes/${char.id}`)} class="char-card">
-        <span class="char-name" style="margin-bottom:4px">{char.name}</span>
-        <span class="text-sm text-azeroth-muted">
-          {char.race?.name ?? 'Sin raza'} · {char.age ?? '?'} años
-        </span>
-        <span class="text-xs text-azeroth-faint">
-          Por {playerName(char.player)}
-        </span>
-      </a>
+      <CharacterCard {char} />
     {/each}
   </div>
 {/if}
@@ -130,17 +117,7 @@
     />
     <div class="char-grid mt-4">
       {#each ownFiltered as char (char.id)}
-        <a href={resolve(`/personajes/${char.id}`)} class="char-card">
-          <div class="flex items-center justify-between gap-2">
-            <span class="char-name" style="margin-bottom:4px">{char.name}</span>
-            <span class="badge {statusColor(char.status)} badge-sm whitespace-nowrap">
-              {statusLabel(char.status)}
-            </span>
-          </div>
-          <span class="text-sm text-azeroth-muted">
-            {char.race?.name ?? 'Sin raza'} · {char.age ?? '?'} años
-          </span>
-        </a>
+        <CharacterCard {char} />
       {/each}
     </div>
   </section>

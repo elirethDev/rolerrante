@@ -67,6 +67,13 @@ describe("personajes index page — public census", () => {
     expect(screen.getByText(/elrond/i)).toBeInTheDocument();
   });
 
+  it("renders a status badge and avatar initial on every census card", () => {
+    renderCensus();
+    expect(screen.getAllByText("Aprobado").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("A")).toBeInTheDocument();
+    expect(screen.getByText("L")).toBeInTheDocument();
+  });
+
   it("renders the name search input and the race filter", () => {
     renderCensus();
     expect(screen.getByLabelText(/buscar personaje/i)).toBeInTheDocument();

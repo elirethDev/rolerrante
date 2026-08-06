@@ -12,6 +12,7 @@ interface CharacterRow {
   status: string;
   race_id?: string;
   player_id?: string;
+  avatar_url?: string | null;
   race?: { name: string } | null;
   player?: { display_name: string | null; username: string } | null;
 }
@@ -75,6 +76,7 @@ const char = (p: Partial<CharacterRow>): CharacterRow => ({
   status: 'aprobado',
   race_id: 'r-humano',
   player_id: 'u-1',
+  avatar_url: 'https://img.example.com/aragorn.png',
   race: { name: 'Humanos' },
   player: { display_name: 'Pablo', username: 'pablo' },
   ...p,
@@ -143,6 +145,12 @@ describe('personajes index load() — public realm census (design personajes.htm
     });
     const result = await loadFn(makeEvent(makeLocals(supabase)));
     expect(result.races).toHaveLength(2);
+  });
+
+  it('exposes avatar_url so the census cards can render the avatar', async () => {
+    const supabase = makeSupabase({ characters: [char({})] });
+    const result = await loadFn(makeEvent(makeLocals(supabase)));
+    expect(result.characters[0].avatar_url).toBe('https://img.example.com/aragorn.png');
   });
 
   it('keeps own-character management reachable for a logged-in player, separate from the census', async () => {

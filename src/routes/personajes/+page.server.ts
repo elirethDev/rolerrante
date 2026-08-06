@@ -5,6 +5,7 @@ type CensusCharacter = {
   name: string;
   age: number | null;
   status: string;
+  avatar_url: string | null;
   race: { name: string } | null;
   player: { display_name: string | null; username: string } | null;
 };
@@ -19,7 +20,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, user, profile }
   const race = url.searchParams.get('race')?.trim() ?? '';
 
   const censusSelect =
-    'id, name, age, status, race:race_id(name), player:player_id(display_name, username)';
+    'id, name, age, status, avatar_url, race:race_id(name), player:player_id(display_name, username)';
 
   let censusQuery = supabase
     .from('characters')

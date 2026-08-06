@@ -340,6 +340,19 @@ h1, h2, h3, h4, h5, h6, .font-cinzel {
   border-color: var(--color-azeroth-gold-dim);
   translate: 0 -2px;
 }
+.char-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.char-info {
+  min-width: 0;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 .char-name {
   font-family: var(--font-cinzel);
   font-weight: 700;
