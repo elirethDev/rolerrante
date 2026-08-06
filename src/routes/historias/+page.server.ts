@@ -1,15 +1,7 @@
 import type { PageServerLoad } from './$types';
-
-export const STORY_TABS = ['todas', 'aprobadas', 'revision', 'borradores', 'mias'] as const;
-export type StoryTab = (typeof STORY_TABS)[number];
+import { STORY_TABS, STORY_STATUS, type StoryTab } from '$lib/historias';
 
 type StoryStatus = 'pendiente' | 'borrador' | 'aprobado' | 'rechazado';
-
-const STORY_STATUS: Partial<Record<StoryTab, StoryStatus>> = {
-  aprobadas: 'aprobado',
-  revision: 'pendiente',
-  borradores: 'borrador',
-};
 
 // El feed embebe el personaje (inner) y su autor, de modo que "Mis historias"
 // se resuelve contra el dueño del personaje (character.player_id) y la tarjeta

@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars, @typescript-eslint/no-explicit-any -- mock helper types intentionally loose */
 import { describe, expect, it } from 'vitest';
-import { load, STORY_TABS } from './+page.server';
+import { load } from './+page.server';
+import { STORY_TABS } from '$lib/historias';
 
 const loadFn = load as unknown as (...args: unknown[]) => Promise<any>;
 
