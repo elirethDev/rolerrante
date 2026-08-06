@@ -467,6 +467,7 @@ export type Database = {
           edited_by: string | null
           id: string
           post_number: number
+          reply_to_post_id: string | null
           thread_id: string
           updated_at: string
         }
@@ -478,6 +479,7 @@ export type Database = {
           edited_by?: string | null
           id?: string
           post_number: number
+          reply_to_post_id?: string | null
           thread_id: string
           updated_at?: string
         }
@@ -489,6 +491,7 @@ export type Database = {
           edited_by?: string | null
           id?: string
           post_number?: number
+          reply_to_post_id?: string | null
           thread_id?: string
           updated_at?: string
         }
