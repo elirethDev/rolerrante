@@ -22,7 +22,7 @@
       editable: false,
       // Render symmetry with the editor (REQ-FC-03): Link + Underline are needed
       // so hrefs and underlined marks written in the composer render identically.
-      extensions: [StarterKit, Link.configure({ openOnClick: true }), Image, Spoiler],
+      extensions: [StarterKit.configure({ link: false }), Link.configure({ openOnClick: true }), Image, Spoiler],
       editorProps: {
         attributes: {
           class: 'prose prose-invert max-w-none',

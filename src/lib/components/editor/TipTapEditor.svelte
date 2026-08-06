@@ -35,7 +35,7 @@
       editable,
       content,
       extensions: [
-        StarterKit,
+        StarterKit.configure({ link: false }),
         Link.configure({ openOnClick: true, autolink: true }),
         CharacterCount,
         Image,
