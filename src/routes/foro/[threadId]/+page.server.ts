@@ -49,24 +49,41 @@ export const load: PageServerLoad = async ({ url, params, locals: { supabase, us
   }
 
   // Lazy bridge: ensure a linked story/character/event has its thread (idempotent).
+  // The entity row read (name/status) is deferred into the parallel batch below.
   let entity: { name: string; status: string } | null = null;
+  let entityCol: string | null = null;
+  let entityQuery: Promise<{ data: unknown; error: unknown }> | null = null;
   if (t.linked_entity_type && t.linked_entity_id) {
     const eType = t.linked_entity_type as 'story' | 'character' | 'event';
     await getOrCreateThread(eType, t.linked_entity_id, t.author_id, supabase);
     const table = eType === 'story' ? 'stories' : eType === 'character' ? 'characters' : 'events';
-    const col = eType === 'character' ? 'name' : 'title';
+    entityCol = eType === 'character' ? 'name' : 'title';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: row } = await supabase.from(table).select(`${col}, status`).eq('id', t.linked_entity_id).single() as any;
-    if (row) {
-      entity = {
-        name: String((row as Record<string, unknown>)[col] ?? ''),
-        status: String((row as Record<string, unknown>).status ?? ''),
-      };
-    }
+    entityQuery = supabase.from(table).select(`${entityCol}, status`).eq('id', t.linked_entity_id).single() as any;
   }
 
-  const { data: sectionRows } = await supabase.from('section_permissions').select('*').eq('category_id', t.category_id ?? '');
-  const { data: threadRows } = await supabase.from('thread_permissions').select('*').eq('thread_id', t.id);
+  // Independent reads fire together (PERF-04): permissions, pagination count,
+  // bridged entity row and follow state only depend on the thread already
+  // fetched, collapsing ~4 sequential round trips into one.
+  const [sectionRes, threadRes, countRes, entityRes, follow] = await Promise.all([
+    supabase.from('section_permissions').select('*').eq('category_id', t.category_id ?? ''),
+    supabase.from('thread_permissions').select('*').eq('thread_id', t.id),
+    supabase.from('posts').select('*', { count: 'exact', head: true }).eq('thread_id', t.id),
+    entityQuery ?? Promise.resolve({ data: null, error: null }),
+    user ? getThreadFollow(t.id, user.id, supabase) : Promise.resolve({ following: false, notify_in_app: true }),
+  ]);
+
+  const { data: sectionRows } = sectionRes;
+  const { data: threadRows } = threadRes;
+  const { count } = countRes;
+  const entityRow = (entityRes as { data: unknown } | null)?.data;
+  if (entityRow && entityCol) {
+    const row = entityRow as Record<string, unknown>;
+    entity = {
+      name: String(row[entityCol] ?? ''),
+      status: String(row.status ?? ''),
+    };
+  }
 
   const sectionRow = (sectionRows ?? []).find((p) => p.role === role) as SectionPermRow | undefined;
   const threadRow = (threadRows ?? []).find((p) => p.role === role) as ThreadPermRow | undefined;
@@ -105,7 +122,6 @@ export const load: PageServerLoad = async ({ url, params, locals: { supabase, us
   const threadBody = typeof body === 'string' ? body : '';
 
   // Paginated posts (REQ-FORUM-02.3): ?page= defaults to 1, LIMIT 20, OFFSET (page-1)*20.
-  const { count } = await supabase.from('posts').select('*', { count: 'exact', head: true }).eq('thread_id', t.id);
   const totalPosts = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalPosts / PAGE_SIZE));
 
@@ -153,11 +169,6 @@ export const load: PageServerLoad = async ({ url, params, locals: { supabase, us
       };
     });
   }
-
-  // Follow state for the watch modal (REQ-FOLLOW-01/02). Guests never follow.
-  const follow = user
-    ? await getThreadFollow(t.id, user.id, supabase)
-    : { following: false, notify_in_app: true };
 
   return {
     thread: t,
@@ -242,10 +253,16 @@ export const actions: Actions = {
     const hrefCheck = validateForumHrefs(body);
     if (!hrefCheck.valid) return fail(400, { message: `Enlace no permitido: ${hrefCheck.rejected.join(', ')}` });
 
-    // next post_number = max + 1 (posts ordered ascending)
-    const { data: existingPosts } = await supabase.from('posts').select('post_number').eq('thread_id', t.id);
-    const posts = (existingPosts ?? []) as unknown as { post_number: number }[];
-    const nextNumber = posts.length === 0 ? 1 : Math.max(...posts.map((p) => p.post_number)) + 1;
+    // next post_number = last + 1: fetch only the newest row (ORDER DESC LIMIT 1)
+    // instead of every post_number in the thread (PERF-03).
+    const { data: lastPost } = await supabase
+      .from('posts')
+      .select('post_number')
+      .eq('thread_id', t.id)
+      .order('post_number', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const nextNumber = ((lastPost as { post_number?: number } | null)?.post_number ?? 0) + 1;
 
     const { error: insertError } = await supabase.from('posts').insert({
       thread_id: t.id,

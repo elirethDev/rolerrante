@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars -- cropperjs mock types intentionally loose */
 import { render, screen, fireEvent } from '@testing-library/svelte';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AvatarCropper from './AvatarCropper.svelte';
 
 // The component wraps `cropperjs` (v1.6.2). We mock the library so the wrapper
@@ -38,6 +38,12 @@ function lastInstance() {
   return arr[arr.length - 1];
 }
 
+// The mock keeps a shared static registry; each test must start from scratch so
+// waitFor() below cannot latch onto an instance created by an earlier test.
+beforeEach(() => {
+  MockCropper.instances = [];
+});
+
 describe('AvatarCropper (REQ-AVUP-01 / REQ-AVUP-02)', () => {
   it('renders the source image and confirm/cancel controls', () => {
     render(AvatarCropper, { src: 'blob:avatar-1' });
@@ -49,15 +55,16 @@ describe('AvatarCropper (REQ-AVUP-01 / REQ-AVUP-02)', () => {
 
   it('creates a Cropper instance with a fixed 1:1 aspect ratio', async () => {
     render(AvatarCropper, { src: 'blob:avatar-1' });
-    await Promise.resolve();
 
-    expect(MockCropper.instances.length).toBeGreaterThanOrEqual(1);
+    // cropperjs is imported lazily (PERF-08): await the async init.
+    await vi.waitFor(() => expect(MockCropper.instances.length).toBeGreaterThanOrEqual(1));
+
     expect(lastInstance().options.aspectRatio).toBe(1);
   });
 
   it('zooms the cropper when the zoom buttons are pressed', async () => {
     render(AvatarCropper, { src: 'blob:avatar-1' });
-    await Promise.resolve();
+    await vi.waitFor(() => expect(MockCropper.instances.length).toBeGreaterThanOrEqual(1));
 
     const zoomIn = screen.getByRole('button', { name: 'Acercar' });
     const zoomOut = screen.getByRole('button', { name: 'Alejar' });
@@ -71,7 +78,7 @@ describe('AvatarCropper (REQ-AVUP-01 / REQ-AVUP-02)', () => {
     vi.useFakeTimers();
     const onavatarfile = vi.fn();
     render(AvatarCropper, { src: 'blob:avatar-1', onavatarfile });
-    await Promise.resolve();
+    await vi.waitFor(() => expect(MockCropper.instances.length).toBeGreaterThanOrEqual(1));
 
     // Stub getCroppedCanvas on the live instance so we don't touch real canvas.
     (lastInstance() as unknown as { getCroppedCanvas: (...a: unknown[]) => unknown }).getCroppedCanvas = () =>

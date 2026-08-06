@@ -73,8 +73,8 @@
     });
   });
 
-  const characterHref = (id: string) => resolve(`/personajes/${id}` as any) as string;
-  const threadHref = (id: string) => resolve(`/foro/${id}` as any) as string;
+  const characterHref = (id: string) => resolve(`/personajes/${id}`);
+  const threadHref = (id: string) => resolve(`/foro/${id}`);
 </script>
 
 <svelte:head>
@@ -99,8 +99,8 @@
         poster="/hero-poster.jpg"
         data-testid="hero-video"
       >
-        <source src="/hero-loop.mp4" type="video/mp4" />
         <source src="/hero-loop.webm" type="video/webm" />
+        <source src="/hero-loop.mp4" type="video/mp4" />
       </video>
       <div class="cinema hero-zoom"><div class="horizon"></div></div>
       <div class="veil"></div>
@@ -266,7 +266,7 @@
   {#if data.eventos.length > 0}
     <div class="media-grid">
       {#each data.eventos as ev (ev.id)}
-        <a class="media-card" href={resolve(`/eventos/${ev.id}` as any) as string}>
+        <a class="media-card" href={resolve(`/eventos/${ev.id}`)}>
           <div class="event-media">
             <div class="event-date" aria-hidden="true">
               <b>{ev.day}</b>

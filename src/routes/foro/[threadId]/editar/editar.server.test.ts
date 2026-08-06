@@ -171,4 +171,14 @@ describe('editar route default action', () => {
     const res = await defaultFn(makeEvent(makeLocals(supabase), 'title=T&content='));
     expect(res.status).toBe(400);
   });
+
+  it('rejects a thread edit with a javascript: href with 400 (REQ-FORUM-03.5)', async () => {
+    const updateThread = vi.fn();
+    const supabase = makeSupabase({ thread: { data: makeThread(), error: null }, updateThread });
+    const res = await defaultFn(
+      makeEvent(makeLocals(supabase), 'title=T&content=<p>leer <a href="javascript:alert(1)">acá</a></p>'),
+    );
+    expect(res.status).toBe(400);
+    expect(updateThread).not.toHaveBeenCalled();
+  });
 });

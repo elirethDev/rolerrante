@@ -1,3 +1,5 @@
+# project_id links this repo to the real Supabase project (CLI requirement).
+# It is the live project ref - treat it as sensitive, do not circulate (AGENTS.md).
 project_id = "dclkjcsvymjqkktvntdy"
 [api]
 port = 54321

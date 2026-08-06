@@ -20,3 +20,6 @@ AGENTS.md
 docs/design-system-migration.md
 # Local codegraph index
 .codegraph/
+
+# Supabase local CLI state (project ref, versions, linked-project) - never commit
+supabase/.temp/

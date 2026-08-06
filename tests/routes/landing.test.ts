@@ -95,12 +95,12 @@ describe("landing page (landing-community)", () => {
     expect(video).toHaveAttribute("poster", "/hero-poster.jpg");
     const sources = video.querySelectorAll("source");
     expect(Array.from(sources).map((s) => s.getAttribute("src"))).toEqual([
-      "/hero-loop.mp4",
       "/hero-loop.webm",
+      "/hero-loop.mp4",
     ]);
     expect(Array.from(sources).map((s) => s.getAttribute("type"))).toEqual([
-      "video/mp4",
       "video/webm",
+      "video/mp4",
     ]);
   });
 
