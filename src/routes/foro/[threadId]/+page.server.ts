@@ -251,6 +251,14 @@ export const actions: Actions = {
       });
     }
 
+    // Reply-to ("respondiendo a" chip): the quoted post IS the reply target, so
+    // reply_to_post_id is derived from the SAME quote_post_id validated above —
+    // no new UI control or form field. When Citar targets a real post
+    // (quotePostId !== thread.id) the reply carries that post's id; quoting the
+    // OP (quotePostId === thread.id) or a plain reply stores NULL (the OP is the
+    // thread body, not a posts row, so there is nothing to point at).
+    const replyToPostId = quotePostId && quotePostId !== t.id ? quotePostId : null;
+
     const imgCheck = validateForumImageUrls(body);
     if (!imgCheck.valid) return fail(400, { message: `Imagen no permitida: ${imgCheck.rejected.join(', ')}` });
 
@@ -273,6 +281,7 @@ export const actions: Actions = {
       author_id: user!.id,
       body,
       post_number: nextNumber,
+      reply_to_post_id: replyToPostId,
     });
 
     if (insertError) return fail(400, { message: insertError.message });

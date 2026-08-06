@@ -533,6 +533,8 @@ describe('thread detail reply action', () => {
     expect(inserted[0].post_number).toBe(3);
     expect(inserted[0].thread_id).toBe('t1');
     expect(inserted[0].author_id).toBe('u1');
+    // plain reply (no quote): no reply-to target
+    expect(inserted[0].reply_to_post_id).toBeNull();
   });
 
   it('numbers the first reply 1 on an empty thread (desc limit-1 returns null)', async () => {
@@ -703,6 +705,50 @@ describe('thread detail reply action', () => {
     expect(body).toContain('Autor');
     expect(body).toContain('apertura del hilo');
     expect(body).toContain('mi respuesta');
+  });
+
+  // Reply-to chip: quoting a REAL post sets reply_to_post_id to that post so the
+  // thread load can render "Respondiendo a <author>".
+  it('persists reply_to_post_id = quoted post id when quoting a real post', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread({ is_locked: false }),
+      posts: [{ id: 'p1', post_number: 1, body: '<p>cita</p>', author_id: 'u9', created_at: 'x', updated_at: 'x', edited_by: null, edited_at: null }],
+      insertedPosts: inserted,
+    });
+    const err = await replyFn(makeQuoteReplyEvent(makeLocals(supabase))).then(
+      () => null,
+      (e: { status?: number }) => e,
+    );
+    expect(err?.status).toBe(303);
+    expect(inserted).toHaveLength(1);
+    expect(inserted[0].reply_to_post_id).toBe('p1');
+  });
+
+  // Reply-to chip: quoting the OP (quote_post_id = thread.id) must NOT set a
+  // reply target — the OP is the thread body, not a posts row, so the chip stays
+  // hidden for OP quotes (they already carry a blockquote in the body).
+  it('stores reply_to_post_id null when quoting the OP (quote_post_id = thread.id)', async () => {
+    const inserted: Array<Record<string, unknown>> = [];
+    const supabase = makeSupabase({
+      thread: makeThread({ is_locked: false }),
+      posts: [],
+      insertedPosts: inserted,
+    });
+    const err = await replyFn(
+      makeReplyEvent(makeLocals(supabase), {
+        content: '<p>mi respuesta</p>',
+        quote_author: 'Autor',
+        quote_excerpt: 'apertura',
+        quote_post_id: 't1',
+      }),
+    ).then(
+      () => null,
+      (e: { status?: number }) => e,
+    );
+    expect(err?.status).toBe(303);
+    expect(inserted).toHaveLength(1);
+    expect(inserted[0].reply_to_post_id).toBeNull();
   });
 });
 
