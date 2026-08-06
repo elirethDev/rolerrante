@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       audit_logs: {
@@ -593,6 +618,64 @@ export type Database = {
           },
         ]
       }
+      reports: {
+        Row: {
+          created_at: string
+          id: string
+          justification: string | null
+          post_id: string
+          reason: string
+          reporter_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          justification?: string | null
+          post_id: string
+          reason: string
+          reporter_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          justification?: string | null
+          post_id?: string
+          reason?: string
+          reporter_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       section_permissions: {
         Row: {
           can_edit: boolean
@@ -843,6 +926,45 @@ export type Database = {
           },
         ]
       }
+      thread_follows: {
+        Row: {
+          created_at: string
+          id: string
+          notify_in_app: boolean
+          thread_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notify_in_app?: boolean
+          thread_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notify_in_app?: boolean
+          thread_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thread_follows_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thread_follows_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       thread_permissions: {
         Row: {
           can_edit: boolean
@@ -880,45 +1002,6 @@ export type Database = {
             columns: ["thread_id"]
             isOneToOne: false
             referencedRelation: "threads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      thread_follows: {
-        Row: {
-          created_at: string
-          id: string
-          notify_in_app: boolean
-          thread_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          notify_in_app?: boolean
-          thread_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          notify_in_app?: boolean
-          thread_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "thread_follows_thread_id_fkey"
-            columns: ["thread_id"]
-            isOneToOne: false
-            referencedRelation: "threads"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "thread_follows_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1012,6 +1095,51 @@ export type Database = {
           },
         ]
       }
+      user_sanctions: {
+        Row: {
+          active_until: string | null
+          created_at: string
+          id: string
+          issued_by: string | null
+          justification: string
+          kind: string
+          user_id: string
+        }
+        Insert: {
+          active_until?: string | null
+          created_at?: string
+          id?: string
+          issued_by?: string | null
+          justification: string
+          kind: string
+          user_id: string
+        }
+        Update: {
+          active_until?: string | null
+          created_at?: string
+          id?: string
+          issued_by?: string | null
+          justification?: string
+          kind?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_sanctions_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_sanctions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       xp_transactions: {
         Row: {
           amount: number
@@ -1060,112 +1188,8 @@ export type Database = {
           },
         ]
       }
-      reports: {
-        Row: {
-          created_at: string
-          id: string
-          justification: string | null
-          post_id: string
-          reason: string
-          reporter_id: string
-          resolved_at: string | null
-          resolved_by: string | null
-          status: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          justification?: string | null
-          post_id: string
-          reason: string
-          reporter_id: string
-          resolved_at?: string | null
-          resolved_by?: string | null
-          status?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          justification?: string | null
-          post_id?: string
-          reason?: string
-          reporter_id?: string
-          resolved_at?: string | null
-          resolved_by?: string | null
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "reports_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "reports_reporter_id_fkey"
-            columns: ["reporter_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "reports_resolved_by_fkey"
-            columns: ["resolved_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_sanctions: {
-        Row: {
-          active_until: string | null
-          created_at: string
-          id: string
-          issued_by: string | null
-          justification: string
-          kind: string
-          user_id: string
-        }
-        Insert: {
-          active_until?: string | null
-          created_at?: string
-          id?: string
-          issued_by?: string | null
-          justification: string
-          kind: string
-          user_id: string
-        }
-        Update: {
-          active_until?: string | null
-          created_at?: string
-          id?: string
-          issued_by?: string | null
-          justification?: string
-          kind?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_sanctions_issued_by_fkey"
-            columns: ["issued_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_sanctions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
-      // eslint-disable-next-line no-unused-vars
       [_ in never]: never
     }
     Functions: {
@@ -1185,16 +1209,23 @@ export type Database = {
         Args: { p_justification: string; p_user_id: string }
         Returns: undefined
       }
+      change_role: {
+        Args: {
+          p_new_role: Database["public"]["Enums"]["user_role"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       confirm_event_completion: {
         Args: { p_event_id: string; p_notes?: string }
         Returns: undefined
       }
-      change_role: {
-        Args: { p_new_role: string; p_user_id: string }
-        Returns: undefined
-      }
       finalize_event: {
-        Args: { p_event_id: string; p_xp_per_participant: number; p_notes?: string }
+        Args: {
+          p_event_id: string
+          p_notes?: string
+          p_xp_per_participant: number
+        }
         Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }
@@ -1229,13 +1260,14 @@ export type Database = {
         Returns: undefined
       }
       suspend_user: {
-        Args: { p_active_until: string; p_justification: string; p_user_id: string }
+        Args: {
+          p_active_until: string
+          p_justification: string
+          p_user_id: string
+        }
         Returns: undefined
       }
-      touch_presence: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      touch_presence: { Args: never; Returns: undefined }
     }
     Enums: {
       approval_status: "borrador" | "pendiente" | "aprobado" | "rechazado"
@@ -1254,13 +1286,13 @@ export type Database = {
         | "bloquear_hilo"
         | "desbloquear_hilo"
         | "editar_permisos"
-        | "fijar_hilo"
-        | "desfijar_hilo"
         | "reportar"
         | "suspender"
         | "banear"
         | "reportar_resuelto"
         | "reportar_descartado"
+        | "fijar_hilo"
+        | "desfijar_hilo"
         | "solicitar_revision"
       event_status:
         | "publicado"
@@ -1269,11 +1301,15 @@ export type Database = {
         | "finalizado"
         | "cancelado"
       event_type: "casual" | "evento" | "campana"
-      thread_status: "borrador" | "pendiente" | "abierto" | "aprobado" | "rechazado"
+      thread_status:
+        | "borrador"
+        | "pendiente"
+        | "abierto"
+        | "aprobado"
+        | "rechazado"
       user_role: "pendiente" | "rolero" | "gm" | "admin"
     }
     CompositeTypes: {
-      // eslint-disable-next-line no-unused-vars
       [_ in never]: never
     }
   }
@@ -1397,6 +1433,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       approval_status: ["borrador", "pendiente", "aprobado", "rechazado"],
@@ -1415,13 +1454,14 @@ export const Constants = {
         "bloquear_hilo",
         "desbloquear_hilo",
         "editar_permisos",
-        "fijar_hilo",
-        "desfijar_hilo",
         "reportar",
         "suspender",
         "banear",
         "reportar_resuelto",
         "reportar_descartado",
+        "fijar_hilo",
+        "desfijar_hilo",
+        "solicitar_revision",
       ],
       event_status: [
         "publicado",
@@ -1431,7 +1471,13 @@ export const Constants = {
         "cancelado",
       ],
       event_type: ["casual", "evento", "campana"],
-      thread_status: ["borrador", "pendiente", "abierto", "aprobado", "rechazado"],
+      thread_status: [
+        "borrador",
+        "pendiente",
+        "abierto",
+        "aprobado",
+        "rechazado",
+      ],
       user_role: ["pendiente", "rolero", "gm", "admin"],
     },
   },
