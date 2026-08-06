@@ -2,18 +2,12 @@ import { redirect } from '@sveltejs/kit';
 import { resolveEffectivePermissions, forumAccessAllowed, type PermissionFlags } from '$lib/auth';
 import { searchThreads, minReadRoleSatisfied, type CategoryNode, type LastPostInfo, type ThreadListItem } from '$lib/forum';
 import type { UserRole } from '$lib/types';
+import type { Database } from '$lib/supabase/database.types';
 import type { PageServerLoad } from './$types';
 
-type CategoryRow = {
-  id: string;
-  parent_id: string | null;
-  name: string;
-  description: string | null;
-  is_visible: boolean;
-  sort_order: number;
-  min_read_role: UserRole | null;
-  requires_approval: boolean;
-};
+// Categories now use the generated Supabase Row type (RED-05) — no hand-rolled
+// duplicate of the schema.
+type CategoryRow = Database['public']['Tables']['categories']['Row'];
 
 export const load: PageServerLoad = async ({ locals: { supabase, profile }, url }) => {
   // Suspended/banned users are denied forum access (REQ-MOD-ENF-03.2).
@@ -45,7 +39,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile }, url 
     });
   }
 
-  const cats = (categories ?? []) as unknown as CategoryRow[];
+  const cats = categories ?? [];
   // Guests (pendiente) see only is_visible categories; admin sees all. A
   // category's "rol mínimo de lectura" (min_read_role) further narrows who may
   // read it (FORO-CAT-MINROLE): NULL = Público (todo el mundo).

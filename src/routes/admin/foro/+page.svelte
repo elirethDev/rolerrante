@@ -6,6 +6,7 @@
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import type { ActionData, PageData } from './$types';
   import type { UserRole } from '$lib/types';
+  import type { Database } from '$lib/supabase/database.types';
 
   let { data, form }: { data: PageData; form: ActionData | null } = $props();
 
@@ -16,16 +17,9 @@
     { value: 'admin', label: 'GM' },
   ];
 
-  type CategoryRow = {
-    id: string;
-    name: string;
-    description: string | null;
-    parent_id: string | null;
-    sort_order: number;
-    is_visible: boolean;
-    min_read_role: UserRole | null;
-    requires_approval: boolean;
-  };
+  // Reuse the generated Supabase Row type (RED-05) instead of duplicating the
+  // categories schema by hand.
+  type CategoryRow = Database['public']['Tables']['categories']['Row'];
 
   type CategoryForm = {
     id: string | null;
@@ -54,12 +48,12 @@
   let editForm = $state<CategoryForm | null>(null);
 
   const roots = $derived<CategoryRow[]>(
-    (data.categories as unknown as CategoryRow[])
+    data.categories
       .filter((c) => !c.parent_id)
       .sort((a, b) => a.sort_order - b.sort_order),
   );
   const childrenOf = (id: string) =>
-    (data.categories as unknown as CategoryRow[])
+    data.categories
       .filter((c) => c.parent_id === id)
       .sort((a, b) => a.sort_order - b.sort_order);
 
@@ -69,7 +63,7 @@
       (a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id),
     );
   }
-  const siblingsOf = (c: CategoryRow) => sortSiblings((data.categories as unknown as CategoryRow[]).filter((k) => k.parent_id === c.parent_id));
+  const siblingsOf = (c: CategoryRow) => sortSiblings(data.categories.filter((k) => k.parent_id === c.parent_id));
 
   function openEdit(c: CategoryRow) {
     editForm = {
