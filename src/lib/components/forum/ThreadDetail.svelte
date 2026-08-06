@@ -20,6 +20,7 @@
     onCitar = undefined,
     currentPage = 1,
     totalPages = 1,
+    totalPosts,
   }: {
     thread: ThreadView;
     threadBody: string;
@@ -33,6 +34,7 @@
     onCitar?: ((payload: QuotePayload) => void) | undefined;
     currentPage?: number;
     totalPages?: number;
+    totalPosts?: number;
   } = $props();
 
   const authorName = $derived(thread.author?.display_name ?? thread.author?.username ?? 'Anónimo');
@@ -64,6 +66,16 @@
     thread.edited_at
       ? `Editado por ${thread.author?.display_name ?? thread.author?.username ?? 'usuario'} · ${formatRelativeTime(thread.edited_at)}`
       : null,
+  );
+  // OD thread.html:63 meta line — respuestas + fecha de publicación + kicker.
+  // No hay columna "vistas" en la DB (confirmado): se muestra el conteo de
+  // respuestas reales (totalPosts cuando la página lo tiene, si no las del
+  // slice renderizado).
+  const replyCount = $derived(totalPosts ?? posts.length);
+  const kicker = $derived(
+    ({ debate: 'Debate', historia: 'Historia', ficha: 'Ficha', evento: 'Evento' } as Record<string, string>)[
+      thread.content_type
+    ] ?? 'Foro',
   );
 </script>
 
@@ -100,6 +112,19 @@
         {#if entity.status}<span class="badge badge-neutral badge-xs ml-1">{statusLabels[entity.status] ?? entity.status}</span>{/if}
       </p>
     {/if}
+
+    <p
+      class="mt-1 text-sm text-azeroth-muted flex flex-wrap items-center gap-x-2 gap-y-0"
+      data-testid="thread-meta-line"
+    >
+      <span class="kicker" data-testid="thread-kicker">{kicker}</span>
+      <span aria-hidden="true">·</span>
+      <span data-testid="thread-replies">
+        {replyCount} {replyCount === 1 ? 'respuesta' : 'respuestas'}
+      </span>
+      <span aria-hidden="true">·</span>
+      <span data-testid="thread-published">Publicado {formatRelativeTime(thread.created_at)}</span>
+    </p>
 
     <p class="text-sm text-azeroth-muted mt-1">
       Por <span class="text-azeroth-gold">{authorName}</span>

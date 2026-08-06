@@ -88,6 +88,39 @@ describe('ThreadDetail', () => {
   });
 });
 
+describe('ThreadDetail header meta line', () => {
+  const post: PostView = {
+    id: 'p1',
+    post_number: 1,
+    body: {},
+    author_id: 'u1',
+    created_at: '2026-08-01T00:00:00Z',
+    edited_at: null,
+    edited_by: null,
+    author: null,
+    like_count: 0,
+    viewer_has_liked: null,
+  };
+
+  it('renders the meta line with reply count, publish date and kicker', () => {
+    render(ThreadDetail, makeProps({ totalPosts: 7 }));
+    expect(screen.getByTestId('thread-meta-line')).toBeInTheDocument();
+    expect(screen.getByTestId('thread-replies')).toHaveTextContent('7 respuestas');
+    expect(screen.getByTestId('thread-published')).toHaveTextContent(/Publicado/);
+    expect(screen.getByTestId('thread-kicker')).toHaveTextContent('Debate');
+  });
+
+  it('uses the singular label for one reply', () => {
+    render(ThreadDetail, makeProps({ totalPosts: 1, posts: [] }));
+    expect(screen.getByTestId('thread-replies')).toHaveTextContent('1 respuesta');
+  });
+
+  it('falls back to the rendered posts count when totalPosts is absent', () => {
+    render(ThreadDetail, makeProps({ posts: [post] }));
+    expect(screen.getByTestId('thread-replies')).toHaveTextContent('1 respuesta');
+  });
+});
+
 describe('ThreadDetail OP (first post) action bar', () => {
   it('renders the OP with the same reply action bar: Citar, Gracias chip and Reportar', () => {
     render(ThreadDetail, makeProps({ threadBody: '<p>apertura del hilo</p>' }));
