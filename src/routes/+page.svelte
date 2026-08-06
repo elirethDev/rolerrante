@@ -81,7 +81,7 @@
   <title>Rol Errante — Comunidad de rol</title>
   <meta
     name="description"
-    content="Foros, crónicas y personajes de rol en World of Warcraft. Un reino pequeño hecho por errantes, con un asiento esperándote."
+    content="Comunidad de rol en World of Warcraft"
   />
 </svelte:head>
 
@@ -115,10 +115,9 @@
     </div>
     <div class="hero-inner">
       <div class="hero-copy">
-        <h1 class="hero-title">Construimos esta casa<br />para que en ella escribas tu <em>leyenda</em></h1>
+        <h1 class="hero-title">Una casa<br />para que escribas tu <em>leyenda</em></h1>
         <p class="hero-sub">
-          Somos una comunidad de rol en World of Warcraft: foros, crónicas y personajes para escribir
-          historias juntos. Acércate y toma asiento: que tus días sean largos y tus contratiempos, escasos.
+          
         </p>
         <div class="hero-cta">
           <a href={resolve('/foro')} class="btn btn-primary btn-lg">Explorar los foros</a>

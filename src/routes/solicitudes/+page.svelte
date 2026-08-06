@@ -15,9 +15,9 @@
 </svelte:head>
 
 <PageHeader
-  kicker="Crecimiento del personaje"
+  kicker="Desarrollo del personaje"
   title="Solicitudes de habilidad"
-  subtitle="Gastá puntos de repetición (XP) para subir habilidades de tus fichas. El consejo revisa cada solicitud."
+  subtitle="Gastá puntos de experiencia (XP) para subir habilidades de tus fichas. El consejo revisa cada solicitud."
 />
 
 <div class="max-w-4xl">

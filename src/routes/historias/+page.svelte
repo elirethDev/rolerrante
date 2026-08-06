@@ -44,8 +44,8 @@
 
 <PageHeader
   kicker="Historias del reino"
-  title="Crónicas en curso"
-  subtitle="Las historias que cuentan los personajes del censo: cada una es su propio relato dentro del canon."
+  title="Crónicas"
+  subtitle="Las historias de los personajes: cada una es su propio relato dentro del canon."
 >
   {#snippet actions()}
     {#if data.profile}

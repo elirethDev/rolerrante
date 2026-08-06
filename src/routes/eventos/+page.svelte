@@ -70,7 +70,7 @@
 <PageHeader
   kicker="Agenda del reino"
   title="Eventos"
-  subtitle="Encuentros, campañas y veladas organizadas por el consejo y la comunidad."
+  subtitle="Eventos y campañas organizadas por el consejo y la comunidad."
 >
   {#snippet actions()}
     {#if canCreate}
