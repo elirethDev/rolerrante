@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars -- mock helper types intentionally loose */
-import { describe, expect, it, type Mock } from 'vitest';
-import { load } from './+page.server';
+import { describe, expect, it, vi, type Mock } from 'vitest';
+import { load, actions } from './+page.server';
 import {
   makeEvent,
   makeLocals,
@@ -418,5 +418,180 @@ describe('foro landing gate (REQ-MOD-ENF-03.2)', () => {
     const result = await loadFn(makeEvent(makeLocals(supabase, 'pendiente')));
     // Reached the categories load instead of redirecting.
     expect(Array.isArray(result.categories)).toBe(true);
+  });
+});
+
+// OD alignment: quick new-thread modal posts to ?/quickCreate on /foro with
+// title, content, category plus optional is_sticky (staff) and allow_replies.
+describe('foro quickCreate action (quick new-thread modal)', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const quickFn = actions.quickCreate as unknown as (...args: unknown[]) => Promise<any>;
+
+  const makeActionEvent = (
+    locals: ReturnType<typeof makeLocals>,
+    fields: Record<string, string>,
+  ) =>
+    ({
+      locals,
+      params: {},
+      url: new URL('http://localhost/foro'),
+      request: new Request('http://localhost/foro', {
+        method: 'POST',
+        body: new URLSearchParams(fields).toString(),
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      }),
+    }) as never;
+
+  const defaultFields = {
+    title: 'Nuevo debate rápido',
+    content: '<p>cuerpo</p>',
+    category_id: 'c1',
+    allow_replies: 'on',
+  };
+
+  const isRedirect = async (p: Promise<unknown>) => {
+    let err: { status?: number; location?: string } | null = null;
+    try {
+      await p;
+    } catch (e) {
+      err = e as { status?: number; location?: string };
+    }
+    expect(err?.status).toBe(303);
+    expect(String(err?.location)).toContain('/foro/');
+    return err;
+  };
+
+  const auditActions = (rpc: Mock) =>
+    rpc.mock.calls.map((c) => (c[0] as { p_action: string }).p_action);
+
+  it('creates an open thread (allow_replies on, is_locked false) and logs crear_hilo', async () => {
+    const inserted: Record<string, unknown[]> = { threads: [] };
+    const audit = vi.fn();
+    const supabase = makeSupabaseMock({
+      single: { categories: { id: 'c1', parent_id: null } },
+      tables: {
+        section_permissions: [
+          { category_id: 'c1', role: 'rolero', can_view: true, can_post: true, can_edit: false, can_lock: false },
+        ],
+      },
+      inserted,
+      rpc: { log_audit: audit },
+    });
+    await isRedirect(quickFn(makeActionEvent(makeLocals(supabase, 'rolero'), defaultFields)));
+    const row = inserted.threads[0] as Record<string, unknown>;
+    expect(row).toMatchObject({
+      content_type: 'debate',
+      title: 'Nuevo debate rápido',
+      category_id: 'c1',
+      author_id: 'u1',
+      status: 'abierto',
+      is_locked: false,
+      is_sticky: false,
+    });
+    expect(auditActions(audit)).toEqual(['crear_hilo']);
+  });
+
+  it('honors allow_replies=off by creating a locked thread (is_locked true)', async () => {
+    const inserted: Record<string, unknown[]> = { threads: [] };
+    const supabase = makeSupabaseMock({
+      single: { categories: { id: 'c1', parent_id: null } },
+      tables: {
+        section_permissions: [
+          { category_id: 'c1', role: 'rolero', can_view: true, can_post: true, can_edit: false, can_lock: false },
+        ],
+      },
+      inserted,
+    });
+    await isRedirect(
+      quickFn(makeActionEvent(makeLocals(supabase, 'rolero'), { ...defaultFields, allow_replies: 'off' })),
+    );
+    expect((inserted.threads[0] as Record<string, unknown>).is_locked).toBe(true);
+  });
+
+  it('lets staff set is_sticky and logs fijar_hilo in addition to crear_hilo', async () => {
+    const inserted: Record<string, unknown[]> = { threads: [] };
+    const audit = vi.fn();
+    const supabase = makeSupabaseMock({
+      single: { categories: { id: 'c1', parent_id: null } },
+      tables: {},
+      inserted,
+      rpc: { log_audit: audit },
+    });
+    await isRedirect(
+      quickFn(
+        makeActionEvent(makeLocals(supabase, 'gm', 'staff1'), {
+          ...defaultFields,
+          is_sticky: 'on',
+        }),
+      ),
+    );
+    expect((inserted.threads[0] as Record<string, unknown>).is_sticky).toBe(true);
+    expect(auditActions(audit)).toEqual(['crear_hilo', 'fijar_hilo']);
+  });
+
+  it('silently forces is_sticky false for non-staff even when the flag is smuggled', async () => {
+    const inserted: Record<string, unknown[]> = { threads: [] };
+    const audit = vi.fn();
+    const supabase = makeSupabaseMock({
+      single: { categories: { id: 'c1', parent_id: null } },
+      tables: {},
+      inserted,
+      rpc: { log_audit: audit },
+    });
+    await isRedirect(
+      quickFn(
+        makeActionEvent(makeLocals(supabase, 'rolero', 'u1'), {
+          ...defaultFields,
+          is_sticky: 'on',
+        }),
+      ),
+    );
+    expect((inserted.threads[0] as Record<string, unknown>).is_sticky).toBe(false);
+    expect(auditActions(audit)).toEqual(['crear_hilo']);
+  });
+
+  it('rejects a missing title/content/section with 400', async () => {
+    const inserted: Record<string, unknown[]> = { threads: [] };
+    const supabase = makeSupabaseMock({ single: { categories: { id: 'c1', parent_id: null } }, inserted });
+    const res = await quickFn(
+      makeActionEvent(makeLocals(supabase, 'rolero'), { title: '', content: '', category_id: '' }),
+    );
+    expect(res.status).toBe(400);
+    expect(inserted.threads).toHaveLength(0);
+  });
+
+  it('rejects an invalid section with 403', async () => {
+    const inserted: Record<string, unknown[]> = { threads: [] };
+    const supabase = makeSupabaseMock({ single: { categories: null }, inserted });
+    const res = await quickFn(makeActionEvent(makeLocals(supabase, 'rolero'), defaultFields));
+    expect(res.status).toBe(403);
+    expect(inserted.threads).toHaveLength(0);
+  });
+
+  it('rejects a body with a forbidden image url with 400 before any insert', async () => {
+    const inserted: Record<string, unknown[]> = { threads: [] };
+    const supabase = makeSupabaseMock({ single: { categories: { id: 'c1', parent_id: null } }, inserted });
+    const res = await quickFn(
+      makeActionEvent(makeLocals(supabase, 'rolero'), {
+        ...defaultFields,
+        content: '<img src="javascript:alert(1)">',
+      }),
+    );
+    expect(res.status).toBe(400);
+    expect(inserted.threads).toHaveLength(0);
+  });
+
+  it('requires auth: a guest hit on quickCreate redirects to login', async () => {
+    const inserted: Record<string, unknown[]> = { threads: [] };
+    const supabase = makeSupabaseMock({ inserted });
+    let err: { status?: number; location?: string } | null = null;
+    try {
+      await quickFn(makeActionEvent(makeLocals(supabase, 'pendiente'), defaultFields));
+    } catch (e) {
+      err = e as { status?: number; location?: string };
+    }
+    expect(err?.status).toBe(303);
+    expect(String(err?.location)).toContain('/login');
+    expect(inserted.threads).toHaveLength(0);
   });
 });
