@@ -1,10 +1,19 @@
 <script lang="ts">
-  import Cropper from 'cropperjs';
   import 'cropperjs/dist/cropper.css';
   import { AVATAR_MAX_BYTES, AVATAR_OUTPUT_SIZE } from '$lib/avatars';
 
   const DEFAULT_QUALITY = 0.85;
   const QUALITY_STEPS = [0.85, 0.7, 0.55, 0.4, 0.3];
+
+  type CropperInstance = {
+    destroy(): void;
+    zoom(delta: number): void;
+    getCroppedCanvas(options: {
+      width: number;
+      height: number;
+      imageSmoothingQuality: 'high' | 'low' | 'medium';
+    }): HTMLCanvasElement;
+  };
 
   interface Props {
     src: string;
@@ -15,28 +24,33 @@
   let { src, outputSize = AVATAR_OUTPUT_SIZE, onavatarfile }: Props = $props();
 
   let imgEl: HTMLImageElement;
-  let cropper: Cropper | null = null;
+  let cropper: CropperInstance | null = null;
   let error = $state<string | null>(null);
   let busy = $state(false);
 
   $effect(() => {
     const el = imgEl;
     if (!el || !src) return;
-    if (cropper) {
-      cropper.destroy();
-      cropper = null;
-    }
-    cropper = new Cropper(el, {
-      viewMode: 1,
-      aspectRatio: 1, // fixed 1:1 square frame (REQ-AVUP-01)
-      autoCropArea: 1,
-      background: false,
-      cropBoxMovable: true,
-      cropBoxResizable: false,
-      zoomOnWheel: true,
-      wheelZoomRatio: 0.05,
+    let disposed = false;
+    // cropperjs is a sizeable library: import it lazily so it only loads when
+    // the avatar crop modal is actually open, not on every /perfil or
+    // /personajes/[id]/editar page load (PERF-08).
+    void import('cropperjs').then(({ default: CropperLib }) => {
+      if (disposed) return;
+      cropper?.destroy();
+      cropper = new CropperLib(el, {
+        viewMode: 1,
+        aspectRatio: 1, // fixed 1:1 square frame (REQ-AVUP-01)
+        autoCropArea: 1,
+        background: false,
+        cropBoxMovable: true,
+        cropBoxResizable: false,
+        zoomOnWheel: true,
+        wheelZoomRatio: 0.05,
+      });
     });
     return () => {
+      disposed = true;
       cropper?.destroy();
       cropper = null;
     };
