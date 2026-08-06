@@ -11,6 +11,14 @@
 
   let filter = $state('todos');
   let query = $state('');
+  let tipo = $state('todos');
+
+  const TYPE_OPTIONS = [
+    { value: 'todos', label: 'Todos los tipos' },
+    { value: 'casual', label: 'Casual' },
+    { value: 'evento', label: 'Evento' },
+    { value: 'campana', label: 'Campaña' },
+  ];
 
   const counts = $derived({
     todos: data.events.length,
@@ -19,16 +27,36 @@
     finalizado: data.events.filter((e) => e.status === 'finalizado').length,
   });
 
+  /** Day+month chip from starts_at (OD eventos.html:89 event-date block). */
+  function eventChip(iso: string | null | undefined) {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return null;
+    const m = d.toLocaleDateString('es-ES', { month: 'short' });
+    return {
+      day: String(d.getDate()),
+      month: m.charAt(0).toUpperCase() + m.slice(1, 3),
+    };
+  }
+
+  const events = $derived(
+    data.events.map((e) => {
+      const chip = eventChip(e.starts_at);
+      return { ...e, chipDay: chip?.day ?? null, chipMonth: chip?.month ?? null };
+    }),
+  );
+
   const filtered = $derived(
-    data.events.filter((e) => {
+    events.filter((e) => {
       const statusOk = filter === 'todos' || e.status === filter;
+      const tipoOk = tipo === 'todos' || e.type === tipo;
       const q = query.trim().toLowerCase();
       const queryOk =
         !q ||
         e.title.toLowerCase().includes(q) ||
         (e.location ?? '').toLowerCase().includes(q) ||
         (e.type ?? '').toLowerCase().includes(q);
-      return statusOk && queryOk;
+      return statusOk && tipoOk && queryOk;
     }),
   );
 
@@ -81,6 +109,18 @@
         bind:value={query}
       />
     </div>
+    <label class="sr-only" for="evento-tipo">Filtrar por tipo</label>
+    <select
+      id="evento-tipo"
+      data-testid="tipo-select"
+      class="input"
+      aria-label="Filtrar por tipo"
+      bind:value={tipo}
+    >
+      {#each TYPE_OPTIONS as opt (opt.value)}
+        <option value={opt.value}>{opt.label}</option>
+      {/each}
+    </select>
   </div>
 
   {#if filtered.length === 0}
@@ -92,12 +132,22 @@
       {#each filtered as event (event.id)}
         <a href={resolve(`/eventos/${event.id}`)} class="media-card">
           <div class="flex items-start justify-between gap-2">
-            <h3 class="media-title">{event.title}</h3>
-            {#if event.status}
-              <span class="badge {statusColor(event.status)} badge-sm whitespace-nowrap">
-                {statusLabel(event.status)}
-              </span>
+            {#if event.chipDay}
+              <div class="event-date shrink-0" data-testid="event-chip" aria-hidden="true">
+                <b>{event.chipDay}</b>
+                <span>{event.chipMonth}</span>
+              </div>
             {/if}
+            <div class="min-w-0 flex-1">
+              <h3 class="media-title">{event.title}</h3>
+              {#if event.status}
+                <div>
+                  <span class="badge {statusColor(event.status)} badge-sm whitespace-nowrap">
+                    {statusLabel(event.status)}
+                  </span>
+                </div>
+              {/if}
+            </div>
           </div>
           <p class="text-sm text-azeroth-muted">
             {formatDateTime(event.starts_at)}

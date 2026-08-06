@@ -279,6 +279,27 @@ h1, h2, h3, h4, h5, h6, .font-cinzel {
   border-color: var(--color-azeroth-gold-dim);
   translate: 0 -2px;
 }
+
+/* fecha-chip de tarjetas de evento (OD eventos.html:89 event-date block) */
+.event-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: var(--font-mono);
+  line-height: 1.1;
+  color: var(--color-azeroth-gold-bright);
+  flex: none;
+}
+.event-date b {
+  font-size: 1.2rem;
+  color: var(--color-azeroth-gold);
+}
+.event-date span {
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-azeroth-faint);
+}
 .media-title {
   font-family: var(--font-cinzel);
   font-weight: 700;
