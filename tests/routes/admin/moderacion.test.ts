@@ -216,7 +216,7 @@ describe("admin/moderacion event review (REQ-FORUM-05.3)", () => {
     expect(conf).toBeUndefined();
   });
 
-  it("runs confirm_event_completion when the event is finalized", async () => {
+  it("approves the bridged thread when the event is finalized, without re-running confirm_event_completion", async () => {
     const supabase = makeSupabase({
       thread: storyThread({
         content_type: "evento",
@@ -229,11 +229,15 @@ describe("admin/moderacion event review (REQ-FORUM-05.3)", () => {
       success: boolean;
     };
     expect(res.success).toBe(true);
+    // XP is awarded once by finalize_event; reviewEvent only flips the bridged
+    // thread to 'aprobado' for public visibility (REQ-FORUM-05.3).
+    expect((supabase.calls.update[0] as { status: string }).status).toBe(
+      "aprobado",
+    );
     const conf = supabase.calls.rpc.find(
       (r) => (r as { name: string }).name === "confirm_event_completion",
-    ) as { args: { p_event_id: string } };
-    expect(conf).toBeTruthy();
-    expect(conf.args.p_event_id).toBe("ev-1");
+    );
+    expect(conf).toBeUndefined();
   });
 });
 

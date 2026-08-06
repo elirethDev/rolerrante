@@ -123,6 +123,10 @@ export const actions: Actions = {
   },
 
   // Event review only when the underlying event is finalized (REQ-FORUM-05.3).
+  // The event was already finalized by finalize_event, which awarded XP; this
+  // action only approves the bridged thread for public visibility and must
+  // NOT re-run confirm_event_completion (would double-award XP and raise,
+  // since the event status is already 'finalizado').
   reviewEvent: async ({ request, locals }) => {
     requireStaff(locals.profile?.role);
     const form = await request.formData();
@@ -147,11 +151,11 @@ export const actions: Actions = {
       return fail(400, { message: 'El evento debe estar finalizado para su revisión' });
     }
 
-    const { error: rpcError } = await locals.supabase.rpc('confirm_event_completion', {
-      p_event_id: thread.linked_entity_id,
-      p_notes: 'Revisión desde la moderación del foro',
-    });
-    if (rpcError) return fail(400, { message: rpcError.message });
+    const { error: upErr } = await locals.supabase
+      .from('threads')
+      .update({ status: 'aprobado' })
+      .eq('id', threadId);
+    if (upErr) return fail(400, { message: upErr.message });
     return { success: true };
   },
 
