@@ -99,8 +99,8 @@
         poster="/hero-poster.jpg"
         data-testid="hero-video"
       >
-        <source src="/hero-loop.mp4" type="video/mp4" />
         <source src="/hero-loop.webm" type="video/webm" />
+        <source src="/hero-loop.mp4" type="video/mp4" />
       </video>
       <div class="cinema hero-zoom"><div class="horizon"></div></div>
       <div class="veil"></div>
