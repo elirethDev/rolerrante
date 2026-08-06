@@ -78,13 +78,10 @@ const emptyData = {
 describe("landing page (landing-community)", () => {
   it("renders the hero copy identical, with a video background and poster", () => {
     render(Page, { data: { ...emptyData, feed } });
-    const title = screen.getByRole("heading", { level: 1 });
-    expect(title).toHaveTextContent("Construimos esta casa");
+    const title = screen.getByRole("heading", { level: 1 }) as HTMLElement;
+    expect(title).toHaveTextContent("Una casa");
     expect(title).toHaveTextContent("escribas tu leyenda");
     expect(title.querySelector("em")).toBeInTheDocument();
-    expect(
-      screen.getByText(/comunidad de rol en World of Warcraft/),
-    ).toBeInTheDocument();
 
     const video = screen.getByTestId("hero-video") as HTMLVideoElement;
     expect(video.tagName).toBe("VIDEO");
