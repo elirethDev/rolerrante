@@ -51,6 +51,8 @@ interface Fixture {
   authUser?: { id: string } | null;
   existingReport?: unknown;
   sanction?: { kind: string; active_until: string | null } | null;
+  // SEC-04: category row for the thread (is_visible + min_read_role)
+  category?: { id: string; is_visible: boolean; min_read_role: string | null } | null;
 }
 
 // Fluent supabase mock for the thread detail route. Supports:
@@ -89,6 +91,7 @@ function makeSupabase(f: Fixture) {
         if (table === 'reactions') return Promise.resolve({ data: f.existingReaction ?? null, error: null });
         if (table === 'user_sanctions') return Promise.resolve({ data: f.sanction ?? null, error: null });
         if (table === 'reports') return Promise.resolve({ data: f.existingReport ?? null, error: null });
+        if (table === 'categories') return Promise.resolve({ data: f.category ?? { id: 'c1', is_visible: true, min_read_role: null }, error: null });
         if (table === 'posts') {
           // like action selects the thread join -> serve postForLike
           if (selection.includes('thread:')) return Promise.resolve({ data: f.postForLike ?? null, error: null });
@@ -354,6 +357,57 @@ describe('thread detail load()', () => {
       sanction: { kind: 'suspension', active_until: future },
     });
     await expectError(() => loadFn(makeEvent(makeLocals(supabase, 'rolero'))), 303);
+  });
+});
+
+describe('thread detail category read gate (SEC-04)', () => {
+  it('denies a viewer below the category min_read_role with 403', async () => {
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      category: { id: 'c1', is_visible: true, min_read_role: 'gm' },
+    });
+    await expectError(() => loadFn(makeEvent(makeLocals(supabase, 'rolero', 'u1'))), 403);
+  });
+
+  it('admits a viewer meeting the min_read_role', async () => {
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      category: { id: 'c1', is_visible: true, min_read_role: 'gm' },
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'gm', 'gm1')));
+    expect(result.thread.title).toBe('Hilo');
+  });
+
+  it('denies access when the section_permissions row denies can_view for the role', async () => {
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      sectionPerms: [{ category_id: 'c1', role: 'rolero', can_view: false, can_post: false, can_edit: false, can_lock: false }],
+    });
+    await expectError(() => loadFn(makeEvent(makeLocals(supabase, 'rolero', 'u1'))), 403);
+  });
+
+  it('grants a section_permissions can_view=true row access', async () => {
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      sectionPerms: [{ category_id: 'c1', role: 'rolero', can_view: true, can_post: true, can_edit: false, can_lock: false }],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'rolero', 'u1')));
+    expect(result.flags.can_view).toBe(true);
+  });
+
+  it('lets staff read even when the section row denies can_view (management path)', async () => {
+    const supabase = makeSupabase({
+      thread: makeThread(),
+      sectionPerms: [{ category_id: 'c1', role: 'gm', can_view: false, can_post: true, can_edit: true, can_lock: true }],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'gm', 'gm1')));
+    expect(result.thread.title).toBe('Hilo');
+  });
+
+  it('falls through when the thread has no category (legacy threads)', async () => {
+    const supabase = makeSupabase({ thread: makeThread({ category_id: null }) });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'rolero', 'u1')));
+    expect(result.thread.title).toBe('Hilo');
   });
 });
 
