@@ -7,6 +7,7 @@
   import { Bell, MessageSquare, CheckCheck } from '@lucide/svelte';
   import type { Component } from 'svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import type { PageData } from './$types';
 
@@ -53,6 +54,8 @@
 <svelte:head>
   <title>Notificaciones — RolErrante</title>
 </svelte:head>
+
+<Breadcrumbs items={[{ label: 'Notificaciones' }]} class="mb-2" />
 
 <PageHeader
   kicker="Cuenta"

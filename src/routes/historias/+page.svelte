@@ -6,6 +6,7 @@
   import { statusLabel, statusColor, formatDate } from '$lib/utils';
   import { Search, Scroll, X } from '@lucide/svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import FilterTabs from '$lib/components/ui/FilterTabs.svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
 
@@ -41,6 +42,8 @@
 <svelte:head>
   <title>Historias — RolErrante</title>
 </svelte:head>
+
+<Breadcrumbs items={[{ label: 'Historias' }]} class="mb-2" />
 
 <PageHeader
   kicker="Historias del reino"

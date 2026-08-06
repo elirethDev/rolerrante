@@ -2,6 +2,7 @@
   import { statusLabel, statusColor, formatDate } from '$lib/utils';
   import { History, Sparkles } from '@lucide/svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import SkillRequestForm from '$lib/components/skills/SkillRequestForm.svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import type { ActionData, PageData } from './$types';
@@ -13,6 +14,8 @@
 <svelte:head>
   <title>Solicitudes de habilidad — RolErrante</title>
 </svelte:head>
+
+<Breadcrumbs items={[{ label: 'Solicitudes' }]} class="mb-2" />
 
 <PageHeader
   kicker="Crecimiento del personaje"

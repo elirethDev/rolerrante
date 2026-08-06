@@ -4,6 +4,7 @@
   import Modal from '$lib/components/ui/Modal.svelte';
   import Field from '$lib/components/ui/Field.svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import type { ActionData, PageData } from './$types';
   import type { UserRole } from '$lib/types';
   import type { Database } from '$lib/supabase/database.types';
@@ -83,6 +84,8 @@
 <svelte:head>
   <title>Foro — Panel Admin</title>
 </svelte:head>
+
+<Breadcrumbs items={[{ label: 'Admin', href: '/admin' }, { label: 'Foro' }]} class="mb-2" />
 
 <PageHeader kicker="Panel admin" title="Gestión del foro" />
 

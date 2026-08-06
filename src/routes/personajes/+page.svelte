@@ -6,6 +6,7 @@
   import FilterTabs from '$lib/components/ui/FilterTabs.svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import CharacterCard from '$lib/components/characters/CharacterCard.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -31,7 +32,9 @@
   <title>Censo del reino — RolErrante</title>
 </svelte:head>
 
-<PageHeader
+<Breadcrumbs items={[{ label: 'Personajes' }]} class="mb-2" />
+
+  <PageHeader
   kicker="Personajes"
   title="Censo del reino"
   subtitle="Las fichas aprobadas por el consejo, de todos los jugadores del reino. Busca por nombre o filtra por raza."

@@ -42,6 +42,7 @@ interface DetailProps {
   isStaff: boolean;
   // eslint-disable-next-line no-unused-vars -- type-only param name
   onCitar?: (payload: { author_display_name: string; body_excerpt: string; post_id: string }) => void;
+  totalPosts?: number;
 }
 
 const makeProps = (p: Partial<DetailProps> = {}): DetailProps => ({

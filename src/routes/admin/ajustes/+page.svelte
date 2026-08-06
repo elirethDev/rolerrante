@@ -2,6 +2,7 @@
   import { enhance } from '$app/forms';
   import Field from '$lib/components/ui/Field.svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import type { ActionData, PageData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -14,6 +15,8 @@
 <svelte:head>
   <title>Ajustes — RolErrante</title>
 </svelte:head>
+
+<Breadcrumbs items={[{ label: 'Admin', href: '/admin' }, { label: 'Ajustes' }]} class="mb-2" />
 
 <PageHeader kicker="Panel admin" title="Ajustes del sistema" />
 

@@ -3,6 +3,7 @@
   import type { PageData } from './$types';
   import { Plus, Search } from '@lucide/svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import FilterTabs from '$lib/components/ui/FilterTabs.svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import { formatDateTime, statusColor, statusLabel } from '$lib/utils';
@@ -66,6 +67,8 @@
 <svelte:head>
   <title>Eventos — RolErrante</title>
 </svelte:head>
+
+<Breadcrumbs items={[{ label: 'Eventos' }]} class="mb-2" />
 
 <PageHeader
   kicker="Agenda del reino"

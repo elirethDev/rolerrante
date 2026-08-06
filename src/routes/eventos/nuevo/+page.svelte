@@ -6,6 +6,7 @@
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import type { ActionData } from './$types';
 
   export let form: ActionData;
@@ -20,6 +21,8 @@
 </svelte:head>
 
 <div class="max-w-3xl mx-auto">
+  <Breadcrumbs items={[{ label: 'Eventos', href: '/eventos' }, { label: 'Nuevo evento' }]} class="mb-2" />
+
   <PageHeader
     kicker="Agenda del reino"
     title="Nuevo evento"

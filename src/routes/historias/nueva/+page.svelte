@@ -6,6 +6,7 @@
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import type { ActionData, PageData } from './$types';
 
   export let data: PageData;
@@ -23,6 +24,8 @@
 </svelte:head>
 
 <section class="max-w-[1180px] mx-auto">
+  <Breadcrumbs items={[{ label: 'Historias', href: '/historias' }, { label: 'Nueva crónica' }]} class="mb-2" />
+
   <PageHeader kicker="Historias del reino" title="Nueva historia" />
 
   {#if form?.message}

@@ -8,6 +8,7 @@
   import CombatValues from '$lib/components/sheets/CombatValues.svelte';
   import AvatarCropper from '$lib/components/ui/AvatarCropper.svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import type { ActionData, PageData } from './$types';
   import type { Character } from '$lib/types';
 
@@ -80,6 +81,8 @@
 </svelte:head>
 
 <div class="max-w-4xl mx-auto">
+  <Breadcrumbs items={[{ label: 'Personajes', href: '/personajes' }, { label: 'Editar' }]} class="mb-2" />
+
   <PageHeader
     kicker="Censo del reino"
     title="Editar personaje"

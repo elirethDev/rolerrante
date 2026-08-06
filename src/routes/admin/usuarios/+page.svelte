@@ -1,6 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import { roleLabel } from '$lib/utils';
   import type { ActionData, PageData } from './$types';
 
@@ -10,6 +11,8 @@
 <svelte:head>
   <title>Usuarios — RolErrante</title>
 </svelte:head>
+
+<Breadcrumbs items={[{ label: 'Admin', href: '/admin' }, { label: 'Usuarios' }]} class="mb-2" />
 
 <PageHeader kicker="Panel admin" title="Gestión de usuarios" />
 

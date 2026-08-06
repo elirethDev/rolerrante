@@ -1,5 +1,6 @@
 <script lang="ts">
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import { formatDate } from '$lib/utils';
   import type { PageData } from './$types';
 
@@ -29,6 +30,8 @@
 <svelte:head>
   <title>Auditoría del foro — Panel Admin</title>
 </svelte:head>
+
+<Breadcrumbs items={[{ label: 'Admin', href: '/admin' }, { label: 'Auditoría' }]} class="mb-2" />
 
 <PageHeader kicker="Panel admin" title="Auditoría del foro" />
 
