@@ -15,6 +15,7 @@ describe("PostView reaction fields", () => {
       created_at: "2026-08-02T00:00:00Z",
       edited_at: null,
       edited_by: null,
+      reply_to_post_id: null,
       like_count: 3,
       viewer_has_liked: true,
     };

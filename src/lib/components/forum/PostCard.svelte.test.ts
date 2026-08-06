@@ -40,6 +40,7 @@ const post = (p: Partial<Record<string, unknown>> = {}) => ({
   author: { id: 'u1', display_name: 'Aragorn', username: 'aragon' },
   like_count: 0,
   viewer_has_liked: false,
+  reply_to_post_id: null,
   ...p,
 });
 
@@ -89,6 +90,30 @@ describe('PostCard', () => {
     expect(onCitar).toHaveBeenCalledTimes(1);
     const payload = onCitar.mock.calls[0][0] as { body_excerpt: string };
     expect(payload.body_excerpt).toBe('Texto corto');
+  });
+});
+
+describe('PostCard reply-to chip ("respondiendo a")', () => {
+  function chip(): HTMLElement {
+    const el = screen.getByText(/Respondiendo a/).closest('.reply-to');
+    expect(el).not.toBeNull();
+    return el as HTMLElement;
+  }
+
+  it('renders "Respondiendo a <author>" when replyToAuthor is provided', () => {
+    render(PostCard, props({ replyToAuthor: 'Aragorn' }));
+    expect(chip().textContent).toContain('Aragorn');
+  });
+
+  it('renders no reply-to chip when replyToAuthor is undefined', () => {
+    render(PostCard, props());
+    expect(screen.queryByText(/Respondiendo a/)).not.toBeInTheDocument();
+  });
+
+  it('renders no reply-to chip when replyToAuthor is null (deleted/absent target)', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    render(PostCard, props({ replyToAuthor: null as any }));
+    expect(screen.queryByText(/Respondiendo a/)).not.toBeInTheDocument();
   });
 });
 

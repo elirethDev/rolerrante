@@ -99,6 +99,7 @@ describe('ThreadDetail header meta line', () => {
     edited_at: null,
     edited_by: null,
     author: null,
+    reply_to_post_id: null,
     like_count: 0,
     viewer_has_liked: null,
   };
@@ -175,5 +176,63 @@ describe('ThreadDetail lock banner + staff controls', () => {
   it('does not show the lock banner on an open thread', () => {
     render(ThreadDetail, makeProps({ isLocked: false, isStaff: false }));
     expect(screen.queryByText(/Este hilo está bloqueado/i)).not.toBeInTheDocument();
+  });
+});
+
+describe('ThreadDetail reply-to chip resolution (replyToAuthor)', () => {
+  const replyPost: PostView = {
+    id: 'p2',
+    post_number: 2,
+    body: {},
+    author_id: 'u1',
+    created_at: '2026-08-01T00:00:00Z',
+    edited_at: null,
+    edited_by: null,
+    author: { id: 'u1', display_name: 'Autor', username: 'autor' },
+    reply_to_post_id: 'p1',
+    replyTo: { id: 'p1', author: { id: 'u9', display_name: 'Legolas', username: 'legolas' } },
+    like_count: 0,
+    viewer_has_liked: null,
+  };
+
+  it('renders "Respondiendo a <author>" when post.replyTo resolves to an author', () => {
+    render(ThreadDetail, makeProps({ posts: [replyPost] }));
+    expect(screen.getByText(/Respondiendo a/)).toBeInTheDocument();
+    // the author name is its own span inside the chip; unique in this render
+    expect(screen.getByText('Legolas')).toBeInTheDocument();
+  });
+
+  it('prefers display_name over username for the reply-to chip', () => {
+    const mixed = {
+      ...replyPost,
+      replyTo: { id: 'p1', author: { id: 'u9', display_name: null, username: 'legolas' } },
+    };
+    render(ThreadDetail, makeProps({ posts: [mixed] }));
+    expect(screen.getByText(/Respondiendo a/)).toBeInTheDocument();
+    expect(screen.getByText('legolas')).toBeInTheDocument();
+  });
+
+  it('renders no reply-to chip when replyTo has no author (absent/deleted target)', () => {
+    const orphan = { ...replyPost, reply_to_post_id: 'pX', replyTo: { id: 'pX', author: null } };
+    render(ThreadDetail, makeProps({ posts: [orphan] }));
+    expect(screen.queryByText(/Respondiendo a/)).not.toBeInTheDocument();
+  });
+
+  it('renders no reply-to chip when a post has no replyTo at all', () => {
+    const plain: PostView = {
+      id: 'p3',
+      post_number: 3,
+      body: {},
+      author_id: 'u1',
+      created_at: '2026-08-01T00:00:00Z',
+      edited_at: null,
+      edited_by: null,
+      author: null,
+      reply_to_post_id: null,
+      like_count: 0,
+      viewer_has_liked: null,
+    };
+    render(ThreadDetail, makeProps({ posts: [plain] }));
+    expect(screen.queryByText(/Respondiendo a/)).not.toBeInTheDocument();
   });
 });

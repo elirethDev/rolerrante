@@ -162,6 +162,12 @@ export interface PostView {
   edited_at: string | null;
   edited_by: string | null;
   author?: AuthorRef | null;
+  // Reply-to ("respondiendo a"): the target post this reply answers, resolved via
+  // the reply_to:reply_to_post_id(...) embed. replyTo carries that post + its
+  // author so the chip can render "Respondiendo a <author>". Null when the reply
+  // has no reply target.
+  reply_to_post_id: string | null;
+  replyTo?: { id: string; author?: { id: string; display_name: string | null; username: string } | null } | null;
   // Reactions (REQ-REACT-01.2): like_count aggregate + viewer's own like state.
   // viewer_has_liked is null for guests (no identity to match); like_count is
   // always populated for both guests and authenticated viewers.

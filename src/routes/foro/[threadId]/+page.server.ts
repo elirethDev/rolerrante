@@ -131,7 +131,7 @@ export const load: PageServerLoad = async ({ url, params, locals: { supabase, us
 
   const { data: posts, error: postsError } = await supabase
     .from('posts')
-    .select('*, author:author_id(id, display_name, username), reactions:reactions(post_id, user_id)')
+    .select('*, author:author_id(id, display_name, username), reactions:reactions(post_id, user_id), reply_to:reply_to_post_id(id, author:author_id(id, display_name, username))')
     .eq('thread_id', t.id)
     .order('post_number', { ascending: true })
     .range((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE - 1);
@@ -148,7 +148,7 @@ export const load: PageServerLoad = async ({ url, params, locals: { supabase, us
     console.error('No se pudieron cargar las reacciones; se muestran los posts base', postsError);
     const { data: basePosts } = await supabase
       .from('posts')
-      .select('*, author:author_id(id, display_name, username)')
+      .select('*, author:author_id(id, display_name, username), reply_to:reply_to_post_id(id, author:author_id(id, display_name, username))')
       .eq('thread_id', t.id)
       .order('post_number', { ascending: true });
     postsWithReactions = (basePosts ?? []).map((p) => ({

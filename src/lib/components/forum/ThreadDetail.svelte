@@ -53,6 +53,8 @@
     author: thread.author ?? null,
     like_count: null,
     viewer_has_liked: null,
+    reply_to_post_id: null,
+    replyTo: null,
   });
   const opEditorName = $derived(thread.author?.display_name ?? thread.author?.username ?? null);
   const statusLabels: Record<string, string> = {
@@ -151,11 +153,30 @@
     </div>
   {/if}
 
-  <PostCard post={opPost} threadId={thread.id} onCitar={onCitar} editorName={opEditorName} />
+  <PostCard
+    post={opPost}
+    threadId={thread.id}
+    onCitar={onCitar}
+    editorName={opEditorName}
+    isOp={true}
+    replyToAuthor={undefined}
+  />
 
   <div class="mt-6">
-    {#each posts as post (post.id)}
-      <PostCard {post} threadId={thread.id} {onCitar} editorName={post.author?.display_name ?? post.author?.username ?? null} />
+    {#each posts as post, i (post.id)}
+      <div class="ornament" aria-hidden="true">
+        <span class="dia"></span>
+      </div>
+      {@const replyToAuthor =
+        post.replyTo?.author ? (post.replyTo.author.display_name ?? post.replyTo.author.username ?? null) : undefined}
+      <PostCard
+        {post}
+        threadId={thread.id}
+        {onCitar}
+        editorName={post.author?.display_name ?? post.author?.username ?? null}
+        isOp={false}
+        {replyToAuthor}
+      />
     {/each}
   </div>
 
@@ -172,3 +193,27 @@
     </div>
   {/if}
 </article>
+
+<style>
+  .ornament {
+    min-height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin: 0.5rem 0;
+  }
+  .ornament::before,
+  .ornament::after {
+    content: '';
+    height: 1px;
+    flex: 1;
+    background: var(--color-azeroth-border);
+  }
+  .dia {
+    width: 0.375rem;
+    height: 0.375rem;
+    transform: rotate(45deg);
+    background: var(--color-azeroth-gold-dim);
+  }
+</style>
