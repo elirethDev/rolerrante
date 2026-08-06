@@ -12,8 +12,10 @@ export const actions: Actions = {
     const form = await request.formData();
     const email = String(form.get('email') ?? '').trim();
     const password = String(form.get('password') ?? '');
+    const confirmPassword = String(form.get('confirm_password') ?? '');
     const username = String(form.get('username') ?? '').trim().toLowerCase();
     const displayName = String(form.get('display_name') ?? '').trim() || username;
+    const terms = String(form.get('terms') ?? '');
     const turnstileToken = String(form.get('cf-turnstile-response') ?? '');
 
     // Verificar CAPTCHA
@@ -25,7 +27,9 @@ export const actions: Actions = {
     const errors: Record<string, string> = {};
     if (!email) errors.email = 'El correo es obligatorio';
     if (!password || password.length < 6) errors.password = 'Mínimo 6 caracteres';
+    if (confirmPassword !== password) errors.confirm_password = 'Las contraseñas no coinciden';
     if (!username || username.length < 3) errors.username = 'Mínimo 3 caracteres';
+    if (terms !== 'on' && terms !== 'accept') errors.terms = 'Debes aceptar la normativa';
     if (Object.keys(errors).length) return fail(400, { errors, values: { email, username, display_name: displayName } });
 
     const { data: existing } = await supabase.from('profiles').select('username').eq('username', username).maybeSingle();
@@ -38,7 +42,7 @@ export const actions: Actions = {
       email,
       password,
       options: {
-        data: { username, display_name: displayName },
+        data: { username, display_name: displayName, terms_accepted_at: new Date().toISOString() },
         emailRedirectTo: 'https://rolerrante.pages.dev/login?confirmed=1',
       },
     });

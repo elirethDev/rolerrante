@@ -55,8 +55,10 @@ const redirectStatus = (p: Promise<any>): Promise<{ status?: number; location?: 
 const VALID: Record<string, string> = {
   email: 'viajero@example.com',
   password: 'secreto123',
+  confirm_password: 'secreto123',
   username: 'viajero',
   display_name: 'Viajero',
+  terms: 'on',
 };
 
 describe('registro default action — autoconfirm (Opción A)', () => {
@@ -140,5 +142,50 @@ describe('registro default action — autoconfirm (Opción A)', () => {
     const res = await defaultFn(makeEvent(supabase, VALID));
     expect(res.status).toBe(400);
     expect(res.data.errors.username).toContain('ya está en uso');
+  });
+
+  it('fails with 400 when the normativa checkbox is not accepted, signUp not called', async () => {
+    const supabase = makeSupabase({
+      data: { user: null, session: null },
+      error: null,
+    });
+    const res = await defaultFn(
+      makeEvent(supabase, { ...VALID, terms: '' }),
+    );
+    expect(res.status).toBe(400);
+    expect(res.data.errors.terms).toBe('Debes aceptar la normativa');
+    expect(supabase.auth.signUp).not.toHaveBeenCalled();
+  });
+
+  it('fails with 400 when the passwords do not match, signUp not called', async () => {
+    const supabase = makeSupabase({
+      data: { user: null, session: null },
+      error: null,
+    });
+    const res = await defaultFn(
+      makeEvent(supabase, { ...VALID, confirm_password: 'otra123' }),
+    );
+    expect(res.status).toBe(400);
+    expect(res.data.errors.confirm_password).toBe('Las contraseñas no coinciden');
+    expect(supabase.auth.signUp).not.toHaveBeenCalled();
+  });
+
+  it('passes the consent timestamp in signUp metadata when terms accepted and confirm matches', async () => {
+    const supabase = makeSupabase({
+      data: { user: { id: 'u1' }, session: null },
+      error: null,
+    });
+    await redirectStatus(defaultFn(makeEvent(supabase, VALID)));
+    expect(supabase.auth.signUp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        options: expect.objectContaining({
+          data: expect.objectContaining({
+            username: 'viajero',
+            display_name: 'Viajero',
+            terms_accepted_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+          }),
+        }),
+      }),
+    );
   });
 });
