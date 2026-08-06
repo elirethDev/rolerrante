@@ -144,7 +144,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile }, url 
       is_visible: c.is_visible,
       min_read_role: c.min_read_role,
       requires_approval: c.requires_approval,
-      flags: { ...flags, can_view: isStaff || c.is_visible ? flags.can_view : true },
+      flags: { ...flags, can_view: (isStaff || c.is_visible) ? flags.can_view : false },
       children,
       threads: children.length ? [] : own,
       threads_count: own.length,

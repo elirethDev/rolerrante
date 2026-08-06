@@ -14,6 +14,14 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, profile
   const canView = character.status === 'aprobado' || isGMOrAdmin(profile?.role ?? null) || character.player_id === profile?.id;
   if (!canView) throw error(403, 'No puedes ver este personaje');
 
+  // SEC-16: review_notes/reviewed_by are staff-only metadata; the ficha UI only
+  // renders reviewed_at (public approval timeline), which we keep for everyone.
+  if (!isGMOrAdmin(profile?.role ?? null)) {
+    const safe = character as unknown as Record<string, unknown>;
+    delete safe.review_notes;
+    delete safe.reviewed_by;
+  }
+
   return { character, profile };
 };
 

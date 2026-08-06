@@ -1,5 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { resolveEffectivePermissions, validateForumImageUrls, validateForumHrefs, requireAuth, isGMOrAdmin, forumAccessAllowed, type PermissionFlags } from '$lib/auth';
+import { minReadRoleSatisfied } from '$lib/forum';
 import { applyQuoteToBody, EXCERPT_MAX_LENGTH } from '$lib/forum-compose';
 import { getOrCreateThread, getThreadFollow, followThread, unfollowThread, setFollowPreference, reportPost, type ThreadView, type PostView } from '$lib/forum';
 import type { Json } from '$lib/supabase/database.types';
@@ -77,6 +78,28 @@ export const load: PageServerLoad = async ({ url, params, locals: { supabase, us
     }),
     can_lock: role === 'gm' || role === 'admin',
   };
+
+  // SEC-04: category-level read gate. Direct-URL access must not bypass the
+  // category rules the list page enforces (FORO-CAT-MINROLE + section can_view).
+  // A role below the category's min_read_role is denied even if the thread is
+  // public; an explicit section-level can_view=false row also denies it. Staff
+  // keep managing; admins always satisfy min_read_role (rank check).
+  if (t.category_id) {
+    const { data: category } = await supabase
+      .from('categories')
+      .select('is_visible, min_read_role')
+      .eq('id', t.category_id)
+      .maybeSingle();
+    if (
+      category &&
+      !minReadRoleSatisfied(role, (category as { min_read_role: UserRole | null }).min_read_role)
+    ) {
+      throw error(403, 'No tienes permiso para ver este hilo');
+    }
+  }
+  if (sectionRow && sectionRow.can_view === false && !isStaff) {
+    throw error(403, 'No tienes permiso para ver este hilo');
+  }
 
   const body = (t.body as Json) ?? {};
   const threadBody = typeof body === 'string' ? body : '';

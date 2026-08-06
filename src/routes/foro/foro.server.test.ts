@@ -140,6 +140,22 @@ describe('foro landing load()', () => {
     expect(hidden.flags.can_view).toBe(true);
   });
 
+  it('non-staff gets can_view false (not true) on a hidden child of a visible parent (SEC-04)', async () => {
+    const supabase = makeSupabase({
+      categories: [
+        cat({ id: 'r1', name: 'General', is_visible: true, sort_order: 1 }),
+        cat({ id: 'sub1', name: 'Secreto', parent_id: 'r1', is_visible: false, sort_order: 1 }),
+      ],
+      perms: [{ category_id: 'r1', role: 'rolero', can_view: true, can_post: true, can_edit: false, can_lock: false }],
+    });
+    const result = await loadFn(makeEvent(makeLocals(supabase, 'rolero')));
+    const root = result.categories.find((r: { id: string }) => r.id === 'r1');
+    // The hidden child still appears in the tree (for admin), but must NOT report
+    // can_view true to a non-staff viewer — the pre-fix ternary defaulted to true.
+    expect(root.children[0].id).toBe('sub1');
+    expect(root.children[0].flags.can_view).toBe(false);
+  });
+
   it('builds a 2-level tree and returns public threads grouped by category', async () => {
     const supabase = makeSupabase({
       categories: [
