@@ -1,5 +1,14 @@
 <script lang="ts">
-  import { groupSkillsByAttribute, skillCreationCost, attributeCost, validateAttributes, ATTR_POINTS_BUDGET } from '$lib/rules';
+  import {
+    groupSkillsByAttribute,
+    skillCreationCost,
+    attributeCost,
+    validateAttributes,
+    ATTR_POINTS_BUDGET,
+    ATTR_BASE_VALUE,
+    ATTR_MIN,
+    ATTR_MAX,
+  } from '$lib/rules';
   import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
@@ -86,7 +95,9 @@
     </div>
   {/if}
 
+  <div class="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
   <form
+    class="min-w-0"
     method="POST"
     use:enhance={() => {
       pending = true;
@@ -229,11 +240,6 @@
       </div>
     </div>
 
-    <!-- VISTA PREVIA DE COMBATE -->
-    <div class="mb-6">
-      <CombatValues attrs={previewAttrs} skills={previewSkills} />
-    </div>
-
     <!-- TURNSTILE -->
     <div class="flex justify-center mb-4">
       <Turnstile bind:token={turnstileToken} theme="dark" />
@@ -251,4 +257,56 @@
       {/if}
     </div>
   </form>
+
+  <aside class="lg:sticky lg:top-6 space-y-6">
+    <!-- SECCIÓN 4 — VISTA PREVIA DE COMBATE -->
+    <section class="form-card" aria-labelledby="combat-preview-title">
+      <div class="form-card-head">
+        <span class="form-card-num">4</span>
+        <h2 id="combat-preview-title">Vista previa de combate</h2>
+        <span class="meta">en vivo</span>
+      </div>
+      <div class="form-card-body">
+        <CombatValues attrs={previewAttrs} skills={previewSkills} />
+      </div>
+    </section>
+
+    <!-- REGLAS DEL CENSO -->
+    <div class="form-card">
+      <div class="form-card-head"><h2>Reglas del censo</h2><span class="meta">cómo crear tu ficha</span></div>
+      <div class="form-card-body text-sm">
+        <ul class="list-inside list-disc space-y-2 text-azeroth-muted">
+          <li>
+            <span class="font-semibold text-azeroth-text-high">Atributos.</span> Los cinco valores
+            (Físico, Destreza, Inteligencia, Percepción y Espíritu) parten de {ATTR_BASE_VALUE} y
+            repartís hasta {ATTR_POINTS_BUDGET} puntos por encima de esa base, sin pasar de {ATTR_MAX}.
+          </li>
+          <li>Si un atributo llega al máximo, otro debe quedar en el mínimo ({ATTR_MIN}).</li>
+          <li>
+            <span class="font-semibold text-azeroth-text-high">Habilidades.</span> Contás con {SKILL_POINTS}
+            puntos. Subir una habilidad al nivel N cuesta la suma acumulada 1 + 2 + … + N, así que
+            conviene priorizar pocos niveles altos.
+          </li>
+          <li>
+            Completás la ficha y la enviás a revisión; el consejo la aprueba y tu personaje pasa a
+            formar parte del canon.
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ¿Y DESPUÉS? -->
+    <div class="form-card">
+      <div class="form-card-head"><h2>¿Y después?</h2><span class="meta">siguientes pasos</span></div>
+      <div class="form-card-body text-sm">
+        <ol class="list-inside list-decimal space-y-2 text-azeroth-muted">
+          <li>Envías la ficha a revisión con el botón “Crear personaje”.</li>
+          <li>El consejo la revisa y la aprueba (o te pide ajustes).</li>
+          <li>Una vez aprobada, tu personaje entra al canon y se muestra en el censo.</li>
+          <li>Podés editar la ficha después del alta desde la sección Personajes.</li>
+        </ol>
+      </div>
+    </div>
+  </aside>
+  </div>
 </section>
