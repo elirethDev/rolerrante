@@ -17,12 +17,15 @@
   let { sessions }: Props = $props();
 </script>
 
-<div class="card bg-base-200 border border-azeroth-border">
-  <div class="card-body">
-    <h2 class="card-title font-cinzel text-azeroth-gold">
-      <Calendar size={18} />
-      Sesiones ({sessions.length})
+<div class="panel">
+  <div class="panel-head">
+    <Calendar size={18} />
+    <h2>
+      Sesiones <span class="text-azeroth-faint font-medium">({sessions.length})</span>
     </h2>
+    <span class="meta">masterizado</span>
+  </div>
+  <div class="panel-body">
     <div class="overflow-x-auto">
       <table class="table w-full">
         <thead>

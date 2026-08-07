@@ -1,7 +1,7 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
   import type { PageData } from './$types';
-  import { Plus, Search } from '@lucide/svelte';
+  import { Plus, Search, CalendarX } from '@lucide/svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import FilterTabs from '$lib/components/ui/FilterTabs.svelte';
@@ -62,6 +62,12 @@
   );
 
   const canCreate = $derived(Boolean(data.profile));
+
+  function clearFilters() {
+    filter = 'todos';
+    tipo = 'todos';
+    query = '';
+  }
 </script>
 
 <svelte:head>
@@ -116,7 +122,7 @@
     <select
       id="evento-tipo"
       data-testid="tipo-select"
-      class="input"
+      class="select"
       aria-label="Filtrar por tipo"
       bind:value={tipo}
     >
@@ -127,14 +133,19 @@
   </div>
 
   {#if filtered.length === 0}
-    <div class="empty-slot">
-      <p>No hay eventos con ese filtro.</p>
+    <div class="empty">
+      <span class="sig" aria-hidden="true"><CalendarX size={48} strokeWidth={1.2} /></span>
+      <h3>No hay eventos con ese filtro</h3>
+      <p>Probá con otro plazo o quitá los filtros de búsqueda.</p>
+      <button type="button" class="btn btn-secondary btn-sm" data-testid="clear-filters" onclick={clearFilters}>
+        Limpiar filtros
+      </button>
     </div>
   {:else}
-    <div class="grid gap-4 md:grid-cols-2">
+    <div class="event-grid">
       {#each filtered as event (event.id)}
         <a href={resolve(`/eventos/${event.id}`)} class="media-card">
-          <div class="flex items-start justify-between gap-2">
+          <div class="event-head">
             {#if event.chipDay}
               <div class="event-date shrink-0" data-testid="event-chip" aria-hidden="true">
                 <b>{event.chipDay}</b>
@@ -144,15 +155,13 @@
             <div class="min-w-0 flex-1">
               <h3 class="media-title">{event.title}</h3>
               {#if event.status}
-                <div>
-                  <span class="badge {statusColor(event.status)} badge-sm whitespace-nowrap">
-                    {statusLabel(event.status)}
-                  </span>
+                <div class="mt-1">
+                  <span class="badge badge-sm {statusColor(event.status)}">{statusLabel(event.status)}</span>
                 </div>
               {/if}
             </div>
           </div>
-          <p class="text-sm text-azeroth-muted">
+          <p class="media-excerpt">
             {formatDateTime(event.starts_at)}
             {#if event.type} · {event.type}{/if}
             {#if event.location} · {event.location}{/if}

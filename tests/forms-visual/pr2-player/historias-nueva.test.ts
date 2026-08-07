@@ -22,23 +22,23 @@ describe("historias/nueva page (forms-visual-pass / PR 2)", () => {
     );
   });
 
-  it("keeps max-w-[1180px] container with md density (REQ-FS-01/FS-04)", () => {
+  it("keeps the OD create-wrap container with md density (REQ-FS-01/FS-04)", () => {
     expectPlayerPageTokens(
       readPageSource(
         "../../../src/routes/historias/nueva/+page.svelte",
         import.meta.url,
       ),
-      "max-w-[1180px]",
+      "create-wrap",
     );
   });
 
-  it("renders 3 fieldset-legend Field groups at md density inside max-w-[1180px]", () => {
+  it("renders the fieldset-legend Field groups at md density inside create-wrap", () => {
     const { container } = render(Page, {
       data: {
         characters: [{ id: "c1", name: "Aragorn" }],
       } as unknown as PageData,
       form: {} as unknown as ActionData,
     });
-    expectRenderedPlayerForm(container, "max-w-[1180px]", 3);
+    expectRenderedPlayerForm(container, "create-wrap", 2);
   });
 });

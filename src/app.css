@@ -1085,3 +1085,442 @@ h1, h2, h3, h4, h5, h6, .font-cinzel {
   color: var(--color-azeroth-muted);
   letter-spacing: 0.04em;
 }
+
+/* ============================================================================
+   OD-RESTO — vistas restantes (eventos índice/detalle/nuevo, perfil,
+   notificaciones, error). Fuente 1:1 de las screens de Open Design:
+   eventos.html, evento.html, evento-nuevo.html, perfil.html,
+   notificaciones.html, error.html (lane feat/od-resto).
+   ============================================================================ */
+
+/* ---------- campo de formulario estilo OD (.field) ---------- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 1rem;
+}
+.field > label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-azeroth-text-soft);
+  letter-spacing: 0.02em;
+}
+.field-hint {
+  font-size: 0.76rem;
+  color: var(--color-azeroth-faint);
+}
+
+/* ---------- eventos · índice (eventos.html:12-36) ---------- */
+.event-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+.event-head {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+/* ---------- eventos · detalle (evento.html:12-44) ---------- */
+.event-detail {
+  max-width: 760px;
+  margin-inline: auto;
+  padding-bottom: 3rem;
+}
+.detail-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+.detail-title {
+  font-family: var(--font-cinzel);
+  font-size: var(--fs-display);
+  line-height: 1.12;
+  color: var(--color-azeroth-text-high);
+  font-weight: 700;
+  margin: 0;
+}
+.detail-sub {
+  font-size: 0.9rem;
+  color: var(--color-azeroth-muted);
+  margin: 8px 0 0;
+}
+.detail-sub b {
+  color: var(--color-azeroth-gold-soft);
+  font-weight: 600;
+}
+.detail-body {
+  border: 1px solid var(--color-azeroth-border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--color-azeroth-surface-2), var(--color-azeroth-surface));
+  padding: 1.5rem;
+  margin-top: 20px;
+}
+.detail-body p {
+  color: var(--color-azeroth-text-soft);
+  line-height: 1.7;
+}
+.p-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-azeroth-border);
+  font-size: 0.92rem;
+  color: var(--color-azeroth-text-soft);
+}
+.p-row:last-child {
+  border-bottom: 0;
+}
+.p-row .who {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.join-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 18px 20px;
+}
+.join-form .field {
+  flex: 1;
+  min-width: 200px;
+  margin: 0;
+}
+.side-note {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.86rem;
+  color: var(--color-azeroth-muted);
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-azeroth-border);
+}
+.side-note svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--color-azeroth-gold-dim);
+}
+
+/* ---------- eventos · nuevo (evento-nuevo.html:12-37) ---------- */
+.create-wrap {
+  max-width: 760px;
+  margin-inline: auto;
+  padding-bottom: 3rem;
+}
+/* .form-card/.form-card-head/.form-card-body/.grid2 ya definidos arriba */
+
+/* ---------- perfil (perfil.html:12-50) ---------- */
+.profile-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 1.5rem;
+  align-items: start;
+  padding-bottom: 3rem;
+}
+@media (max-width: 900px) {
+  .profile-layout {
+    grid-template-columns: 1fr;
+  }
+}
+.profile-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+}
+.profile-card {
+  border: 1px solid var(--color-azeroth-border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--color-azeroth-surface-2), var(--color-azeroth-surface));
+  padding: 1.5rem;
+}
+.profile-top {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.profile-who {
+  flex: 1;
+  min-width: 220px;
+}
+.profile-who h2 {
+  font-family: var(--font-cinzel);
+  font-size: 1.5rem;
+  color: var(--color-azeroth-text-high);
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+.profile-who .handle {
+  color: var(--color-azeroth-muted);
+  font-size: 0.9rem;
+}
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.avatar-preview {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.activity-row .a-main {
+  flex: 1;
+  min-width: 0;
+}
+.activity-row .a-title {
+  font-weight: 600;
+  color: var(--color-azeroth-text-high);
+  font-size: 0.92rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.activity-row .a-meta {
+  font-size: 0.78rem;
+  color: var(--color-azeroth-faint);
+}
+.activity-row:hover .a-title {
+  color: var(--color-azeroth-gold-bright);
+}
+.profile-side {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  position: sticky;
+  top: calc(var(--topbar-h, 64px) + 16px);
+}
+.side-jobs {
+  border: 1px solid var(--color-azeroth-border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--color-azeroth-surface-2), var(--color-azeroth-surface));
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.side-jobs h3 {
+  font-family: var(--font-cinzel);
+  font-size: 1rem;
+  color: var(--color-azeroth-cream);
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+.job-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--color-azeroth-text-soft);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: var(--color-azeroth-sunken);
+  border: 1px solid var(--color-azeroth-border);
+}
+.job-btn:hover {
+  color: var(--color-azeroth-gold-bright);
+  border-color: var(--color-azeroth-gold-dim);
+}
+.job-btn svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  color: var(--color-azeroth-muted);
+}
+
+/* ---------- notificaciones (notificaciones.html:12-34) ---------- */
+.notif-wrap {
+  max-width: 680px;
+  margin-inline: auto;
+  padding-bottom: 3rem;
+}
+.notif-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.notif {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 15px 18px;
+  border: 1px solid var(--color-azeroth-border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--color-azeroth-surface-2), var(--color-azeroth-surface));
+  text-decoration: none;
+  transition:
+    border-color 0.15s,
+    translate 0.15s;
+}
+.notif:hover {
+  border-color: var(--color-azeroth-gold-dim);
+  translate: 0 -1px;
+}
+.notif.unread {
+  border-left: 3px solid var(--color-azeroth-gold);
+}
+.notif-ico {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: 11px;
+  background: var(--color-azeroth-sunken);
+  border: 1px solid var(--color-azeroth-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-azeroth-gold-dim);
+}
+.notif-ico svg {
+  width: 19px;
+  height: 19px;
+}
+.notif-main {
+  flex: 1;
+  min-width: 0;
+}
+.notif-text {
+  font-size: 0.92rem;
+  color: var(--color-azeroth-text-soft);
+  line-height: 1.5;
+}
+.notif-text b {
+  color: var(--color-azeroth-text-high);
+  font-weight: 600;
+}
+.notif-text a {
+  color: var(--color-azeroth-gold-soft);
+  font-weight: 600;
+}
+.notif-time {
+  font-size: 0.76rem;
+  color: var(--color-azeroth-faint);
+  margin-top: 3px;
+}
+.mark-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--color-azeroth-muted);
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+.mark-all button {
+  background: none;
+  border: 0;
+  color: var(--color-azeroth-link);
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0;
+}
+.mark-all button:hover {
+  color: var(--color-azeroth-gold-bright);
+}
+
+/* ---------- error (error.html:12-21) ---------- */
+.err-inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.err-emblem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  flex: none;
+  border-radius: 999px;
+  border: 1px solid rgba(200, 148, 26, 0.4);
+  background: rgba(248, 183, 0, 0.07);
+  color: var(--color-azeroth-gold-bright);
+  box-shadow:
+    0 0 0 2px rgba(248, 183, 0, 0.14),
+    0 0 44px -8px rgba(248, 183, 0, 0.55);
+  margin-bottom: 18px;
+}
+.err-emblem svg {
+  width: 30px;
+  height: 30px;
+}
+.err-title {
+  font-family: var(--font-cinzel);
+  font-size: 1.5rem;
+  color: var(--color-azeroth-text-high);
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+.err-sub {
+  color: var(--color-azeroth-muted);
+  max-width: 420px;
+  margin: 0 auto 26px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+.err-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+/* ---------- empty state OD (od.css ".empty" /* port to active stylesheet) ---------- */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  padding: 4rem 1.5rem;
+}
+.empty .sig {
+  flex: none;
+  color: var(--color-azeroth-gold-dim);
+  opacity: 0.75;
+}
+.empty .sig svg {
+  width: 64px;
+  height: 64px;
+}
+.empty h3 {
+  font-family: var(--font-cinzel);
+  color: var(--color-azeroth-text-soft);
+  font-weight: 600;
+  margin: 0;
+  font-size: 1.3rem;
+}
+.empty p {
+  color: var(--color-azeroth-muted);
+  max-width: 420px;
+  margin: 0;
+}
+.empty .empty-cta {
+  margin-top: 6px;
+}
