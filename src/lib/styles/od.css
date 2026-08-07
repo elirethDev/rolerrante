@@ -473,8 +473,12 @@ table.table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 .stale-mark::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--warn-strong); box-shadow: 0 0 8px var(--warn-strong); }
 
 /* ---------- 16. MODAL / TOAST / EMPTY ---------- */
+/* NOTE: daisyUI still ships a base `.modal { visibility:hidden; pointer-events:none; ... }`
+   in `@layer components`. OD's rules are unlayered (win on cascade) but only set `display`;
+   without this the open modal would exist in the DOM but stay invisible & non-interactive.
+   `.modal.open` must reset both leaked properties. */
 .modal { position: fixed; inset: 0; z-index: 300; display: none; align-items: center; justify-content: center; padding: 20px; }
-.modal.open { display: flex; }
+.modal.open { display: flex; visibility: visible; pointer-events: auto; }
 .modal-backdrop { position: absolute; inset: 0; background: rgba(5, 7, 12, 0.72); backdrop-filter: blur(4px); }
 .modal-panel { position: relative; width: min(520px, 100%); max-height: 86vh; overflow: auto; background: linear-gradient(180deg, var(--surface-2), var(--surface)); border: 1px solid var(--border-strong); border-radius: var(--r-lg); box-shadow: var(--shadow-2); padding: 26px; }
 .modal-panel::before { content: ""; position: absolute; inset-inline: 0; top: 0; height: 2px; background: var(--gold-hairline); }
