@@ -119,7 +119,7 @@
             <a href={resolve(`/foro/categoria/${cat.id}` as any)} class="forum-main">
               <span class="ico"><FolderOpen size={20} /></span>
               <span class="forum-row-text">
-                <span class="forum-title">Ver hilos</span>
+                <span class="forum-title">{cat.name}</span>
                 {#if cat.description}
                   <span class="forum-desc">{cat.description}</span>
                 {/if}

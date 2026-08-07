@@ -113,7 +113,7 @@ describe('CategoryTree (OD forum-index rows)', () => {
     expect(header).toHaveTextContent('12mensajes');
   });
 
-  it('a root without children links its title and provides a Ver hilos row', () => {
+  it('a root without children links its title and shows its name in the row', () => {
     render(CategoryTree, {
       categories: [cat({ id: 'r1', name: 'General', description: 'Charlas libres', threads_count: 2, posts_count: 4 })],
     });
@@ -121,8 +121,11 @@ describe('CategoryTree (OD forum-index rows)', () => {
     const titleLink = title.querySelector('a');
     expect(titleLink).not.toBeNull();
     expect(titleLink?.getAttribute('href')).toBe('/foro/categoria/r1');
-    const ver = screen.getByRole('link', { name: /Ver hilos/ });
-    expect(ver.getAttribute('href')).toBe('/foro/categoria/r1');
+    // The leaf row shows the category's own name (not a hardcoded label) so the
+    // admin-defined section name is what the users see.
+    const row = screen.getByTestId('forum-row');
+    expect(row).toHaveTextContent('General');
+    expect(row.querySelector('a')?.getAttribute('href')).toBe('/foro/categoria/r1');
   });
 
   it('does not link a root title when it has children (navigation lives in the rows)', () => {
