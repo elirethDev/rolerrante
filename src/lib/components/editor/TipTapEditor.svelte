@@ -49,7 +49,7 @@
       },
       editorProps: {
         attributes: {
-          class: 'prose prose-invert max-w-none min-h-[200px] focus:outline-none p-4',
+          class: 'composer-body prose prose-invert max-w-none focus:outline-none',
         },
       },
     });
@@ -85,23 +85,23 @@
 </script>
 
 {#if editable}
-  <div class="border border-azeroth-border rounded-t-lg bg-base-200 p-2 flex flex-wrap gap-1">
-    <button type="button" class="btn btn-xs btn-ghost" on:click={() => editor?.chain().focus().toggleBold().run()} class:btn-active={editor?.isActive('bold')}><Bold size={14} /></button>
-    <button type="button" class="btn btn-xs btn-ghost" on:click={() => editor?.chain().focus().toggleItalic().run()} class:btn-active={editor?.isActive('italic')}><Italic size={14} /></button>
-    <button type="button" class="btn btn-xs btn-ghost" on:click={() => editor?.chain().focus().toggleUnderline().run()} class:btn-active={editor?.isActive('underline')}><UnderlineIcon size={14} /></button>
-    <button type="button" class="btn btn-xs btn-ghost" on:click={() => editor?.chain().focus().toggleStrike().run()} class:btn-active={editor?.isActive('strike')}><Strikethrough size={14} /></button>
-    <div class="divider divider-horizontal mx-1"></div>
-    <button type="button" class="btn btn-xs btn-ghost" on:click={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()} class:btn-active={editor?.isActive('heading', { level: 1 })}><Heading1 size={14} /></button>
-    <button type="button" class="btn btn-xs btn-ghost" on:click={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} class:btn-active={editor?.isActive('heading', { level: 2 })}><Heading2 size={14} /></button>
-    <div class="divider divider-horizontal mx-1"></div>
-    <button type="button" class="btn btn-xs btn-ghost" on:click={() => editor?.chain().focus().toggleBulletList().run()} class:btn-active={editor?.isActive('bulletList')}><List size={14} /></button>
-    <button type="button" class="btn btn-xs btn-ghost" on:click={() => editor?.chain().focus().toggleOrderedList().run()} class:btn-active={editor?.isActive('orderedList')}><ListOrdered size={14} /></button>
-    <button type="button" class="btn btn-xs btn-ghost" on:click={() => editor?.chain().focus().toggleBlockquote().run()} class:btn-active={editor?.isActive('blockquote')}><Quote size={14} /></button>
-    <div class="divider divider-horizontal mx-1"></div>
-    <button type="button" class="btn btn-xs btn-ghost" on:click={addImage}><ImageIcon size={14} /></button>
-    <button type="button" class="btn btn-xs btn-ghost" on:click={addLink} class:btn-active={editor?.isActive('link')}><LinkIcon size={14} /></button>
+  <div class="composer-toolbar" role="toolbar" aria-label="Formato">
+    <button type="button" class="cm-btn" class:on={editor?.isActive('bold')} title="Negrita" aria-label="Negrita" on:click={() => editor?.chain().focus().toggleBold().run()}><Bold size={16} /></button>
+    <button type="button" class="cm-btn" class:on={editor?.isActive('italic')} title="Cursiva" aria-label="Cursiva" on:click={() => editor?.chain().focus().toggleItalic().run()}><Italic size={16} /></button>
+    <button type="button" class="cm-btn" class:on={editor?.isActive('underline')} title="Subrayado" aria-label="Subrayado" on:click={() => editor?.chain().focus().toggleUnderline().run()}><UnderlineIcon size={16} /></button>
+    <button type="button" class="cm-btn" class:on={editor?.isActive('strike')} title="Tachado" aria-label="Tachado" on:click={() => editor?.chain().focus().toggleStrike().run()}><Strikethrough size={16} /></button>
+    <span class="sep" aria-hidden="true"></span>
+    <button type="button" class="cm-btn" class:on={editor?.isActive('heading', { level: 1 })} title="Título 1" aria-label="Título 1" on:click={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}><Heading1 size={16} /></button>
+    <button type="button" class="cm-btn" class:on={editor?.isActive('heading', { level: 2 })} title="Título 2" aria-label="Título 2" on:click={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}><Heading2 size={16} /></button>
+    <span class="sep" aria-hidden="true"></span>
+    <button type="button" class="cm-btn" class:on={editor?.isActive('bulletList')} title="Lista" aria-label="Lista" on:click={() => editor?.chain().focus().toggleBulletList().run()}><List size={16} /></button>
+    <button type="button" class="cm-btn" class:on={editor?.isActive('orderedList')} title="Lista numerada" aria-label="Lista numerada" on:click={() => editor?.chain().focus().toggleOrderedList().run()}><ListOrdered size={16} /></button>
+    <button type="button" class="cm-btn" class:on={editor?.isActive('blockquote')} title="Cita" aria-label="Cita" on:click={() => editor?.chain().focus().toggleBlockquote().run()}><Quote size={16} /></button>
+    <span class="sep" aria-hidden="true"></span>
+    <button type="button" class="cm-btn" title="Imagen" aria-label="Imagen" on:click={addImage}><ImageIcon size={16} /></button>
+    <button type="button" class="cm-btn" class:on={editor?.isActive('link')} title="Enlace" aria-label="Enlace" on:click={addLink}><LinkIcon size={16} /></button>
     <!-- REQ-FC-05: Spoiler is an inline TipTap Node; TipTap auto-generates toggleSpoiler. -->
-    <button type="button" class="btn btn-xs btn-ghost" title="Spoiler" aria-label="Spoiler" on:click={() => editor?.chain().focus().toggleSpoiler().run()} class:btn-active={editor?.isActive('spoiler')}>Spoiler</button>
+    <button type="button" class="cm-btn" style="width:auto;padding:0 10px;font-size:.72rem;font-weight:700" class:on={editor?.isActive('spoiler')} title="Spoiler" aria-label="Spoiler" on:click={() => editor?.chain().focus().toggleSpoiler().run()}>Spoiler</button>
   </div>
 {/if}
-<div bind:this={element} class="border border-azeroth-border {editable ? 'rounded-b-lg' : 'rounded-lg'} bg-base-100"></div>
+<div class="composer-body" bind:this={element}></div>

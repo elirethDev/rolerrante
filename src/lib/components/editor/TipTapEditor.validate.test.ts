@@ -10,7 +10,7 @@ function getEditorEl(container: HTMLElement): HTMLElement {
 }
 
 function findToolbarButton(container: HTMLElement, index: number): HTMLButtonElement {
-  const toolbar = container.querySelector('.bg-base-200');
+  const toolbar = container.querySelector('.composer-toolbar');
   if (!toolbar) throw new Error('Toolbar not found');
   const buttons = toolbar.querySelectorAll('button');
   return buttons[index] as HTMLButtonElement;
