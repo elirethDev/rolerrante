@@ -136,20 +136,35 @@ export const actions: Actions = {
     const file = form.get('avatar_file');
 
     let avatarUrl: string | null;
-    if (file instanceof File && file.size > 0) {
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      const validation = validateAvatarUpload({ bytes, size: file.size, name: file.name });
+    // `avatar_file` llega como File en el multipart; en runtimes edge (CF
+    // Workers) el constructor de File puede diferir del global → usamos la
+    // forma duck-typed (tiene size/name/arrayBuffer) en vez de instanceof.
+    if (file && typeof file === 'object' && 'size' in file && 'name' in file && (file as File).size > 0) {
+      let bytes: Uint8Array;
+      try {
+        bytes = new Uint8Array(await (file as File).arrayBuffer());
+      } catch {
+        return fail(400, { message: 'No se pudo leer el archivo de avatar.' });
+      }
+      const validation = validateAvatarUpload({ bytes, size: (file as File).size, name: (file as File).name });
       if (!validation.ok) {
         return fail(400, { message: validation.error });
       }
-      const path = buildAvatarPath('profile', user!.id, file.name);
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(path, bytes, {
-          contentType: 'image/webp',
-          upsert: true,
-          cacheControl: '31536000',
-        });
+      const path = buildAvatarPath('profile', user!.id, (file as File).name);
+      let uploadError: { message: string } | null = null;
+      try {
+        const res = await supabase.storage
+          .from('avatars')
+          .upload(path, bytes, {
+            contentType: 'image/webp',
+            upsert: true,
+            cacheControl: '31536000',
+          });
+        uploadError = res.error;
+      } catch (err) {
+        console.error('avatar upload falló', err);
+        return fail(400, { message: 'No se pudo subir el avatar al almacenamiento.' });
+      }
       if (uploadError) return fail(400, { message: uploadError.message });
       avatarUrl = avatarPublicUrl(path);
     } else {

@@ -61,18 +61,31 @@ async function resolveCharacterAvatar(
   pastedUrl: string,
 ): Promise<{ avatarUrl: string | null; error?: string }> {
   const file = form.get('avatar_file');
-  if (file instanceof File && file.size > 0) {
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const validation = validateAvatarUpload({ bytes, size: file.size, name: file.name });
+  // Duck-typed File check (tolerante al constructor de File del runtime edge).
+  if (file && typeof file === 'object' && 'size' in file && 'name' in file && (file as File).size > 0) {
+    let bytes: Uint8Array;
+    try {
+      bytes = new Uint8Array(await (file as File).arrayBuffer());
+    } catch {
+      return { avatarUrl: null, error: 'No se pudo leer el archivo de avatar.' };
+    }
+    const validation = validateAvatarUpload({ bytes, size: (file as File).size, name: (file as File).name });
     if (!validation.ok) return { avatarUrl: null, error: validation.error };
-    const path = buildAvatarPath('character', characterId, file.name);
-    const { error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(path, bytes, {
-        contentType: 'image/webp',
-        upsert: true,
-        cacheControl: '31536000',
-      });
+    const path = buildAvatarPath('character', characterId, (file as File).name);
+    let uploadError: { message: string } | null = null;
+    try {
+      const res = await supabase.storage
+        .from('avatars')
+        .upload(path, bytes, {
+          contentType: 'image/webp',
+          upsert: true,
+          cacheControl: '31536000',
+        });
+      uploadError = res.error;
+    } catch (err) {
+      console.error('avatar upload falló (ficha)', err);
+      return { avatarUrl: null, error: 'No se pudo subir el avatar al almacenamiento.' };
+    }
     if (uploadError) return { avatarUrl: null, error: uploadError.message };
     return { avatarUrl: avatarPublicUrl(path) };
   }
