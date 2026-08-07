@@ -4,7 +4,7 @@
      componen query strings (nuevo pre-seccionado + paginación); resolve() no
      admite query strings y la regla no puede verificar templates con sufijo
      (mismo falso positivo que historias/+page.svelte). */
-  import { FolderOpen, MessageSquarePlus, MessagesSquare } from '@lucide/svelte';
+  import { MessageSquarePlus } from '@lucide/svelte';
   import { resolve } from '$app/paths';
   import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
@@ -53,7 +53,7 @@
       {#each data.children as child (child.id)}
         <a
           href={resolve(`/foro/categoria/${child.id}` as any)}
-          class="btn btn-outline btn-xs"
+          class="btn btn-secondary btn-sm"
           data-testid="child-section-link"
         >
           {child.name}
@@ -68,67 +68,46 @@
       description="Sé la primera persona en abrir un debate en esta sección."
     />
   {:else}
-    <div class="panel">
-      <div class="panel-head">
-        <h2>Debates</h2>
-        <span class="meta">
-          {data.totalThreads} {data.totalThreads === 1 ? 'hilo' : 'hilos'}
-        </span>
-      </div>
-      <div class="panel-body p-0">
-        <ul class="divide-y divide-azeroth-border">
-          {#each data.threads as t (t.id)}
-            <li class="py-3 px-4">
-              <a
-                href={resolve(`/foro/${t.id}` as any)}
-                class="block hover:bg-base-100 rounded-lg px-2 -mx-2 py-1"
-              >
-                <div class="flex items-center gap-2">
-                  {#if t.content_type === 'debate'}
-                    <MessagesSquare size={16} class="text-azeroth-gold shrink-0" />
-                  {:else}
-                    <FolderOpen size={16} class="text-azeroth-gold shrink-0" />
+    <ul class="stack">
+      {#each data.threads as t (t.id)}
+        <li class="thread-row">
+          <div class="thread-flags">
+            {#if t.is_sticky}
+              <PinBadge />
+            {/if}
+            {#if t.is_locked}
+              <LockBadge />
+            {/if}
+          </div>
+          <div class="thread-main">
+            <a class="thread-title" href={resolve(`/foro/${t.id}` as any)}>{t.title}</a>
+            <div class="thread-meta">
+              <span>por {t.author?.display_name ?? t.author?.username ?? 'desconocido'}</span>
+              <span>{formatDate(t.created_at)}</span>
+              {#if t.lastPost?.author_display_name}
+                <span data-testid="last-post">
+                  <span>Último:</span>
+                  <span style="color:var(--text-soft);font-weight:500">{t.lastPost.author_display_name}</span>
+                  {#if t.lastPost.created_at}
+                    <span style="color:var(--text-faint)">{formatRelativeTime(t.lastPost.created_at)}</span>
                   {/if}
-                  <span class="font-medium line-clamp-1">{t.title}</span>
-                  {#if t.is_sticky}
-                    <PinBadge />
-                  {/if}
-                  {#if t.is_locked}
-                    <LockBadge />
-                  {/if}
-                </div>
-                <div
-                  class="text-xs text-azeroth-muted mt-1 pl-6 flex flex-wrap items-center gap-x-2 gap-y-1"
-                >
-                  <span>por {t.author?.display_name ?? t.author?.username ?? 'desconocido'}</span>
-                  <span>· {formatDate(t.created_at)}</span>
-                  <span class="inline-flex items-center gap-1" aria-label={`${t.posts_count ?? 0} mensajes`}>
-                    <MessagesSquare size={12} class="inline" />
-                    {t.posts_count ?? 0} mensajes
-                  </span>
-                  {#if t.lastPost?.author_display_name}
-                    <span class="inline-flex items-center gap-1" data-testid="last-post">
-                      <span>Último:</span>
-                      <span class="text-azeroth-text-soft font-medium">{t.lastPost.author_display_name}</span>
-                      {#if t.lastPost.created_at}
-                        <span class="text-azeroth-faint">{formatRelativeTime(t.lastPost.created_at)}</span>
-                      {/if}
-                    </span>
-                  {/if}
-                </div>
-              </a>
-            </li>
-          {/each}
-        </ul>
-      </div>
-    </div>
+                </span>
+              {/if}
+            </div>
+          </div>
+          <div class="thread-count">
+            <b>{`${t.posts_count ?? 0} mensajes`}</b>
+          </div>
+        </li>
+      {/each}
+    </ul>
 
     {#if data.totalPages > 1}
       <nav class="mt-5 flex items-center justify-center gap-3" aria-label="Paginación de hilos">
         <a
           href={pageHref(data.currentPage - 1)}
           aria-disabled={data.currentPage <= 1}
-          class="btn btn-outline btn-xs"
+          class="btn btn-secondary btn-sm"
         >
           Anterior
         </a>
@@ -138,7 +117,7 @@
         <a
           href={pageHref(data.currentPage + 1)}
           aria-disabled={data.currentPage >= data.totalPages}
-          class="btn btn-outline btn-xs"
+          class="btn btn-secondary btn-sm"
         >
           Siguiente
         </a>

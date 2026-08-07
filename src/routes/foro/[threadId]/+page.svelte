@@ -43,31 +43,26 @@
 
     <div class="shrink-0">
       {#if data.isAuthenticated}
-        <button type="button" class="btn btn-outline btn-sm" onclick={() => (watchOpen = true)}>
+        <button type="button" class="btn btn-secondary btn-sm" onclick={() => (watchOpen = true)}>
           {data.follow.following ? 'Siguiendo' : 'Seguir'}
         </button>
       {/if}
     </div>
   </div>
 
-  <div class="mt-6 flex gap-3">
-    {#if data.flags.can_post && !data.isLocked}
-      <div class="w-full panel">
-        <div class="panel-head"><h2>Responder</h2></div>
-        <div class="panel-body">
-          <ReplyComposer
-            draftKey={`forum:draft:${data.thread.id}`}
-            quotePayload={replyTo}
-            onClearQuote={() => (replyTo = null)}
-          />
-        </div>
-      </div>
-    {/if}
-  </div>
+  {#if data.flags.can_post && !data.isLocked}
+    <div class="mt-6">
+      <ReplyComposer
+        draftKey={`forum:draft:${data.thread.id}`}
+        quotePayload={replyTo}
+        onClearQuote={() => (replyTo = null)}
+      />
+    </div>
+  {/if}
 
   <div class="mt-4">
     {#if data.isOwner || data.isStaff}
-      <a href={resolve(`/foro/${data.thread.id}/editar` as any)} class="btn btn-outline">Editar hilo</a>
+      <a href={resolve(`/foro/${data.thread.id}/editar` as any)} class="btn btn-secondary">Editar hilo</a>
     {/if}
   </div>
 </section>
