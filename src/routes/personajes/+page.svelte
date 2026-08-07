@@ -2,11 +2,10 @@
   import { resolve } from '$app/paths';
   import type { PageData } from './$types';
   import { Plus, Search } from '@lucide/svelte';
-  import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import FilterTabs from '$lib/components/ui/FilterTabs.svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import CharacterCard from '$lib/components/characters/CharacterCard.svelte';
-  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -34,19 +33,20 @@
 
 <Breadcrumbs items={[{ label: 'Personajes' }]} class="mb-2" />
 
-  <PageHeader
-  kicker="Personajes"
-  title="Censo del reino"
-  subtitle="Las fichas aprobadas por el consejo, de todos los jugadores del reino. Busca por nombre o filtra por raza."
->
-  {#snippet actions()}
+<header class="page-head" style="border-bottom:var(--border-faint)">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div class="min-w-0">
+      <span class="kicker">Personajes</span>
+      <h1 class="page-title" style="margin-bottom:6px">Censo del reino</h1>
+      <p class="page-sub">Las fichas aprobadas por el consejo, de todos los jugadores del reino. Busca por nombre o filtra por raza.</p>
+    </div>
     {#if data.profile}
-      <a href={resolve('/personajes/nuevo')} class="btn btn-primary">
+      <a href={resolve('/personajes/nuevo')} class="btn btn-primary btn-lg">
         <Plus size={18} /> Nueva ficha
       </a>
     {/if}
-  {/snippet}
-</PageHeader>
+  </div>
+</header>
 
 {#if data.characters.length === 0}
   <EmptyState
@@ -54,7 +54,7 @@
     description="Todavía no hay fichas aprobadas por el consejo. Volvé a intentar con otra búsqueda o raza."
   >
     {#if data.profile}
-      <a href={resolve('/personajes/nuevo')} class="btn btn-primary mt-4">Crear la primera</a>
+      <a href={resolve('/personajes/nuevo')} class="btn btn-primary">Crear la primera</a>
     {/if}
   </EmptyState>
 {:else}
@@ -62,29 +62,27 @@
     method="GET"
     action={resolve('/personajes')}
     bind:this={filterForm}
-    class="mb-6 grid gap-3 md:grid-cols-[1fr_220px_auto]"
+    class="top-actions"
     role="search"
+    aria-label="Buscar fichas del censo"
   >
-    <div class="relative">
-      <Search
-        size={16}
-        class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-azeroth-gold-dim"
-        aria-hidden="true"
-      />
+    <div class="search-wrap">
+      <Search size={16} aria-hidden="true" />
       <input
         type="search"
         name="q"
         value={data.query}
-        placeholder="Buscar personaje..."
+        placeholder="Buscar por nombre, raza o gremio..."
         aria-label="Buscar personaje por nombre"
-        class="azeroth-focus input w-full pl-9"
+        class="input"
       />
     </div>
     <select
       name="race"
       value={data.race ?? ''}
       aria-label="Filtrar por raza"
-      class="azeroth-focus min-h-10 w-full appearance-none rounded-lg border border-azeroth-border bg-azeroth-sunken py-2.5 pl-3 pr-9 font-sans text-sm text-base-content"
+      class="input"
+      style="max-width:220px"
       onchange={() => filterForm?.requestSubmit()}
     >
       <option value="">Todas las razas</option>
@@ -106,7 +104,12 @@
 
 {#if data.profile && data.ownCharacters.length > 0}
   <section class="mt-10" data-testid="own-characters">
-    <h2 class="mb-4 text-xl font-cinzel text-azeroth-gold">Mis fichas</h2>
+    <div class="flex items-end justify-between gap-4 flex-wrap" style="margin-bottom:var(--s-4)">
+      <div>
+        <span class="kicker">Censo del reino</span>
+        <h2 class="page-title" style="font-size:1.15rem;margin:8px 0 0">Mis fichas</h2>
+      </div>
+    </div>
     <FilterTabs
       ariaLabel="Filtrar mis fichas"
       value={ownFilter}
@@ -118,7 +121,7 @@
       ]}
       onchange={(v) => (ownFilter = v)}
     />
-    <div class="char-grid mt-4">
+    <div class="char-grid" style="margin-top:var(--s-4)">
       {#each ownFiltered as char (char.id)}
         <CharacterCard {char} />
       {/each}
