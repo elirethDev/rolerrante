@@ -26,6 +26,24 @@
     a.sort_order - b.sort_order || String(a.id).localeCompare(String(b.id));
 
   const sortedCategories = $derived(data.categories.toSorted(rowSort));
+
+  // Read-only cell glyph (design admin.html: .perm-grid). Compact markers
+  // keep the grid narrow; the title carries the full meaning.
+  function permMark(perm: SectionPerm | undefined) {
+    if (!perm) return '—';
+    if (perm.can_view && perm.can_post) return 'VP';
+    if (perm.can_view) return 'V';
+    if (perm.can_post) return 'P';
+    return '—';
+  }
+
+  function permTitle(perm: SectionPerm | undefined) {
+    if (!perm) return 'Sin permiso asignado';
+    if (perm.can_view && perm.can_post) return 'Ver + Publicar';
+    if (perm.can_view) return 'Ver';
+    if (perm.can_post) return 'Publicar';
+    return 'Acceso denegado';
+  }
 </script>
 
 <svelte:head>
@@ -54,95 +72,70 @@
   <div class="kpi"><span class="kpi-num">{data.logs}</span><span class="kpi-label">Eventos de auditoría</span></div>
 </div>
 
-<div class="panel" data-testid="perm-matrix">
-  <div class="panel-head">
-    <h2>Permisos por sección</h2>
-    <span class="meta">solo lectura · se gestionan en /admin/foro</span>
+<!-- design admin.html section-permisos: read-only .perm-grid over the roles -->
+<section data-testid="perm-matrix" class="perm-cat" id="permisos">
+  <div class="perm-cat-head">
+    <b>Permisos por sección</b>
+    <span class="meta faint" style="margin-left:auto;font-size:.76rem">solo lectura · se gestionan en /admin/foro</span>
   </div>
-  <div class="panel-body p-0">
-    <div class="overflow-x-auto">
-      <table class="table table-sm">
-        <thead>
-          <tr>
-            <th>Sección</th>
-            <th>Lectura mínima</th>
-            {#each ROLES as role (role)}
-              <th title={role}>{roleLabel(role)}</th>
-            {/each}
-          </tr>
-        </thead>
-        <tbody>
-          {#each sortedCategories as cat (cat.id)}
-            <tr>
-              <td class="font-semibold whitespace-nowrap">{cat.name}</td>
-              <td class="whitespace-nowrap">
-                {#if cat.min_read_role}
-                  <span class="badge badge-ghost badge-sm">{roleLabel(cat.min_read_role)}</span>
-                {:else}
-                  <span class="text-azeroth-faint">Público</span>
-                {/if}
-              </td>
-              {#each ROLES as role (role)}
-                {@const perm = permFor(cat.id, role)}
-                <td data-testid="perm-cell" data-role={role}>
-                  {#if perm}
-                    {#if perm.can_view && perm.can_post}
-                      <span class="badge badge-success badge-sm">Ver + Publicar</span>
-                    {:else if perm.can_view}
-                      <span class="badge badge-neutral badge-sm">Ver</span>
-                    {:else if perm.can_post}
-                      <span class="badge badge-warning badge-sm">Publicar</span>
-                    {:else}
-                      <span class="text-azeroth-faint">—</span>
-                    {/if}
-                  {:else}
-                    <span class="text-azeroth-faint">—</span>
-                  {/if}
-                </td>
-              {/each}
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-      {#if sortedCategories.length === 0}
-        <p class="text-azeroth-faint text-center py-4">No hay categorías registradas.</p>
-      {/if}
-    </div>
+  <div class="perm-grid">
+    <div class="head">Sección</div>
+    {#each ROLES as role (role)}
+      <div class="head">{roleLabel(role)}</div>
+    {/each}
+    {#each sortedCategories as cat (cat.id)}
+      <div class="cell-title">
+        {cat.name}
+        {#if cat.min_read_role}
+          <span class="tag gold">min {roleLabel(cat.min_read_role as UserRole)}</span>
+        {/if}
+      </div>
+      {#each ROLES as role (role)}
+        {@const perm = permFor(cat.id, role)}
+        <div data-testid="perm-cell" data-role={role} title={permTitle(perm)}>
+          {permMark(perm)}
+        </div>
+      {/each}
+    {/each}
   </div>
-</div>
+  {#if sortedCategories.length === 0}
+    <p class="muted" style="padding:var(--s-4);font-size:.9rem">No hay categorías registradas.</p>
+  {/if}
+</section>
 
-<div class="panel">
-  <div class="panel-head">
-    <h2>Actividad reciente</h2>
-    <span class="meta">{data.recentLogs.length} registros</span>
+<!-- design admin.html section-auditoria: recent audit as .table -->
+<section style="margin-top:var(--s-8)" id="auditoria">
+  <div class="thread-toolbar">
+    <div><span class="kicker">Registro</span><h2 style="margin:8px 0 0">Auditoría de moderación</h2></div>
+    <span class="meta muted" style="font-size:.82rem">{data.recentLogs.length} registros recientes</span>
   </div>
-  <div class="panel-body p-0">
-    <div class="overflow-x-auto">
-      <table class="table table-sm">
-        <thead>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Actor</th>
+          <th>Acción</th>
+          <th>Entidad</th>
+          <th>Detalles</th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each data.recentLogs as log (log.id ?? log.created_at)}
           <tr>
-            <th>Fecha</th>
-            <th>Actor</th>
-            <th>Acción</th>
-            <th>Entidad</th>
-            <th>Detalles</th>
+            <td data-th="Fecha" class="mono faint">{formatDate(log.created_at)}</td>
+            <td data-th="Actor" class="audit-actor">
+              {log.actor?.display_name ?? log.actor?.username ?? 'Sistema'}
+            </td>
+            <td data-th="Acción" class="cell-title"><AuditActionBadge action={log.action} /></td>
+            <td data-th="Entidad" class="audit-entry">{log.entity_type}{#if log.entity_id} · {log.entity_id.slice(0, 8)}{/if}</td>
+            <td data-th="Detalles" class="mono faint" style="font-size:.76rem">{JSON.stringify(log.details)}</td>
           </tr>
-        </thead>
-        <tbody>
-          {#each data.recentLogs as log (log.id ?? log.created_at)}
-            <tr>
-              <td>{formatDate(log.created_at)}</td>
-              <td>{log.actor?.display_name ?? log.actor?.username ?? 'Sistema'}</td>
-              <td><AuditActionBadge action={log.action} /></td>
-              <td>{log.entity_type}{#if log.entity_id} · {log.entity_id.slice(0, 8)}{/if}</td>
-              <td class="text-xs">{JSON.stringify(log.details)}</td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-      {#if data.recentLogs.length === 0}
-        <p class="text-azeroth-faint text-center py-4">No hay actividad reciente.</p>
-      {/if}
-    </div>
+        {/each}
+      </tbody>
+    </table>
+    {#if data.recentLogs.length === 0}
+      <p class="muted" style="padding:var(--s-4);font-size:.9rem">No hay actividad reciente.</p>
+    {/if}
   </div>
-</div>
+</section>
