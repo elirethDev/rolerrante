@@ -278,7 +278,9 @@ describe("admin/foro category CRUD actions (REQ-FORUM-04.1)", () => {
   });
 
   it("updateCategory edits all fields including parent and min read role", async () => {
-    const supabase = makeSupabase();
+    // parent_id=p1 apunta a una sección raíz (parent_id null) — valida la nueva
+    // regla de 2 niveles (categoría solo dentro de sección).
+    const supabase = makeSupabase({ category: { id: "p1", parent_id: null } });
     await expectRedirect(
       () =>
         act("updateCategory")(

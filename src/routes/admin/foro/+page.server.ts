@@ -40,6 +40,20 @@ export const actions: Actions = {
 
     if (!name) return fail(400, { message: 'El nombre es obligatorio' });
 
+    // Sécción→Categoría: sólo niveles de 2. Un `parent_id` debe apuntar a una
+    // SECCIÓN (raíz), nunca a otra categoría — evita anidamientos profundos.
+    if (parent_id) {
+      const { data: parent } = await locals.supabase
+        .from('categories')
+        .select('id, parent_id')
+        .eq('id', parent_id)
+        .maybeSingle();
+      if (!parent) return fail(400, { message: 'La sección elegida no existe' });
+      if ((parent as { parent_id: string | null }).parent_id) {
+        return fail(400, { message: 'Solo se pueden crear categorías dentro de una sección (no dentro de otra categoría)' });
+      }
+    }
+
     const { error: dbError } = await locals.supabase
       .from('categories')
       .insert({ name, description, parent_id, sort_order, is_visible: true, min_read_role, requires_approval });
@@ -60,6 +74,18 @@ export const actions: Actions = {
     const requires_approval = form.get('requires_approval') === 'on';
 
     if (!id || !name) return fail(400, { message: 'ID y nombre son obligatorios' });
+
+    if (parent_id) {
+      const { data: parent } = await locals.supabase
+        .from('categories')
+        .select('id, parent_id')
+        .eq('id', parent_id)
+        .maybeSingle();
+      if (!parent) return fail(400, { message: 'La sección elegida no existe' });
+      if ((parent as { parent_id: string | null }).parent_id) {
+        return fail(400, { message: 'Solo se pueden crear categorías dentro de una sección (no dentro de otra categoría)' });
+      }
+    }
 
     const { error: dbError } = await locals.supabase
       .from('categories')

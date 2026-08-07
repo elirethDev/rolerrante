@@ -54,7 +54,7 @@ describe("admin/foro category management UI", () => {
   it("renders a create modal with the min-read-role select (Público/Miembro/Moderador/GM) (FORO-CAT-MINROLE)", async () => {
     renderPage();
     await fireEvent.click(
-      screen.getByRole("button", { name: "Nueva categoría" }),
+      screen.getByRole("button", { name: "+ Nueva categoría" }),
     );
     const select = document.querySelector(
       'select[name="min_read_role"]',
@@ -115,5 +115,32 @@ describe("admin/foro category management UI", () => {
     const downButtons = screen.getAllByRole("button", { name: "Bajar" });
     expect(upButtons.length).toBeGreaterThan(0);
     expect(downButtons.length).toBeGreaterThan(0);
+  });
+
+  it("'Nueva sección' modal has NO parent/section select (section = root)", async () => {
+    renderPage();
+    await fireEvent.click(
+      screen.getByRole("button", { name: "+ Nueva sección" }),
+    );
+    const dialog = document.querySelector('div[role="dialog"]') as HTMLElement;
+    expect(dialog).toBeTruthy();
+    expect(
+      dialog.querySelector('select[name="parent_id"]'),
+    ).toBeNull();
+  });
+
+  it("'Nueva categoría' modal lists the sections as the parent select", async () => {
+    renderPage();
+    await fireEvent.click(
+      screen.getByRole("button", { name: "+ Nueva categoría" }),
+    );
+    const dialog = document.querySelector('div[role="dialog"]') as HTMLElement;
+    const select = dialog.querySelector(
+      'select[name="parent_id"]',
+    ) as HTMLSelectElement;
+    expect(select).toBeTruthy();
+    const options = Array.from(select.options).map((o) => o.textContent?.trim());
+    expect(options).toContain("General");
+    expect(options).toContain("Zona GM");
   });
 });

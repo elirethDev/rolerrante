@@ -45,6 +45,16 @@
   let createOpen = $state(false);
   let editOpen = $state(false);
   let editForm = $state<CategoryForm | null>(null);
+  // Qué estamos creando: 'seccion' (raíz, sin padre) o 'categoria' (hija de una sección).
+  let createKind = $state<'seccion' | 'categoria'>('seccion');
+  // Form del modal de creación — mutable para poder precargar la sección elegida.
+  let createForm = $state<CategoryForm>(emptyForm());
+
+  function openCreate(kind: 'seccion' | 'categoria', seccionId = '') {
+    createKind = kind;
+    createForm = { ...emptyForm(), parent_id: seccionId };
+    createOpen = true;
+  }
 
   const roots = $derived<CategoryRow[]>(
     data.categories
@@ -94,10 +104,21 @@
 <!-- design admin-foro.html: .cat-tree with .cat-root sections + per-category perms -->
 <section class="cat-tree">
   <div class="cat-head">
-    <h2>Categorías</h2>
-    <button class="btn btn-primary btn-sm" onclick={() => (createOpen = true)}>
-      Nueva categoría
-    </button>
+    <h2>Secciones y categorías</h2>
+    <div class="acts" style="display:flex;gap:8px">
+      <button
+        class="btn btn-secondary btn-sm"
+        onclick={() => openCreate('seccion')}
+      >
+        + Nueva sección
+      </button>
+      <button
+        class="btn btn-primary btn-sm"
+        onclick={() => openCreate("categoria")}
+      >
+        + Nueva categoría
+      </button>
+    </div>
   </div>
   <div class="cat-body">
     {#each roots as root (root.id)}
@@ -105,6 +126,7 @@
       <div class="cat-root">
         <div class="r-top">
           <div>
+            <span class="tag gold" style="margin-right:8px">Sección</span>
             <b>{root.name}</b>
             <span class="meta"> · orden {root.sort_order}</span>
             {#if !root.is_visible}<span class="tag">oculta</span>{/if}
@@ -159,6 +181,7 @@
             {#each childSiblings as child (child.id)}
               <li>
                 <span>
+                  <span class="tag" style="margin-right:6px">Categoría</span>
                   {child.name}
                   {#if !child.is_visible}<span class="tag">oculta</span>{/if}
                   {#if child.requires_approval}<span class="tag">aprob. entrada</span>{/if}
@@ -215,17 +238,26 @@
           permissions={data.sectionPermissions.filter((p) => p.category_id === root.id)}
           form={form}
         />
+
+        <div style="margin-top:10px">
+            <button
+              class="btn btn-ghost btn-sm"
+              onclick={() => openCreate('categoria', root.id)}
+            >
+              + Añadir categoría
+            </button>
+        </div>
       </div>
     {/each}
     {#if roots.length === 0}
       <p class="muted" style="font-size:.9rem;padding:8px 0">
-        Aún no hay categorías. Creá la primera con «Nueva categoría».
+        Aún no hay secciones. Empezá creando la primera con «Nueva sección» y después agregá categorías dentro de ella.
       </p>
     {/if}
   </div>
 </section>
 
-{#snippet categoryFields(v: CategoryForm, showVisibility: boolean)}
+{#snippet categoryFields(v: CategoryForm, showVisibility: boolean, kind: 'seccion' | 'categoria' | 'auto' = 'auto')}
   <div class="field">
     <label for="cat-name">Nombre</label>
     <input id="cat-name" name="name" class="input" required value={v.name} />
@@ -235,15 +267,19 @@
     <textarea id="cat-desc" name="description" class="textarea" rows="2">{v.description}</textarea>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-    <div class="field">
-      <label for="cat-parent">Categoría padre</label>
-      <select id="cat-parent" name="parent_id" class="select">
-        <option value="">(raíz)</option>
-        {#each roots as root (root.id)}
-          <option value={root.id} selected={v.parent_id === root.id}>{root.name}</option>
-        {/each}
-      </select>
-    </div>
+    {#if kind === 'categoria'}
+      <div class="field">
+        <label for="cat-parent">Sección</label>
+        <select id="cat-parent" name="parent_id" class="select" required>
+          <option value="" disabled selected={!v.parent_id}>— elegir sección —</option>
+          {#each roots as root (root.id)}
+            <option value={root.id} selected={v.parent_id === root.id}>{root.name}</option>
+          {/each}
+        </select>
+      </div>
+    {:else}
+      <input type="hidden" name="parent_id" value="" />
+    {/if}
     <div class="field">
       <label for="cat-order">Orden</label>
       <input id="cat-order" name="sort_order" type="number" class="input" value={v.sort_order} />
@@ -263,11 +299,11 @@
   <label class="check"><input type="checkbox" name="requires_approval" checked={v.requires_approval} /> Requiere aprobación de entrada</label>
 {/snippet}
 
-<Modal bind:open={createOpen} title="Nueva categoría">
-  {@const v = emptyForm()}
+<Modal bind:open={createOpen} title={createKind === 'seccion' ? 'Nueva sección' : 'Nueva categoría'}>
+  {@const v = createForm}
   <form method="POST" action="?/createCategory" use:enhance>
     <input type="hidden" name="id" value="" />
-    {@render categoryFields(v, false)}
+    {@render categoryFields(v, false, createKind)}
     <div class="modal-foot" style="margin-top:var(--s-5)">
       <button type="button" class="btn btn-ghost" onclick={() => (createOpen = false)}>Cancelar</button>
       <button type="submit" class="btn btn-primary">Crear</button>
@@ -277,10 +313,10 @@
 
 {#if editForm}
   {@const v = editForm}
-  <Modal bind:open={editOpen} title="Editar categoría">
+  <Modal bind:open={editOpen} title="Editar">
     <form method="POST" action="?/updateCategory" use:enhance>
       <input type="hidden" name="id" value={v.id ?? ''} />
-      {@render categoryFields(v, true)}
+      {@render categoryFields(v, true, v.parent_id ? 'categoria' : 'seccion')}
       <div class="modal-foot" style="margin-top:var(--s-5)">
         <button type="button" class="btn btn-ghost" onclick={() => (editOpen = false)}>Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar</button>
