@@ -26,16 +26,18 @@ describe("gm/solicitudes/[id] (REQ-GS-02)", () => {
       form: null as never,
     });
 
-    const fieldset = document.querySelector("fieldset");
-    expect(fieldset).toBeInTheDocument();
-    const legend = fieldset?.querySelector("legend");
-    expect(legend?.textContent).toContain("Motivo del rechazo");
+    const field = document.querySelector(".field");
+    expect(field).toBeInTheDocument();
+    expect(field?.querySelector("label")?.textContent).toContain(
+      "Motivo del rechazo",
+    );
 
     const input = document.querySelector(
       'input[name="notes"]',
     ) as HTMLInputElement;
     expect(input).toBeInTheDocument();
-    expect(input).toHaveClass("flex-1");
-    expect(input.className).not.toContain("w-40");
+    expect(input).toHaveClass("input");
+    expect(input.closest(".field")).not.toBeNull();
+    expect(input.closest(".reject")).not.toBeNull();
   });
 });
