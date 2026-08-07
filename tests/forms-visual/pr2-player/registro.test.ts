@@ -6,11 +6,11 @@ import {
   readPageSource,
   expectNoInlineFieldsetMarkup,
   expectPlayerAuthTokens,
-  expectRenderedPlayerForm,
+  expectRenderedAuthForm,
 } from "../../../src/test/page-vision";
 
 describe("registro page (forms-visual-pass / PR 2)", () => {
-  it("uses the Field primitive — no inline fieldset/legend markup (REQ-PF-01/FS-02)", () => {
+  it("renders OD fields — no inline fieldset/legend markup (REQ-PF-01/FS-02)", () => {
     expectNoInlineFieldsetMarkup(
       readPageSource(
         "../../../src/routes/registro/+page.svelte",
@@ -28,12 +28,12 @@ describe("registro page (forms-visual-pass / PR 2)", () => {
     );
   });
 
-  it("renders 5 fieldset-legend Field groups at md density inside the auth container", () => {
+  it("renders 5 OD .field groups inside the .auth-form", () => {
     const { container } = render(Page, { form: {} as unknown as ActionData });
-    expectRenderedPlayerForm(container, "max-w-[440px]", 5);
+    expectRenderedAuthForm(container, 5);
   });
 
-  it("passes inline error spans through the Field error prop (REQ-PF-02)", () => {
+  it("passes inline error messages through (REQ-PF-02)", () => {
     const { container } = render(Page, {
       form: { errors: { email: "Email inválido" } } as unknown as ActionData,
     });

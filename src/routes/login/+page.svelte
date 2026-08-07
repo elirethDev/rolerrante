@@ -1,7 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
-  import Field from '$lib/components/ui/Field.svelte';
   import AuthShell from '$lib/components/ui/AuthShell.svelte';
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
@@ -40,33 +39,31 @@
         turnstileRef?.reset();
       };
     }}
-    class="space-y-4"
+    class="auth-form"
   >
-    <Field label="Correo electrónico" required>
-      {#snippet ctrl()}
-        <input id="email" name="email" type="email" class="input" autocomplete="username" required />
-      {/snippet}
-    </Field>
+    <div class="field">
+      <label for="email">Correo electrónico</label>
+      <input id="email" name="email" type="email" class="input" autocomplete="username" required />
+    </div>
 
-    <Field label="Contraseña" required>
-      {#snippet ctrl()}
-        <input id="password" name="password" type="password" class="input" autocomplete="current-password" required />
-      {/snippet}
-    </Field>
+    <div class="field">
+      <label for="password">Contraseña</label>
+      <input id="password" name="password" type="password" class="input" autocomplete="current-password" required />
+    </div>
 
-    <div class="flex items-center justify-between gap-2 text-sm">
-      <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="remember" class="checkbox checkbox-sm checkbox-primary" checked /> Recordarme</label>
-      <a href={resolve('/forgot-password')} class="link link-hover link-primary">¿Olvidaste tu contraseña?</a>
+    <div class="auth-links">
+      <label class="check"><input type="checkbox" name="remember" checked /> Recordarme</label>
+      <a href={resolve('/forgot-password')} style="color:var(--link-blue);font-weight:500">¿Olvidaste tu contraseña?</a>
     </div>
     <div class="flex justify-center">
       <Turnstile bind:this={turnstileRef} bind:token={turnstileToken} theme="dark" />
     </div>
     <input type="hidden" name="cf-turnstile-response" value={turnstileToken} />
 
-    <SubmitButton class="w-full font-cinzel" disabled={!turnstileToken} pending={pending}>Entrar</SubmitButton>
+    <SubmitButton class="btn-lg btn-block" disabled={!turnstileToken} pending={pending}>Entrar</SubmitButton>
   </form>
 
-  <p class="text-center text-sm mt-4">
-    ¿No tienes cuenta? <a href={resolve('/registro')} class="link link-primary">Crear cuenta</a>
+  <p class="auth-alt">
+    ¿No tienes cuenta? <a href={resolve('/registro')}>Crear cuenta</a>
   </p>
 </AuthShell>
