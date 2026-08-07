@@ -83,3 +83,25 @@ export function expectRenderedPlayerForm(
 
   expect(container.querySelectorAll('fieldset.fieldset-sm, fieldset.fieldset-lg')).toHaveLength(0);
 }
+
+/*
+ * OD re-render contract for auth pages (od-auth2): the AuthShell renders the
+ * OD `.auth-card` and the page renders a `.auth-form` where each field is an
+ * inline `.field` div (label + input.input), replacing the daisyUI Fieldset.
+ */
+export function expectRenderedAuthForm(container: HTMLElement, fieldCount: number): void {
+  const card = container.querySelector('.auth-card');
+  expect(card, 'expected an OD .auth-card').toBeTruthy();
+
+  const form = container.querySelector('form.auth-form');
+  expect(form, 'expected an OD .auth-form').toBeTruthy();
+
+  const fields = form!.querySelectorAll('div.field');
+  expect(fields.length).toBe(fieldCount);
+  fields.forEach((field) => {
+    expect(field.querySelector('label')).not.toBeNull();
+    expect(field.querySelector('input.input')).not.toBeNull();
+  });
+
+  expect(container.querySelectorAll('fieldset')).toHaveLength(0);
+}

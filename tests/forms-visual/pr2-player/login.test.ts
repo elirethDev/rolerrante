@@ -6,11 +6,11 @@ import {
   readPageSource,
   expectNoInlineFieldsetMarkup,
   expectPlayerAuthTokens,
-  expectRenderedPlayerForm,
+  expectRenderedAuthForm,
 } from "../../../src/test/page-vision";
 
 describe("login page (forms-visual-pass / PR 2)", () => {
-  it("uses the Field primitive — no inline fieldset/legend markup (REQ-PF-01/FS-02)", () => {
+  it("renders OD fields — no inline fieldset/legend markup (REQ-PF-01/FS-02)", () => {
     expectNoInlineFieldsetMarkup(
       readPageSource("../../../src/routes/login/+page.svelte", import.meta.url),
     );
@@ -22,11 +22,11 @@ describe("login page (forms-visual-pass / PR 2)", () => {
     );
   });
 
-  it("renders 2 fieldset-legend Field groups at md density inside the auth container", () => {
+  it("renders 2 OD .field groups inside the .auth-form", () => {
     const { container } = render(Page, {
       data: { registrado: false } as unknown as PageData,
       form: {} as unknown as ActionData,
     });
-    expectRenderedPlayerForm(container, "max-w-[440px]", 2);
+    expectRenderedAuthForm(container, 2);
   });
 });

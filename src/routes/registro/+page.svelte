@@ -1,7 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
-  import Field from '$lib/components/ui/Field.svelte';
   import AuthShell from '$lib/components/ui/AuthShell.svelte';
   import type { ActionData } from './$types';
   import Turnstile from '$lib/components/ui/Turnstile.svelte';
@@ -33,45 +32,51 @@
         turnstileRef?.reset();
       };
     }}
-    class="space-y-4"
+    class="auth-form"
   >
-    <Field label="Correo electrónico" required error={form?.errors?.email ?? null}>
-      {#snippet ctrl()}
-        <input id="email" name="email" type="email" class="input" autocomplete="email" value={form?.values?.email ?? ''} required />
-      {/snippet}
-    </Field>
+    <div class="field">
+      <label for="email">Correo electrónico</label>
+      <input id="email" name="email" type="email" class="input {form?.errors?.email ? 'invalid' : ''}" autocomplete="email" value={form?.values?.email ?? ''} required />
+      {#if form?.errors?.email}
+        <p class="text-error text-sm" role="alert">{form.errors.email}</p>
+      {/if}
+    </div>
 
-    <Field label="Nombre de usuario" required error={form?.errors?.username ?? null}>
-      {#snippet ctrl()}
-        <input id="username" name="username" type="text" class="input" autocomplete="username" value={form?.values?.username ?? ''} required minlength="3" />
-      {/snippet}
-    </Field>
+    <div class="field">
+      <label for="username">Nombre de usuario</label>
+      <input id="username" name="username" type="text" class="input {form?.errors?.username ? 'invalid' : ''}" autocomplete="username" value={form?.values?.username ?? ''} required minlength="3" />
+      {#if form?.errors?.username}
+        <p class="text-error text-sm" role="alert">{form.errors.username}</p>
+      {/if}
+    </div>
 
-    <Field label="Nombre a mostrar (opcional)">
-      {#snippet ctrl()}
-        <input id="display_name" name="display_name" type="text" class="input" value={form?.values?.display_name ?? ''} />
-      {/snippet}
-    </Field>
+    <div class="field">
+      <label for="display_name">Nombre a mostrar (opcional)</label>
+      <input id="display_name" name="display_name" type="text" class="input" value={form?.values?.display_name ?? ''} />
+    </div>
 
-    <Field label="Contraseña" required error={form?.errors?.password ?? null}>
-      {#snippet ctrl()}
-        <input id="password" name="password" type="password" class="input" autocomplete="new-password" required minlength="6" />
-      {/snippet}
-    </Field>
+    <div class="field">
+      <label for="password">Contraseña</label>
+      <input id="password" name="password" type="password" class="input {form?.errors?.password ? 'invalid' : ''}" autocomplete="new-password" required minlength="6" />
+      {#if form?.errors?.password}
+        <p class="text-error text-sm" role="alert">{form.errors.password}</p>
+      {/if}
+    </div>
 
-    <Field label="Confirmar contraseña" required error={form?.errors?.confirm_password ?? null}>
-      {#snippet ctrl()}
-        <input id="confirm_password" name="confirm_password" type="password" class="input" autocomplete="new-password" required minlength="6" />
-      {/snippet}
-    </Field>
+    <div class="field">
+      <label for="confirm_password">Confirmar contraseña</label>
+      <input id="confirm_password" name="confirm_password" type="password" class="input {form?.errors?.confirm_password ? 'invalid' : ''}" autocomplete="new-password" required minlength="6" />
+      {#if form?.errors?.confirm_password}
+        <p class="text-error text-sm" role="alert">{form.errors.confirm_password}</p>
+      {/if}
+    </div>
 
-    <label
-      class="flex items-start gap-2 text-sm text-azeroth-muted cursor-pointer"
-      data-error={form?.errors?.terms ? 'true' : undefined}
-    >
-      <input id="terms" name="terms" type="checkbox" value="on" class="checkbox checkbox-sm mt-0.5" required />
-      <span>Acepto la normativa de la comunidad</span>
-    </label>
+    <div class="auth-links">
+      <label class="check" data-error={form?.errors?.terms ? 'true' : undefined}>
+        <input id="terms" name="terms" type="checkbox" value="on" required />
+        Acepto la normativa de la comunidad
+      </label>
+    </div>
     {#if form?.errors?.terms}
       <p class="text-error text-sm" id="terms-error" role="alert">{form.errors.terms}</p>
     {/if}
@@ -81,10 +86,10 @@
     </div>
     <input type="hidden" name="cf-turnstile-response" value={turnstileToken} />
 
-    <SubmitButton class="w-full font-cinzel" disabled={!turnstileToken} pending={pending}>Registrarse</SubmitButton>
+    <SubmitButton class="btn-lg btn-block" disabled={!turnstileToken} pending={pending}>Registrarse</SubmitButton>
   </form>
 
-  <p class="text-center text-sm mt-4">
-    ¿Ya tienes cuenta? <a href={resolve('/login')} class="link link-primary">Entrar</a>
+  <p class="auth-alt">
+    ¿Ya tienes cuenta? <a href={resolve('/login')}>Entrar</a>
   </p>
 </AuthShell>

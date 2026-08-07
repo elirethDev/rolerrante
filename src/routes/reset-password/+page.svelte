@@ -1,7 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
-  import Field from '$lib/components/ui/Field.svelte';
   import AuthShell from '$lib/components/ui/AuthShell.svelte';
   import SubmitButton from '$lib/components/ui/SubmitButton.svelte';
   import type { ActionData } from './$types';
@@ -42,22 +41,21 @@
         pending = false;
       };
     }}
-    class="space-y-4"
+    class="auth-form"
   >
-    <Field label="Nueva contraseña" required>
-      {#snippet ctrl()}
-        <input
-          id="password"
-          name="password"
-          type="password"
-          class="input"
-          autocomplete="new-password"
-          required
-          minlength="6"
-          bind:value={password}
-        />
-      {/snippet}
-    </Field>
+    <div class="field">
+      <label for="password">Nueva contraseña</label>
+      <input
+        id="password"
+        name="password"
+        type="password"
+        class="input"
+        autocomplete="new-password"
+        required
+        minlength="6"
+        bind:value={password}
+      />
+    </div>
 
     {#if password}
       {@const st = strength(password)}
@@ -75,16 +73,15 @@
       </div>
     {/if}
 
-    <Field label="Confirmar contraseña" required>
-      {#snippet ctrl()}
-        <input id="confirm_password" name="confirm_password" type="password" class="input" autocomplete="new-password" required minlength="6" />
-      {/snippet}
-    </Field>
+    <div class="field">
+      <label for="confirm_password">Confirmar contraseña</label>
+      <input id="confirm_password" name="confirm_password" type="password" class="input" autocomplete="new-password" required minlength="6" />
+    </div>
 
-    <SubmitButton class="w-full font-cinzel" pending={pending}>Guardar contraseña</SubmitButton>
+    <SubmitButton class="btn-lg btn-block" pending={pending}>Guardar contraseña</SubmitButton>
   </form>
 
-  <p class="text-center text-sm mt-4">
-    ¿Ya la recordaste? <a href={resolve('/login')} class="link link-primary">Iniciar sesión</a>
+  <p class="auth-alt">
+    ¿Ya la recordaste? <a href={resolve('/login')}>Iniciar sesión</a>
   </p>
 </AuthShell>
