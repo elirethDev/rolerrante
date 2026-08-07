@@ -3,7 +3,7 @@ import { loadSupabase } from '$lib/supabase/server';
 import { safeGetSession } from '$lib/supabase/auth';
 import { checkRateLimit, getClientIP } from '$lib/rateLimit';
 
-const CSP = "default-src 'self'; script-src 'self' https://challenges.cloudflare.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-src https://challenges.cloudflare.com; img-src 'self' data: https://*.supabase.co; media-src 'self' blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co";
+const CSP = "default-src 'self'; script-src 'self' https://challenges.cloudflare.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-src https://challenges.cloudflare.com; img-src 'self' data: blob: https://*.supabase.co; media-src 'self' blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co blob:";
 
 // Rutas de formularios que necesitan rate limiting
 const FORM_ROUTES = new Set([
