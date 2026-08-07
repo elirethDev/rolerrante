@@ -17,7 +17,9 @@
   let { data }: { data: PageData } = $props();
 
   // resolve() no admite query strings: el ?categoria= / ?page= se compone aquí.
-  const nuevoHref = `${resolve('/foro/nuevo' as any)}?categoria=${data.category.id}`;
+  const nuevoHref = $derived(
+    `${resolve('/foro/nuevo' as any)}?categoria=${data.category.id}`,
+  );
   const pageHref = (page: number) =>
     `${resolve(`/foro/categoria/${data.category.id}` as any)}?page=${page}`;
 </script>
