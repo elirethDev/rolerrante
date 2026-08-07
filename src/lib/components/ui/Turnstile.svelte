@@ -1,6 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { dev } from '$app/environment';
   import { PUBLIC_TURNSTILE_SITE_KEY } from '$env/static/public';
+
+  // Cloudflare Turnstile test site key: always issues a passable token, so
+  // captcha-protected forms work on localhost (the production key refuses to
+  // issue a token for a hostname not bound to the real site key).
+  const SITE_KEY = dev ? '1x00000000000000000000AA' : PUBLIC_TURNSTILE_SITE_KEY;
 
   export let token = '';
   export let theme: 'light' | 'dark' | 'auto' = 'auto';
@@ -50,7 +56,7 @@
         if (!container || !window.turnstile) return;
         try {
           widgetId = window.turnstile.render(container, {
-            sitekey: PUBLIC_TURNSTILE_SITE_KEY,
+            sitekey: SITE_KEY,
             theme,
             callback: (t: string) => {
               token = t;

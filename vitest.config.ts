@@ -27,6 +27,9 @@ export default defineConfig({
       "$app/state": fileURLToPath(
         new URL("./src/test/app-state.ts", import.meta.url),
       ),
+      "$app/environment": fileURLToPath(
+        new URL("./src/test/app-environment.ts", import.meta.url),
+      ),
     },
   },
   test: {

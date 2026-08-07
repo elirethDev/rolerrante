@@ -1,4 +1,9 @@
 import { TURNSTILE_SECRET_KEY } from '$env/static/private';
+import { dev } from '$app/environment';
+
+// Cloudflare Turnstile test secret: siteverify always returns success. Pairs
+// with the test site key the widget uses during dev so local testing works.
+const SECRET = dev ? '1x0000000000000000000000000000000AA' : TURNSTILE_SECRET_KEY;
 
 /**
  * Verifica un token de Cloudflare Turnstile desde el servidor.
@@ -14,7 +19,7 @@ export async function verifyTurnstileToken(token: string): Promise<boolean> {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
-          secret: TURNSTILE_SECRET_KEY,
+          secret: SECRET,
           response: token,
         }),
       }
