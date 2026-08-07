@@ -87,7 +87,9 @@
       <div class="cell-title">
         {cat.name}
         {#if cat.min_read_role}
-          <span class="tag gold">min {roleLabel(cat.min_read_role as UserRole)}</span>
+          <span class="tag gold">min {roleLabel(cat.min_read_role)}</span>
+        {:else}
+          <span class="tag">Público</span>
         {/if}
       </div>
       {#each ROLES as role (role)}

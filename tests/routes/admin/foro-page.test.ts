@@ -73,10 +73,10 @@ describe("admin/foro category management UI", () => {
 
   it("opens a prefilled edit modal for a category (FORO-CAT-APPR)", async () => {
     renderPage();
-    // Scope to Zona GM's own row (its name label) and click its Editar button.
+    // Scope to Zona GM's own row (its .cat-root) and click its Editar button.
     const zonaRow = screen
       .getByText("Zona GM")
-      .closest(".border") as HTMLElement;
+      .closest(".cat-root") as HTMLElement;
     const zonaEdit = zonaRow.querySelector(
       'button[aria-label="Editar"]',
     ) as HTMLButtonElement;
@@ -106,6 +106,7 @@ describe("admin/foro category management UI", () => {
     // Only the category with requires_approval=true (Zona GM) shows the badge.
     const badge = screen.getByText("aprob. entrada");
     expect(badge).toBeInTheDocument();
+    expect(badge.className).toContain("tag");
   });
 
   it("renders reorder up/down controls for a sibling (FORO-CAT-REORDER)", () => {

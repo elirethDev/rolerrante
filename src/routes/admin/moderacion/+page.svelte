@@ -63,228 +63,146 @@
   <div class="alert alert-error text-sm mb-4">{form.message}</div>
 {/if}
 
-<section class="panel mb-6">
-  <div class="panel-head"><h2>Hilos vinculados pendientes</h2></div>
-  <div class="panel-body">
+<!-- design admin-moderacion.html: guards note + .mod-card sections -->
+<div class="sticky-note">
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" />
+    <path d="M12 10.5V16M12 7.8v.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+  </svg>
+  <span>Las cuentas <b>GM</b> y <b>admin</b> no pueden ser suspendidas ni baneadas desde este panel.</span>
+</div>
+
+<section class="mod-card">
+  <div class="mod-head"><h2>Hilos vinculados pendientes</h2><span class="meta">aprobación</span></div>
+  <div class="mod-body">
     {#if data.pendingThreads.length === 0}
-      <p class="text-azeroth-muted">No hay hilos pendientes de aprobación.</p>
+      <p class="muted" style="font-size:.9rem;padding:10px 0">No hay hilos pendientes de aprobación.</p>
     {:else}
-      <div class="overflow-x-auto">
-        <table class="table table-sm">
-          <thead>
-            <tr>
-              <th>Título</th>
-              <th>Tipo</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each data.pendingThreads as thread (thread.id)}
-              <tr>
-                <td>{(thread as ThreadRow).title}</td>
-                <td>{(thread as ThreadRow).content_type}</td>
-                <td>
-                  <div class="flex gap-1">
-                    <form method="POST" action="?/approveThread" use:enhance>
-                      <input type="hidden" name="threadId" value={(thread as ThreadRow).id} />
-                      <button type="submit" class="btn btn-success btn-xs">Aprobar</button>
-                    </form>
-                    <form method="POST" action="?/rejectThread" use:enhance>
-                      <input type="hidden" name="threadId" value={(thread as ThreadRow).id} />
-                      <button type="submit" class="btn btn-error btn-xs">Rechazar</button>
-                    </form>
-                  </div>
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
+      {#each data.pendingThreads as thread (thread.id)}
+        <div class="m-row">
+          <div class="m-main">
+            <div class="m-title">{(thread as ThreadRow).title}</div>
+            <div class="m-sub">{(thread as ThreadRow).content_type}</div>
+          </div>
+          <div class="m-acts">
+            <form method="POST" action="?/approveThread" use:enhance>
+              <input type="hidden" name="threadId" value={(thread as ThreadRow).id} />
+              <button type="submit" class="btn btn-success btn-sm">Aprobar</button>
+            </form>
+            <form method="POST" action="?/rejectThread" use:enhance>
+              <input type="hidden" name="threadId" value={(thread as ThreadRow).id} />
+              <button type="submit" class="btn btn-danger btn-sm">Rechazar</button>
+            </form>
+          </div>
+        </div>
+      {/each}
     {/if}
   </div>
 </section>
 
-<section class="panel">
-  <div class="panel-head"><h2>Eventos (revisión al finalizar)</h2></div>
-  <div class="panel-body">
+<section class="mod-card">
+  <div class="mod-head"><h2>Eventos (revisión al finalizar)</h2><span class="meta">revisión</span></div>
+  <div class="mod-body">
     {#if data.eventThreads.length === 0}
-      <p class="text-azeroth-muted">No hay hilos de evento.</p>
+      <p class="muted" style="font-size:.9rem;padding:10px 0">No hay hilos de evento.</p>
     {:else}
-      <div class="overflow-x-auto">
-        <table class="table table-sm">
-          <thead>
-            <tr>
-              <th>Evento</th>
-              <th>Revisión</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each data.eventThreads as thread (thread.id)}
-              <tr>
-                <td>{(thread as ThreadRow).title}</td>
-                <td>
-                  <form method="POST" action="?/reviewEvent" use:enhance>
-                    <input type="hidden" name="threadId" value={(thread as ThreadRow).id} />
-                    <button type="submit" class="btn btn-primary btn-xs">Revisar (solo finalizado)</button>
-                  </form>
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
+      {#each data.eventThreads as thread (thread.id)}
+        <div class="m-row">
+          <div class="m-main">
+            <div class="m-title">{(thread as ThreadRow).title}</div>
+            <div class="m-sub">Revisión al finalizar</div>
+          </div>
+          <div class="m-acts">
+            <form method="POST" action="?/reviewEvent" use:enhance>
+              <input type="hidden" name="threadId" value={(thread as ThreadRow).id} />
+              <button type="submit" class="btn btn-primary btn-sm">Revisar (solo finalizado)</button>
+            </form>
+          </div>
+        </div>
+      {/each}
     {/if}
   </div>
 </section>
 
-<section class="panel mt-6">
-  <div class="panel-head"><h2>Reportes de mensajes</h2></div>
-  <div class="panel-body">
+<section class="mod-card">
+  <div class="mod-head"><h2>Reportes de mensajes</h2><span class="meta">{data.reports.length} abiertos</span></div>
+  <div class="mod-body">
     {#if data.reports.length === 0}
-      <p class="text-azeroth-muted">No hay reportes abiertos.</p>
+      <p class="muted" style="font-size:.9rem;padding:10px 0">No hay reportes abiertos.</p>
     {:else}
-      <div class="overflow-x-auto">
-        <table class="table table-sm">
-          <thead>
-            <tr>
-              <th>Reportante</th>
-              <th>Usuario reportado</th>
-              <th>Motivo</th>
-              <th>Mensaje</th>
-              <th>Fecha</th>
-              {#if data.isAdmin}
-                <th class="w-72">Acciones</th>
+      {#each data.reports as report (report.id)}
+        {@const author = (report as ReportRow).post?.author}
+        {@const sanction = (author ? data.sanctions[author.id] : undefined) as SanctionState | undefined}
+        <div class="m-row">
+          <div class="m-main">
+            <div class="m-title">
+              Reportante: {(report as ReportRow).reporter?.display_name ?? (report as ReportRow).reporter?.username ?? 'Anónimo'}
+              <span class="sep" style="color:var(--text-faint)">→</span>
+              <b>{author?.display_name ?? author?.username ?? 'Anónimo'}</b>
+              {#if sanction}
+                <span class="badge badge-warning no-dot">
+                  {sanction.kind === 'ban' ? 'Baneado' : 'Suspendido'}
+                </span>
               {/if}
-            </tr>
-          </thead>
-          <tbody>
-            {#each data.reports as report (report.id)}
-              {@const author = (report as ReportRow).post?.author}
-              {@const sanction = (author ? data.sanctions[author.id] : undefined) as SanctionState | undefined}
-              <tr>
-                <td>
-                  {(report as ReportRow).reporter?.display_name ??
-                    (report as ReportRow).reporter?.username ??
-                    'Anónimo'}
-                </td>
-                <td>
-                  {author?.display_name ?? author?.username ?? 'Anónimo'}
-                  {#if sanction}
-                    <span class="badge badge-warning badge-xs ml-1">
-                      {sanction.kind === 'ban' ? 'Baneado' : 'Suspendido'}
-                    </span>
-                  {/if}
-                </td>
-                <td>
-                  {(report as ReportRow).reason}
-                  {#if (report as ReportRow).justification}
-                    <span class="text-xs text-azeroth-muted block">
-                      {(report as ReportRow).justification}
-                    </span>
-                  {/if}
-                </td>
-                <td>
-                  {#if (report as ReportRow).post}
-                    <a
-                      href={`/foro/${(report as ReportRow).post!.thread_id}`}
-                      class="text-azeroth-gold underline"
-                    >
-                      Mensaje #{(report as ReportRow).post!.post_number}
-                    </a>
-                  {/if}
-                </td>
-                <td class="text-xs text-azeroth-muted">
-                  {formatDateTime((report as ReportRow).created_at)}
-                </td>
-                {#if data.isAdmin}
-                  <td>
-                    <div class="flex flex-col gap-2">
-                      <div class="flex gap-2 items-center">
-                        <form method="POST" action="?/resolveReport" use:enhance class="flex gap-1 items-center">
-                          <input type="hidden" name="reportId" value={(report as ReportRow).id} />
-                          <input
-                            type="text"
-                            name="justification"
-                            placeholder="Justificación"
-                            class="input input-xs input-bordered w-28"
-                            required
-                          />
-                          <button type="submit" class="btn btn-success btn-xs">Resolver</button>
-                        </form>
-                        <form method="POST" action="?/discardReport" use:enhance class="flex gap-1 items-center">
-                          <input type="hidden" name="reportId" value={(report as ReportRow).id} />
-                          <input
-                            type="text"
-                            name="justification"
-                            placeholder="Justificación"
-                            class="input input-xs input-bordered w-28"
-                            required
-                          />
-                          <button type="submit" class="btn btn-error btn-xs">Descartar</button>
-                        </form>
-                      </div>
+            </div>
+            <div class="m-sub">
+              Motivo: {(report as ReportRow).reason}
+              {#if (report as ReportRow).justification} · {(report as ReportRow).justification}{/if}
+              {#if (report as ReportRow).post}
+                · <a
+                  href={`/foro/${(report as ReportRow).post!.thread_id}`}
+                  style="color:var(--gold-soft)"
+                >
+                  Mensaje #{(report as ReportRow).post!.post_number}
+                </a>
+              {/if}
+              · {formatDateTime((report as ReportRow).created_at)}
+            </div>
+          </div>
+          {#if data.isAdmin}
+            <div class="m-acts">
+              <form method="POST" action="?/resolveReport" use:enhance>
+                <input type="hidden" name="reportId" value={(report as ReportRow).id} />
+                <input type="text" name="justification" placeholder="Justificación" class="input" required />
+                <button type="submit" class="btn btn-success btn-sm">Resolver</button>
+              </form>
+              <form method="POST" action="?/discardReport" use:enhance>
+                <input type="hidden" name="reportId" value={(report as ReportRow).id} />
+                <input type="text" name="justification" placeholder="Justificación" class="input" required />
+                <button type="submit" class="btn btn-danger btn-sm">Descartar</button>
+              </form>
 
-                      {#if !isProtectedTarget(author)}
-                        <div class="flex gap-2 items-center">
-                          <button
-                            type="button"
-                            class="btn btn-warning btn-xs"
-                            onclick={() => toggleSanction(report.id, 'suspend')}
-                          >
-                            Suspender
-                          </button>
-                          <button
-                            type="button"
-                            class="btn btn-error btn-xs"
-                            onclick={() => toggleSanction(report.id, 'ban')}
-                          >
-                            Banear
-                          </button>
-                        </div>
-                        {#if openSanction[report.id] === 'suspend'}
-                          <form method="POST" action="?/suspendUser" use:enhance class="flex gap-1 items-center">
-                            <input type="hidden" name="userId" value={author?.id ?? ''} />
-                            <select name="duration" class="select select-xs select-bordered">
-                              <option value="3">3 días</option>
-                              <option value="7" selected>7 días</option>
-                              <option value="30">30 días</option>
-                            </select>
-                            <input
-                              type="text"
-                              name="justification"
-                              placeholder="Justificación"
-                              class="input input-xs input-bordered w-32"
-                              required
-                            />
-                            <button type="submit" class="btn btn-warning btn-xs">
-                              Confirmar suspensión
-                            </button>
-                          </form>
-                        {/if}
-                        {#if openSanction[report.id] === 'ban'}
-                          <form method="POST" action="?/banUser" use:enhance class="flex gap-1 items-center">
-                            <input type="hidden" name="userId" value={author?.id ?? ''} />
-                            <input
-                              type="text"
-                              name="justification"
-                              placeholder="Justificación"
-                              class="input input-xs input-bordered w-32"
-                              required
-                            />
-                            <button type="submit" class="btn btn-error btn-xs">
-                              Confirmar baneo
-                            </button>
-                          </form>
-                        {/if}
-                      {/if}
-                    </div>
-                  </td>
+              {#if !isProtectedTarget(author)}
+                <button type="button" class="btn btn-warning btn-sm" onclick={() => toggleSanction(report.id, 'suspend')}>
+                  Suspender
+                </button>
+                <button type="button" class="btn btn-danger btn-sm" onclick={() => toggleSanction(report.id, 'ban')}>
+                  Banear
+                </button>
+                {#if openSanction[report.id] === 'suspend'}
+                  <form method="POST" action="?/suspendUser" use:enhance>
+                    <input type="hidden" name="userId" value={author?.id ?? ''} />
+                    <select name="duration" class="select">
+                      <option value="3">3 días</option>
+                      <option value="7" selected>7 días</option>
+                      <option value="30">30 días</option>
+                    </select>
+                    <input type="text" name="justification" placeholder="Justificación" class="input" required />
+                    <button type="submit" class="btn btn-warning btn-sm">Confirmar suspensión</button>
+                  </form>
                 {/if}
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
+                {#if openSanction[report.id] === 'ban'}
+                  <form method="POST" action="?/banUser" use:enhance>
+                    <input type="hidden" name="userId" value={author?.id ?? ''} />
+                    <input type="text" name="justification" placeholder="Justificación" class="input" required />
+                    <button type="submit" class="btn btn-danger btn-sm">Confirmar baneo</button>
+                  </form>
+                {/if}
+              {/if}
+            </div>
+          {/if}
+        </div>
+      {/each}
     {/if}
   </div>
 </section>

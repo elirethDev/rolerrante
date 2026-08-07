@@ -39,38 +39,32 @@
   }
 </script>
 
-<div class="card bg-base-200 border border-azeroth-border">
-  <div class="card-body">
-    <h3 class="card-title font-cinzel text-azeroth-gold">Permisos</h3>
-    {#if form?.message}
-      <div class="alert alert-error text-sm">{form.message}</div>
-    {/if}
-    <div class="space-y-3">
-      {#each ROLES as role (role)}
-        {@const flags = flagsFor(role)}
-        <form
-          method="POST"
-          action={action}
-          use:enhance
-          class="flex flex-wrap items-center gap-3 rounded border border-azeroth-border p-3"
-        >
-          <input type="hidden" name={targetName} value={targetValue} />
-          <input type="hidden" name="role" value={role} />
-          <span class="w-24 font-semibold text-sm">{role}</span>
-          {#each FLAGS as f (f.key)}
-            <label class="label cursor-pointer">
-              <span class="label-text mr-1">{f.label}</span>
-              <input
-                type="checkbox"
-                name={f.key}
-                class="checkbox checkbox-sm"
-                checked={flags[f.key]}
-              />
-            </label>
-          {/each}
-          <button type="submit" class="btn btn-primary btn-sm ml-auto">Guardar</button>
-        </form>
+<!-- design admin-foro.html: one .perm-row form per role with .check toggles -->
+<div data-testid="perm-panel">
+  {#if form?.message}
+    <div class="alert alert-error text-sm">{form.message}</div>
+  {/if}
+  {#each ROLES as role (role)}
+    {@const flags = flagsFor(role)}
+    <form
+      method="POST"
+      action={action}
+      use:enhance
+      class="perm-row"
+      style="gap:10px"
+    >
+      <input type="hidden" name={targetName} value={targetValue} />
+      <input type="hidden" name="role" value={role} />
+      <b style="width:76px;flex:none;color:var(--text-soft)">{role}</b>
+      {#each FLAGS as f (f.key)}
+        <label class="check">
+          <input type="checkbox" name={f.key} checked={flags[f.key]} />
+          {f.label}
+        </label>
       {/each}
-    </div>
-  </div>
+      <button type="submit" class="btn btn-primary btn-sm" style="margin-left:auto">
+        Guardar
+      </button>
+    </form>
+  {/each}
 </div>
