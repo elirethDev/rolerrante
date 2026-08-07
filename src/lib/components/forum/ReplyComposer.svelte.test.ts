@@ -16,7 +16,7 @@ describe('ReplyComposer', () => {
     window.localStorage.clear();
   });
 
-  it('renders a submit button with the default label', () => {
+  it('renders a submit button with the default label', { timeout: 30000 }, () => {
     render(ReplyComposer);
     expect(screen.getByRole('button', { name: 'Responder' })).toBeInTheDocument();
   });

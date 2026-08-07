@@ -118,71 +118,76 @@
   });
 </script>
 
-<form
-  method="POST"
-  action={action}
-  use:enhance={() => {
-    pending = true;
-    return async ({ update, result }) => {
-      pending = false;
-      handleSubmitSuccess(result.type);
-      await update();
-    };
-  }}
->
-  <input type="hidden" name="content" bind:value={content} />
-  {#if quotePayload}
-    <input type="hidden" name="quote_author" value={quotePayload.author_display_name} />
-    <input type="hidden" name="quote_excerpt" value={quotePayload.body_excerpt} />
-    <input type="hidden" name="quote_post_id" value={quotePayload.post_id} />
-  {/if}
+<div class="composer">
+  <form
+    method="POST"
+    action={action}
+    use:enhance={() => {
+      pending = true;
+      return async ({ update, result }) => {
+        pending = false;
+        handleSubmitSuccess(result.type);
+        await update();
+      };
+    }}
+  >
+    <input type="hidden" name="content" bind:value={content} />
+    {#if quotePayload}
+      <input type="hidden" name="quote_author" value={quotePayload.author_display_name} />
+      <input type="hidden" name="quote_excerpt" value={quotePayload.body_excerpt} />
+      <input type="hidden" name="quote_post_id" value={quotePayload.post_id} />
+    {/if}
 
-  {#if quotePayload}
-    <div class="flex items-center gap-2 alert alert-info mb-3" role="status">
-      <span>Respondiendo a <strong>{quotePayload.author_display_name}</strong></span>
-      {#if onClearQuote}
-        <button
-          type="button"
-          class="btn btn-xs btn-ghost ml-auto"
-          aria-label="Cancelar cita"
-          onclick={handleClearQuote}
-        >
-          ×
-        </button>
-      {/if}
-    </div>
-  {/if}
-
-  <TipTapEditor
-    {content}
-    onChange={handleChange}
-    onCharCount={(n) => (charCount = n)}
-    validateImageUrl={isValidImageUrl}
-  />
-
-  <div class="mt-1 flex items-center justify-between text-xs">
-    <span class="text-green-400" data-testid="draft-indicator" role="status">
-      {savedIndicator ? 'Borrador guardado' : ''}
-    </span>
-    <span
-      class={isOverLimit(charCount, maxLength) ? 'text-error' : 'text-azeroth-muted'}
-      data-testid="char-counter"
-    >
-      {charCount}/{maxLength}
-      {#if isOverLimit(charCount, maxLength)}
-        <span class="text-error block" role="alert">
-          Has superado el límite de {maxLength} caracteres.
+    {#if quotePayload}
+      <div style="padding:16px 16px 0">
+        <span class="reply-to" role="status">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 10c0 4-3 7-8 7v3l-6-5 6-5v3c3 0 5-1 5-3h3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /></svg>
+          Respondiendo a <b>{quotePayload.author_display_name}</b>
+          {#if onClearQuote}
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              aria-label="Cancelar cita"
+              onclick={handleClearQuote}
+            >
+              ✕
+            </button>
+          {/if}
         </span>
-      {/if}
-    </span>
-  </div>
-  <div class="mt-3 flex justify-end">
-    <SubmitButton
-      class="font-cinzel"
-      {pending}
-      disabled={isOverLimit(charCount, maxLength)}
-    >
-      {submitLabel}
-    </SubmitButton>
-  </div>
-</form>
+      </div>
+    {/if}
+
+    <TipTapEditor
+      {content}
+      onChange={handleChange}
+      onCharCount={(n) => (charCount = n)}
+      validateImageUrl={isValidImageUrl}
+    />
+
+    <div class="composer-foot">
+      <span class="count">
+        <span role="status" data-testid="draft-indicator">
+          {savedIndicator ? 'Borrador guardado' : ''}
+        </span>
+        {#if savedIndicator}<span aria-hidden="true"> · </span>{/if}
+        <span data-testid="char-counter">
+          {charCount}/{maxLength}
+          {#if isOverLimit(charCount, maxLength)}
+            <span class="text-error block" role="alert">
+              Has superado el límite de {maxLength} caracteres.
+            </span>
+          {/if}
+        </span>
+      </span>
+      <div class="row" style="gap:10px">
+        <SubmitButton
+          class="font-cinzel"
+          {pending}
+          disabled={isOverLimit(charCount, maxLength)}
+        >
+          {submitLabel}
+        </SubmitButton>
+      </div>
+    </div>
+  </form>
+</div>
