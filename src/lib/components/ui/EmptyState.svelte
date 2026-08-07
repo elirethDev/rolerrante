@@ -11,20 +11,18 @@
   let { icon, title, description, children }: Props = $props();
 </script>
 
-<div class="card bg-base-200 border border-azeroth-border">
-  <div class="card-body items-center text-center py-12">
-    {#if icon}
-      {@const Icon = icon}
-      <Icon class="text-azeroth-gold mb-3" size={40} strokeWidth={1.5} />
-    {/if}
-    <h3 class="card-title font-cinzel text-azeroth-gold text-xl">{title}</h3>
-    {#if description}
-      <p class="text-azeroth-muted max-w-md">{description}</p>
-    {/if}
-    {#if children}
-      <div class="mt-2">
-        {@render children()}
-      </div>
-    {/if}
-  </div>
+<div class="empty" data-testid="empty-state">
+  {#if icon}
+    {@const Icon = icon}
+    <Icon class="sig" size={56} strokeWidth={1.2} />
+  {/if}
+  <h3>{title}</h3>
+  {#if description}
+    <p>{description}</p>
+  {/if}
+  {#if children}
+    <div class="row" style="justify-content:center;margin-top:4px">
+      {@render children()}
+    </div>
+  {/if}
 </div>
