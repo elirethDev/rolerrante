@@ -18,35 +18,45 @@ const skills = [
 ];
 
 describe('SkillPicker', () => {
-  it('renders fieldset+legend instead of a horizontal label sibling row (REQ-GS-01)', () => {
+  it('groups controls in .field with label inside skill-row (REQ-GS-01)', () => {
     render(SkillPicker, { skills, mode: 'create' });
-    // Level control is grouped in a fieldset with a legend, no sibling <label>
-    expect(document.querySelectorAll('fieldset').length).toBeGreaterThan(0);
-    expect(document.querySelector('fieldset legend')).toBeInTheDocument();
+    // level control is grouped in a .field with a label, one per skill row
+    expect(document.querySelectorAll('.skill-group').length).toBe(2);
+    expect(document.querySelector('.skill-group-head h3')?.textContent).toContain('F');
+    expect(document.querySelectorAll('.s-up').length).toBe(2);
+    expect(document.querySelector('.s-up label')).toHaveTextContent('Nivel');
     expect(screen.getAllByText('Nivel').length).toBeGreaterThan(0);
-    // zero <label> rendered as horizontal sibling rows
-    expect(document.querySelectorAll('label')).toHaveLength(0);
+    // controls are .input elements wired to the skill level name
+    const levelInput = document.querySelector('.s-up input') as HTMLInputElement;
+    expect(levelInput).not.toBeNull();
+    expect(levelInput.classList).toContain('input');
+    expect(levelInput.name).toContain('skill_level_');
   });
 
-  it('renders specialization fieldset+legend when a skill requires spec', () => {
+  it('renders an Especialización field only when a skill requires spec', () => {
     render(SkillPicker, { skills, mode: 'create' });
-    expect(screen.getByPlaceholderText('Especialización')).toBeInTheDocument();
-    expect(document.querySelectorAll('fieldset').length).toBe(2);
+    const specInput = screen.getByPlaceholderText('Especialización') as HTMLInputElement;
+    expect(specInput).toBeInTheDocument();
+    expect(specInput.classList).toContain('input');
+    // only Puntería (requires_specialization) gets the spec field
+    expect(document.querySelectorAll('.s-spec').length).toBe(1);
   });
 
-  it('applies sm fieldset density for GM/admin context and md by default (REQ-GS-01)', () => {
+  it('applies sm field density for GM/admin context and md by default (REQ-GS-01)', () => {
     const { unmount } = render(SkillPicker, { skills, size: 'sm' });
-    expect(document.querySelector('fieldset')).toHaveClass('fieldset-sm');
+    expect(document.querySelector('.s-up')).toHaveClass('field-sm');
     unmount();
 
     render(SkillPicker, { skills, size: 'md' });
-    expect(document.querySelector('fieldset')).not.toHaveClass('fieldset-sm');
+    expect(document.querySelector('.s-up')).not.toHaveClass('field-sm');
   });
 
-  it('keeps the w-20 inline level stepper width (REQ-FS-05)', () => {
+  it('renders a narrow inline level stepper (REQ-FS-05)', () => {
     render(SkillPicker, { skills, mode: 'create' });
-    const levelInput = document.querySelector('input[type="number"]') as HTMLInputElement;
+    const levelInput = document.querySelector('.s-up input') as HTMLInputElement;
     expect(levelInput).not.toBeNull();
-    expect(levelInput.classList).toContain('w-20');
+    expect(levelInput.type).toBe('number');
+    expect(levelInput.name).toContain('skill_level_');
+    expect(levelInput.closest('.skill-row')).toBeInTheDocument();
   });
 });

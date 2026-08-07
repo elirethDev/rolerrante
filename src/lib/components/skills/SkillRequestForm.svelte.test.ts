@@ -8,16 +8,16 @@ const characters = [
 ];
 
 describe('SkillRequestForm', () => {
-  it('renders the character select wrapped in Field (REQ-FS-02)', () => {
+  it('renders the character select wrapped in .field (REQ-FS-02)', () => {
     render(SkillRequestForm, { characters });
-    expect(document.querySelectorAll('fieldset').length).toBeGreaterThan(0);
-    expect(document.querySelector('legend')?.textContent).toContain('Personaje');
+    const field = document.querySelector('.field');
+    expect(field).not.toBeNull();
+    expect(field?.querySelector('label')?.textContent).toContain('Personaje');
     expect(screen.getByRole('combobox')).toBeInTheDocument();
-    // zero horizontal <label> rows remain for the character control
-    expect(document.querySelectorAll('label')).toHaveLength(0);
+    expect(document.querySelector('select')).toHaveClass('select');
   });
 
-  it('passes bindings through Field on the character select (REQ-FP-02)', async () => {
+  it('passes bindings through the character select (REQ-FP-02)', async () => {
     render(SkillRequestForm, { characters });
     const select = screen.getByRole('combobox') as HTMLSelectElement;
     await fireEvent.change(select, { target: { value: 'c2' } });
@@ -26,8 +26,8 @@ describe('SkillRequestForm', () => {
     expect(screen.getAllByText(/5 pts/i).length).toBeGreaterThan(0);
   });
 
-  it('forwards size to the SkillPicker via sm fieldset density', () => {
+  it('forwards size to the SkillPicker via sm field density', () => {
     render(SkillRequestForm, { characters, skills: [{ skill_id: 's1', level: 1 }], size: 'sm' });
-    expect(document.querySelector('fieldset')).toHaveClass('fieldset-sm');
+    expect(document.querySelector('.field-sm')).not.toBeNull();
   });
 });
