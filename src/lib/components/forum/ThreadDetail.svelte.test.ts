@@ -153,13 +153,13 @@ describe('ThreadDetail OP (first post) action bar', () => {
 describe('ThreadDetail lock banner + staff controls', () => {
   it('shows a prominent lock banner with a Reabrir hilo button for staff on a locked thread', () => {
     render(ThreadDetail, makeProps({ isLocked: true, isStaff: true }));
-    expect(screen.getByText(/Este hilo está bloqueado/i)).toBeInTheDocument();
+    expect(screen.getByTestId('lock-banner')).toHaveTextContent(/Este hilo está bloqueado/);
     expect(screen.getByRole('button', { name: /Reabrir hilo/i })).toBeInTheDocument();
   });
 
   it('shows the lock banner to everyone but only staff can reopen', () => {
     render(ThreadDetail, makeProps({ isLocked: true, isStaff: false }));
-    expect(screen.getByText(/Este hilo está bloqueado/i)).toBeInTheDocument();
+    expect(screen.getByTestId('lock-banner')).toHaveTextContent(/Este hilo está bloqueado/);
     expect(screen.queryByRole('button', { name: /Reabrir hilo/i })).not.toBeInTheDocument();
   });
 

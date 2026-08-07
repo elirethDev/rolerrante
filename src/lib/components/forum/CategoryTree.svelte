@@ -38,16 +38,11 @@
   <div class="lastpost">
     {#if last}
       {#if last.avatar}
-        <img
-          src={last.avatar}
-          alt={last.alt}
-          class="w-9 h-9 rounded-full object-cover bg-azeroth-surface ring-2 ring-azeroth-border"
-        />
+        <span class="avatar avatar-sm avatar-ring">
+          <img src={last.avatar} alt={last.alt} />
+        </span>
       {:else}
-        <span
-          class="lastpost-init"
-          aria-hidden="true"
-        >
+        <span class="avatar avatar-sm avatar-ring" aria-hidden="true">
           {last.author.charAt(0).toUpperCase()}
         </span>
       {/if}

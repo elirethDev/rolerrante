@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "./lib/styles/od.css";
 @plugin "@tailwindcss/typography";
 @plugin "daisyui";
 /* OD design-system foundation (feat/od-css): tokens + componentes del design

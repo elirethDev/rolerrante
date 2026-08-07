@@ -2,7 +2,7 @@
   import { Pin } from '@lucide/svelte';
 </script>
 
-<span data-testid="pin-badge" class="badge badge-warning badge-outline gap-1">
-  <Pin size={12} />
+<span data-testid="pin-badge" class="marker marker-pin" title="Fijado">
+  <Pin size={13} />
   Fijado
 </span>
