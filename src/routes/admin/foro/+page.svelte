@@ -131,7 +131,7 @@
             <span class="tag gold" style="margin-right:8px">Sección</span>
             <b>{root.name}</b>
             <span class="meta"> · orden {root.sort_order}</span>
-            {#if !root.is_visible}<span class="tag">oculta</span>{/if}
+            {#if !root.is_visible}<span class="tag" title="Sección oculta: solo el admin la ve en el foro (los demás no, aunque tengan permisos)">oculta</span>{/if}
             {#if root.requires_approval}<span class="tag">aprob. entrada</span>{/if}
             {#if root.min_read_role}<span class="tag gold">min {root.min_read_role}</span>{/if}
           </div>
@@ -185,7 +185,7 @@
                 <span>
                   <span class="tag" style="margin-right:6px">Categoría</span>
                   {child.name}
-                  {#if !child.is_visible}<span class="tag">oculta</span>{/if}
+                  {#if !child.is_visible}<span class="tag" title="Categoría oculta: solo el admin la ve en el foro (los demás no, aunque tengan permisos)">oculta</span>{/if}
                   {#if child.requires_approval}<span class="tag">aprob. entrada</span>{/if}
                   {#if child.min_read_role}<span class="tag gold">min {child.min_read_role}</span>{/if}
                 </span>
