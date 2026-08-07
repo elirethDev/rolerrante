@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import Page from "../../../src/routes/admin/ajustes/+page.svelte";
 
 describe("admin/ajustes (REQ-AF-01)", () => {
-  it("renders each setting as Field size=sm keeping the inline row flex layout", () => {
+  it("renders each setting as a labeled set-row with input and Guardar", () => {
     render(Page, {
       data: {
         settings: [{ key: "max_personajes", value: "5" }],
@@ -13,19 +13,16 @@ describe("admin/ajustes (REQ-AF-01)", () => {
 
     const form = document.querySelector("form");
     expect(form).toBeInTheDocument();
-    // inline row flex layout kept
-    expect(form?.className).toContain("flex");
+    // OD admin-ajustes.html: .set-row keeps the inline row flex layout
+    expect(form?.className).toContain("set-row");
 
-    const fieldset = form?.querySelector("fieldset");
-    expect(fieldset?.className).toContain("fieldset-sm");
-    expect(fieldset?.querySelector("legend")?.textContent).toContain(
-      "max_personajes",
-    );
-    expect(fieldset?.querySelector("legend")?.className).toContain(
-      "text-[13px]",
-    );
-    expect(fieldset?.querySelector("legend")?.className).not.toContain(
-      "text-xs",
-    );
+    // each setting renders as an OD .field with a label + value input
+    expect(form?.querySelector(".field")).toBeTruthy();
+    expect(form?.querySelector("label")?.textContent).toContain("max_personajes");
+    expect(form?.querySelector('input[name="value"]')).toBeTruthy();
+    expect(form?.querySelector('button[type="submit"]')?.textContent).toContain("Guardar");
+
+    // row layout: OD .field, no fieldset wrapping
+    expect(document.querySelectorAll("fieldset")).toHaveLength(0);
   });
 });

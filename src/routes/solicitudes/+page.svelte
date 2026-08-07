@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { statusLabel, statusColor, formatDate } from '$lib/utils';
-  import { History, Sparkles } from '@lucide/svelte';
+  import { statusLabel, formatDate } from '$lib/utils';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import SkillRequestForm from '$lib/components/skills/SkillRequestForm.svelte';
@@ -9,6 +8,19 @@
 
   export let data: PageData;
   export let form: ActionData;
+
+  const odBadge = (status: string): string => {
+    switch (status) {
+      case 'aprobado':
+        return 'badge-success';
+      case 'pendiente':
+        return 'badge-blue';
+      case 'rechazado':
+        return 'badge-danger';
+      default:
+        return 'badge-neutral';
+    }
+  };
 </script>
 
 <svelte:head>
@@ -23,46 +35,34 @@
   subtitle="Gastá puntos de experiencia (XP) para subir habilidades de tus fichas. El consejo revisa cada solicitud."
 />
 
-<div class="max-w-4xl">
-  <div class="mb-8">
-    <SkillRequestForm characters={data.characters} form={form} />
-  </div>
+<div class="solic-wrap">
+  <SkillRequestForm characters={data.characters} form={form} />
 
-  <div class="panel">
-    <div class="panel-head">
-      <History size={18} />
+  <section class="hist-section" aria-label="Historial de solicitudes">
+    <div class="section-head">
       <h2>Historial</h2>
       <span class="meta">{data.requests.length} solicitudes</span>
     </div>
-    <div class="panel-body py-3">
-      {#if data.requests.length === 0}
-        <EmptyState
-          title="Sin solicitudes"
-          description="No has enviado solicitudes todavía. Subí una habilidad para empezar."
-        />
-      {:else}
-        <div class="space-y-2">
-          {#each data.requests as req (req.id)}
-            <div class="rounded-lg border border-azeroth-border bg-azeroth-sunken p-4">
-              <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                  <p class="font-semibold text-azeroth-text-high flex items-center gap-2">
-                    <Sparkles size={16} class="text-azeroth-gold-dim" />
-                    {req.character?.name ?? 'Personaje'} · {req.total_xp_cost} XP
-                  </p>
-                  <p class="text-xs text-azeroth-muted mt-0.5">{formatDate(req.created_at)}</p>
-                </div>
-                <span class="badge {statusColor(req.status)} badge-sm whitespace-nowrap">
-                  {statusLabel(req.status)}
-                </span>
-              </div>
-              {#if req.review_notes}
-                <p class="text-sm mt-2 text-warning">Nota: {req.review_notes}</p>
-              {/if}
+    {#if data.requests.length === 0}
+      <EmptyState
+        title="Sin solicitudes"
+        description="No has enviado solicitudes todavía. Subí una habilidad para empezar."
+      />
+    {:else}
+      {#each data.requests as req (req.id)}
+        <div class="hist-row">
+          <div class="h-top">
+            <div>
+              <div class="h-title">{req.character?.name ?? 'Personaje'} · {req.total_xp_cost} XP</div>
+              <div class="h-meta">{formatDate(req.created_at)}</div>
             </div>
-          {/each}
+            <span class="badge {odBadge(req.status)} no-dot">{statusLabel(req.status)}</span>
+          </div>
+          {#if req.review_notes}
+            <p class="h-note">Nota: {req.review_notes}</p>
+          {/if}
         </div>
-      {/if}
-    </div>
-  </div>
+      {/each}
+    {/if}
+  </section>
 </div>

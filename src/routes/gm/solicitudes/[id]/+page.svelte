@@ -1,6 +1,5 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import Field from '$lib/components/ui/Field.svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import type { ActionData, PageData } from './$types';
@@ -22,7 +21,7 @@
   <title>Solicitud de habilidad — RolErrante</title>
 </svelte:head>
 
-<section class="max-w-[1180px] mx-auto">
+<section class="gm-detail">
   <Breadcrumbs
     items={[{ label: 'Panel GM', href: '/gm' }, { label: 'Solicitud' }]}
     class="mb-2"
@@ -34,34 +33,32 @@
     subtitle={`${req.character?.name ?? ''} · ${req.total_xp_cost} XP · ${playerName(req.character?.player)}`}
   />
 
-  <div class="panel mb-6">
-    <div class="panel-head"><h2>Mejoras solicitadas</h2></div>
-    <div class="panel-body">
-      <ul class="divide-y divide-azeroth-border">
-        {#each items as item (item.id)}
-          <li class="py-2 flex justify-between">
-            <span>{item.skill?.name}{item.specialization ? ` (${item.specialization})` : ''}</span>
-            <span class="text-azeroth-gold">{item.from_level} → {item.to_level} ({item.xp_cost} XP)</span>
-          </li>
-        {/each}
-      </ul>
-      <p class="mt-4"><strong>Justificación:</strong> {req.justification}</p>
+  {#if form?.message}<div class="form-error" role="alert">{form.message}</div>{/if}
+
+  <section class="up-card">
+    <div class="up-head"><h2>Mejoras solicitadas</h2></div>
+    <div class="up-body">
+      {#each items as item (item.id)}
+        <div class="up-row">
+          <span class="u-name"><b>{item.skill?.name}</b>{item.specialization ? ` (${item.specialization})` : ''}</span>
+          <span class="arrow">{item.from_level} → {item.to_level}</span>
+          <span class="cost">{item.xp_cost} XP</span>
+        </div>
+      {/each}
+      <p class="justific"><b>Justificación:</b> {req.justification}</p>
     </div>
-  </div>
+  </section>
 
-  {#if form?.message}<div class="alert alert-error mb-4">{form.message}</div>{/if}
-
-  <div class="flex flex-col gap-3">
+  <div class="gm-actions">
     <form method="POST" action="?/approve">
-      <button type="submit" class="btn btn-success w-full">✓ Aprobar solicitud</button>
+      <button type="submit" class="btn btn-success btn-lg btn-block">✓ Aprobar solicitud</button>
     </form>
-    <form method="POST" action="?/reject" class="flex gap-2 items-center">
-      <button type="submit" class="btn btn-error">✕ Rechazar</button>
-      <Field label="Motivo del rechazo" class="flex-1">
-        {#snippet ctrl()}
-          <input name="notes" type="text" class="input flex-1" placeholder="Motivo del rechazo" />
-        {/snippet}
-      </Field>
+    <form method="POST" action="?/reject" class="reject">
+      <div class="field">
+        <label for="gm-rej">Motivo del rechazo</label>
+        <input id="gm-rej" name="notes" type="text" class="input" placeholder="Motivo del rechazo" />
+      </div>
+      <button type="submit" class="btn btn-danger">✕ Rechazar</button>
     </form>
   </div>
 </section>

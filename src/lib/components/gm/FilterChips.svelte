@@ -25,12 +25,13 @@
   });
 </script>
 
-<div data-testid="filter-chips" class="flex flex-wrap gap-2" role="group" aria-label="Filtros">
+<div data-testid="filter-chips" class="filter-row" role="group" aria-label="Filtrar cola">
   {#each FILTER_OPTIONS as option (option.key)}
     <button
       type="button"
-      class="btn btn-sm {selected === option.key ? 'btn-active' : 'btn-outline'}"
+      class="fchip"
       aria-pressed={selected === option.key}
+      data-filter={option.key}
       onclick={() => select(option.key)}
     >
       {option.label}

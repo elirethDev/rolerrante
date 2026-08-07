@@ -3,7 +3,6 @@
   import { skillUpgradeCost } from '$lib/rules';
   import { User } from '@lucide/svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
-  import Field from '$lib/components/ui/Field.svelte';
   import SkillPicker from './SkillPicker.svelte';
 
   interface CharacterShape {
@@ -61,30 +60,32 @@
 {#if characters.length === 0}
   <EmptyState icon={User} title="Sin personajes aprobados" description="Necesitás un personaje aprobado para solicitar mejoras." />
 {:else}
-  <div class="card bg-base-200 border border-azeroth-border">
-    <div class="card-body">
-      <h2 class="card-title font-cinzel text-azeroth-gold">Nueva solicitud</h2>
+  <section class="form-card">
+    <div class="form-card-head">
+      <h2>Nueva solicitud</h2>
+      <span class="meta">Subir habilidades</span>
+    </div>
+    <div class="form-card-body">
       {#if form?.message}
-        <div class="alert alert-error text-sm">{form.message}</div>
+        <div class="form-error" role="alert">{form.message}</div>
       {/if}
-      <form method="POST" use:enhance class="space-y-4">
-        <Field label="Personaje" required {size}>
-          {#snippet ctrl()}
-            <select
-              id="character_id"
-              name="character_id"
-              class="select"
-              bind:value={selectedCharacterId}
-              required
-            >
-              {#each characters as c (c.id)}
-                <option value={c.id}>{c.name} ({c.rp_points ?? 0} pts)</option>
-              {/each}
-            </select>
-          {/snippet}
-        </Field>
+      <form method="POST" use:enhance>
+        <div class="field">
+          <label for="character_id">Personaje <span class="req">*</span></label>
+          <select
+            id="character_id"
+            name="character_id"
+            class="select"
+            bind:value={selectedCharacterId}
+            required
+          >
+            {#each characters as c (c.id)}
+              <option value={c.id}>{c.name} ({c.rp_points ?? 0} pts)</option>
+            {/each}
+          </select>
+        </div>
 
-        <div class="space-y-2 max-h-96 overflow-y-auto pr-2">
+        <div class="picker-scroll">
           <SkillPicker
             mode="upgrade"
             skills={gridSkills}
@@ -96,19 +97,19 @@
           />
         </div>
 
-        <Field label="Justificación / Trama" required {size}>
-          {#snippet ctrl()}
-            <textarea id="justification" name="justification" class="textarea" rows="3" required></textarea>
-          {/snippet}
-        </Field>
+        <div class="field">
+          <label for="justification">Justificación / Trama <span class="req">*</span></label>
+          <textarea id="justification" name="justification" class="textarea" rows="3" required></textarea>
+        </div>
 
-        <div class="flex justify-between items-center">
-          <span class="badge badge-lg {overBudget ? 'badge-error' : totalCost > 0 ? 'badge-primary' : 'badge-ghost'}">
-            Coste total: {totalCost} XP
+        <div class="cost-bar {overBudget ? 'over' : ''}">
+          <span class="lbl">Coste total</span>
+          <span class="cost-right">
+            <span class="xp">{totalCost} XP</span>
+            <button type="submit" class="btn btn-primary" disabled={!canSubmit}>Enviar solicitud</button>
           </span>
-          <button type="submit" class="btn btn-primary" disabled={!canSubmit}>Enviar solicitud</button>
         </div>
       </form>
     </div>
-  </div>
+  </section>
 {/if}

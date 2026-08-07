@@ -93,7 +93,7 @@
         {/if}
       </div>
     </form>
-    <button type="button" class="btn btn-outline btn-sm" onclick={() => (helpOpen = true)}>Ayuda</button>
+    <button type="button" class="btn btn-secondary btn-sm" onclick={() => (helpOpen = true)}>Ayuda</button>
   </div>
 
   {#if data.isSearch}
@@ -111,9 +111,7 @@
       <EmptyState title="Sin resultados" description="Prueba con otro término de búsqueda." />
     {:else}
       <div class="panel">
-        <div class="panel-body p-0">
-          <ThreadList threads={data.searchResults} />
-        </div>
+        <ThreadList threads={data.searchResults} />
       </div>
     {/if}
   {:else if data.categories.length === 0}
@@ -186,20 +184,19 @@
     </Field>
 
     {#if data.isStaff}
-      <label class="label cursor-pointer justify-start gap-2">
-        <input type="checkbox" name="is_sticky" class="checkbox checkbox-sm" bind:checked={qcSticky} />
-        <span class="text-sm">Fijar (destacarlo en la sección)</span>
+      <label class="check">
+        <input type="checkbox" name="is_sticky" bind:checked={qcSticky} />
+        <span>Fijar (destacarlo en la sección)</span>
       </label>
     {/if}
 
-    <label class="label cursor-pointer justify-start gap-2">
+    <label class="check">
       <input
         type="checkbox"
         name="allow_replies"
-        class="checkbox checkbox-sm"
         bind:checked={qcAllowReplies}
       />
-      <span class="text-sm">Permitir respuestas</span>
+      <span>Permitir respuestas</span>
     </label>
 
     <div class="flex items-center justify-between pt-1">

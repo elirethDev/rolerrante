@@ -1,11 +1,10 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
-  import TipTapEditor from '$lib/components/editor/TipTapEditor.svelte';
   import { isGMOrAdmin } from '$lib/auth';
   import { statusLabel, statusColor, formatDate } from '$lib/utils';
   import TipTapViewer from '$lib/components/editor/TipTapViewer.svelte';
-  import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import type { ActionData, PageData } from './$types';
 
   export let data: PageData;
@@ -26,54 +25,61 @@
   <title>{story.title} — RolErrante</title>
 </svelte:head>
 
-<article class="max-w-[1180px] mx-auto">
-  <PageHeader
-    kicker="Historias del reino"
-    title={story.title}
-  >
-    {#snippet actions()}
-      <span class="badge {statusColor(story.status)}">{statusLabel(story.status)}</span>
-    {/snippet}
-  </PageHeader>
-  <p class="text-sm text-azeroth-muted mt-1 mb-6">
-    Por <span class="text-azeroth-gold">{playerName(story.character?.player)}</span>
-    · {formatDate(story.created_at)}
-    {#if story.character}
-      · Personaje: <a href={resolve(`/personajes/${story.character.id}`)} class="link">{story.character.name}</a>
-    {/if}
-  </p>
+<article class="story-detail">
+  <Breadcrumbs
+    items={[{ label: 'Historias', href: '/historias' }, { label: story.title }]}
+    class="mb-2"
+  />
+
+  <header class="story-head">
+    <div style="min-width:0">
+      <span class="kicker" style="margin-bottom:6px">Crónica</span>
+      <h1 class="story-title">{story.title}</h1>
+      <p class="story-sub">
+        <span>por <b style="color:var(--gold-soft)">{playerName(story.character?.player)}</b></span>
+        <span>· {formatDate(story.created_at)}</span>
+        {#if story.character}
+          <span>· Personaje: <a href={resolve(`/personajes/${story.character.id}`)}>{story.character.name}</a></span>
+        {/if}
+      </p>
+    </div>
+    <span class="badge {statusColor(story.status)} no-dot">{statusLabel(story.status)}</span>
+  </header>
 
   {#if story.review_notes}
-    <div class="alert alert-warning text-sm mb-6">
-      <strong>Notas de revisión:</strong> {story.review_notes}
+    <div class="review-note" data-od-id="notas-revision">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 3l2.6 6.4L21 12l-6.4 2.6L12 21l-2.6-6.4L3 12l6.4-2.6z" fill="currentColor"/></svg>
+      <span><b>Notas de revisión:</b> {story.review_notes}</span>
     </div>
   {/if}
 
-  <div class="prose prose-invert max-w-none bg-base-100 border border-azeroth-border rounded-lg p-6">
-    <TipTapViewer content={String(story.content)} />
+  <div class="story-body" data-od-id="historia-contenido">
+    <div class="post-text">
+      <TipTapViewer content={String(story.content)} />
+    </div>
   </div>
 
   {#if canModerate && story.status === 'pendiente'}
-    <div class="panel mt-6">
-      <div class="panel-head"><h2>Moderación GM</h2></div>
-      <div class="panel-body">
-        {#if form?.message}<div class="alert alert-error text-sm">{form.message}</div>{/if}
-        <div class="flex flex-col gap-3 mt-2">
-          <form method="POST" action="?/approve">
-            <button type="submit" class="btn btn-success w-full">✓ Aprobar historia</button>
-          </form>
-          <form method="POST" action="?/reject" class="flex gap-2">
+    <div class="mod-panel" data-od-id="panel-moderacion">
+      <h2>Moderación GM</h2>
+      <div class="mod-row">
+        <form method="POST" action="?/approve">
+          <button type="submit" class="btn btn-success">✓ Aprobar historia</button>
+        </form>
+        <div class="mod-row reject">
+          <form method="POST" action="?/reject" class="flex gap-2 items-center">
+            <input name="notes" type="text" class="input" placeholder="Motivo del rechazo (visible para el autor)" />
             <button type="submit" class="btn btn-error">✕ Rechazar</button>
-            <input name="notes" type="text" class="input flex-1" placeholder="Motivo del rechazo" />
           </form>
         </div>
       </div>
+      {#if form?.message}<p class="text-error text-sm mt-2">{form.message}</p>{/if}
     </div>
   {/if}
 
   {#if isOwner || canModerate}
-    <div class="mt-6 text-center">
-      <a href={resolve(`/historias/${story.id}/editar`)} class="btn btn-primary">Editar historia</a>
+    <div class="story-actions">
+      <a href={resolve(`/historias/${story.id}/editar`)} class="btn btn-primary">✎ Editar historia</a>
     </div>
   {/if}
 </article>

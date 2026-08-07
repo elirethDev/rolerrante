@@ -5,6 +5,7 @@
   import { formatRelativeTime } from '$lib/utils';
   import Pager from '$lib/components/ui/Pager.svelte';
   import PinBadge from './PinBadge.svelte';
+  import LockBadge from './LockBadge.svelte';
   import PostCard from './PostCard.svelte';
 
   let {
@@ -82,74 +83,66 @@
 </script>
 
 <article>
-  <header class="mb-6">
-    <div class="flex flex-wrap items-center gap-3">
-      <h1 class="text-2xl font-cinzel text-azeroth-gold">{thread.title}</h1>
+  <header>
+    <div class="row" style="gap:10px;flex-wrap:wrap">
       {#if isSticky}<PinBadge />{/if}
-      {#if isLocked}<Lock size={18} class="text-error" />{/if}
+      {#if isLocked}<LockBadge />{/if}
       {#if thread.status === 'pendiente'}
-        <span class="badge badge-warning">Pendiente</span>
+        <span class="badge badge-warning no-dot">Pendiente</span>
+      {/if}
+    </div>
+
+    <h1 class="page-title" style="margin:10px 0 0">{thread.title}</h1>
+
+    {#if entity}
+      <p style="margin-top:8px;font-size:.85rem;color:var(--text-muted)">
+        Vincular:
+        <span style="color:var(--gold-soft);font-weight:600">{entity.name}</span>
+        {#if entity.status}
+          <span class="badge badge-neutral no-dot">{statusLabels[entity.status] ?? entity.status}</span>
+        {/if}
+      </p>
+    {/if}
+
+    <div class="thread-meta-line" data-testid="thread-meta-line">
+      <span class="kicker" data-testid="thread-kicker">{kicker}</span>
+      <span data-testid="thread-replies">
+        {replyCount} {replyCount === 1 ? 'respuesta' : 'respuestas'}
+      </span>
+      <span data-testid="thread-published">Publicado {formatRelativeTime(thread.created_at)}</span>
+      <span class="who">Por <b>{authorName}</b></span>
+      {#if editMarker}
+        <span data-testid="thread-edit-marker">{editMarker}</span>
       {/if}
     </div>
 
     {#if isStaff}
-      <div class="mt-2 flex flex-wrap gap-2">
+      <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px">
         <form method="POST" action={isSticky ? '?/unpin' : '?/pin'}>
-          <button type="submit" class="btn btn-outline btn-xs">
+          <button type="submit" class="btn btn-secondary btn-sm">
             {isSticky ? 'Desfijar hilo' : 'Fijar hilo'}
           </button>
         </form>
         {#if !isLocked}
           <form method="POST" action="?/lock">
-            <button type="submit" class="btn btn-outline btn-xs">Bloquear hilo</button>
+            <button type="submit" class="btn btn-secondary btn-sm">Bloquear hilo</button>
           </form>
         {/if}
       </div>
     {/if}
-
-    {#if entity}
-      <p class="text-sm text-azeroth-muted mt-2">
-        Vincular:
-        <span class="font-medium text-azeroth-gold">{entity.name}</span>
-        {#if entity.status}<span class="badge badge-neutral badge-xs ml-1">{statusLabels[entity.status] ?? entity.status}</span>{/if}
-      </p>
-    {/if}
-
-    <p
-      class="mt-1 text-sm text-azeroth-muted flex flex-wrap items-center gap-x-2 gap-y-0"
-      data-testid="thread-meta-line"
-    >
-      <span class="kicker" data-testid="thread-kicker">{kicker}</span>
-      <span aria-hidden="true">·</span>
-      <span data-testid="thread-replies">
-        {replyCount} {replyCount === 1 ? 'respuesta' : 'respuestas'}
-      </span>
-      <span aria-hidden="true">·</span>
-      <span data-testid="thread-published">Publicado {formatRelativeTime(thread.created_at)}</span>
-    </p>
-
-    <p class="text-sm text-azeroth-muted mt-1">
-      Por <span class="text-azeroth-gold">{authorName}</span>
-      {#if editMarker}
-        · <span data-testid="thread-edit-marker">{editMarker}</span>
-      {/if}
-    </p>
   </header>
 
   {#if isLocked}
-    <div class="alert alert-error mb-6" data-testid="lock-banner">
-      <Lock size={20} />
+    <div class="lock-banner" data-testid="lock-banner">
+      <Lock size={20} aria-hidden="true" />
       <div>
-        <p class="font-semibold">Este hilo está bloqueado</p>
-        <p class="text-sm opacity-80">
-          Los autores no pueden responder mientras el hilo permanezca bloqueado.
-        </p>
-        {#if isStaff}
-          <form method="POST" action="?/unlock" class="mt-2">
-            <button type="submit" class="btn btn-outline btn-xs">Reabrir hilo</button>
-          </form>
-        {/if}
+        Este hilo está <b>bloqueado</b> — los autores no pueden responder mientras el hilo permanezca bloqueado.
       </div>
+      {#if isStaff}
+        <form method="POST" action="?/unlock">
+          <button type="submit" class="btn btn-secondary btn-sm">Reabrir hilo</button>
+        </form>
+      {/if}
     </div>
   {/if}
 
@@ -162,7 +155,7 @@
     replyToAuthor={undefined}
   />
 
-  <div class="mt-6">
+  <div class="stack">
     {#each posts as post, i (post.id)}
       <div class="ornament" aria-hidden="true">
         <span class="dia"></span>
@@ -181,39 +174,13 @@
   </div>
 
   {#if totalPages > 1}
-    <div class="mt-6 flex justify-center">
-      <Pager
-        total={totalPages}
-        current={currentPage}
-        onChange={(page) => {
-          if (page === currentPage) return;
-          window.location.href = `?page=${page}`;
-        }}
-      />
-    </div>
+    <Pager
+      total={totalPages}
+      current={currentPage}
+      onChange={(page) => {
+        if (page === currentPage) return;
+        window.location.href = `?page=${page}`;
+      }}
+    />
   {/if}
 </article>
-
-<style>
-  .ornament {
-    min-height: 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    margin: 0.5rem 0;
-  }
-  .ornament::before,
-  .ornament::after {
-    content: '';
-    height: 1px;
-    flex: 1;
-    background: var(--color-azeroth-border);
-  }
-  .dia {
-    width: 0.375rem;
-    height: 0.375rem;
-    transform: rotate(45deg);
-    background: var(--color-azeroth-gold-dim);
-  }
-</style>

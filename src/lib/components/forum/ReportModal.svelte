@@ -12,55 +12,63 @@
     reason = '';
     open = true;
   }
+
+  function closeModal() {
+    open = false;
+  }
 </script>
 
-<button type="button" class="btn btn-ghost btn-xs text-azeroth-muted" onclick={openModal}>
+<button type="button" class="danger" onclick={openModal}>
   Reportar
 </button>
 
 {#if open}
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label="Reportar mensaje">
-    <div class="card bg-base-200 border border-azeroth-border w-full max-w-md">
-      <div class="card-body">
-        <div class="flex items-center justify-between">
-          <h2 class="card-title font-cinzel text-azeroth-gold text-lg">Reportar mensaje</h2>
-          <button type="button" class="btn btn-ghost btn-xs" aria-label="Cerrar" onclick={() => (open = false)}>
-            <X size={18} />
-          </button>
+  <div class="modal open" role="dialog" aria-modal="true" aria-label="Reportar mensaje">
+    <div class="modal-backdrop" aria-hidden="true" onclick={closeModal}></div>
+    <div class="modal-panel">
+      <div class="modal-head">
+        <div>
+          <h3>Reportar mensaje</h3>
+          <p class="muted" style="margin:6px 0 0;font-size:.9rem">El equipo de moderación revisa cada reporte.</p>
         </div>
+        <button type="button" class="modal-x" aria-label="Cerrar" onclick={closeModal}>
+          <X size={18} />
+        </button>
+      </div>
 
-        <form
-          data-testid="report-form"
-          method="POST"
-          action="?/report"
-          use:enhance={() => {
-            pending = true;
-            return async ({ update }) => {
-              pending = false;
-              await update();
-            };
-          }}
-        >
-          <input type="hidden" name="post_id" value={postId} />
-          <label class="label" for="reason">Motivo</label>
+      <form
+        data-testid="report-form"
+        method="POST"
+        action="?/report"
+        use:enhance={() => {
+          pending = true;
+          return async ({ update }) => {
+            pending = false;
+            await update();
+          };
+        }}
+      >
+        <input type="hidden" name="post_id" value={postId} />
+        <div class="field">
+          <label for="reason">Motivo</label>
           <textarea
             id="reason"
             name="reason"
-            class="textarea textarea-bordered w-full"
+            class="textarea"
             rows="3"
             maxlength="500"
             placeholder="Explica brevemente el motivo del reporte"
             bind:value={reason}
             required
           ></textarea>
+        </div>
 
-          <div class="mt-4 flex justify-end">
-            <button type="submit" class="btn btn-error btn-sm" disabled={pending || reason.trim().length === 0}>
-              Enviar reporte
-            </button>
-          </div>
-        </form>
-      </div>
+        <div class="modal-foot">
+          <button type="submit" class="btn btn-danger" disabled={pending || reason.trim().length === 0}>
+            Enviar reporte
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 {/if}

@@ -71,48 +71,34 @@
 </script>
 
 {#if open}
-  <div class="fixed inset-0 z-[300] flex items-center justify-center p-5">
-    <div
-      class="absolute inset-0 bg-[rgba(5,7,12,0.72)] backdrop-blur-[4px]"
-      onclick={close}
-      aria-hidden="true"
-    ></div>
+  <!-- design rolerrante.css: .modal.open > .modal-backdrop + .modal-panel -->
+  <div class="modal open {className}">
+    <div class="modal-backdrop" onclick={close} aria-hidden="true"></div>
     <div
       bind:this={panel}
       role="dialog"
       aria-modal="true"
       aria-label={title}
       tabindex="-1"
-      class="modal-panel-gold relative max-h-[86vh] w-full overflow-auto rounded-2xl border border-azeroth-border-strong bg-linear-to-b from-azeroth-surface-2 to-azeroth-surface p-[26px] shadow-[var(--shadow-2)] {className}"
+      class="modal-panel {className}"
     >
-      <header class="mb-4 flex items-start justify-between gap-3">
-        <h3 class="font-cinzel text-xl font-semibold text-base-content">{title}</h3>
+      <div class="modal-head">
+        <h3>{title}</h3>
         <button
           type="button"
-          class="azeroth-focus inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg border border-azeroth-border-strong bg-transparent text-azeroth-muted hover:border-azeroth-gold-dim hover:text-azeroth-gold-bright"
+          class="modal-x"
           onclick={close}
           aria-label={closeLabel}
         >
           <X size={18} aria-hidden="true" />
         </button>
-      </header>
+      </div>
       {@render children()}
       {#if footer}
-        <footer class="mt-5 flex justify-end gap-2.5">
+        <div class="modal-foot">
           {@render footer()}
-        </footer>
+        </div>
       {/if}
     </div>
   </div>
 {/if}
-
-<style>
-  .modal-panel-gold::before {
-    content: '';
-    position: absolute;
-    inset-inline: 0;
-    top: 0;
-    height: 2px;
-    background: var(--gold-hairline);
-  }
-</style>

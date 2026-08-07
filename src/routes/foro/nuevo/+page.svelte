@@ -69,73 +69,86 @@
     <div class="alert alert-error mb-4">{form.message}</div>
   {/if}
 
-  <form
-    method="POST"
-    use:enhance={() => {
-      pending = true;
-      return async ({ result, update }) => {
-        pending = false;
-        if (shouldClearDraft(result.type)) {
-          clearDraft(window.localStorage, 'forum:draft:nuevo');
-        }
-        await update();
-      };
-    }}
-    class="space-y-4"
-  >
-    <Field label="Sección" required>
-      {#snippet ctrl()}
-        <select id="category_id" name="category_id" class="select" bind:value={categoryId} required>
-          <option value="" disabled>Elegí una sección</option>
-          {#each data.categories as c (c.id)}
-            {#if c.parent_id === null}
-              <optgroup label={c.name}>
-                <option value={c.id}>{c.name}</option>
-                {#each data.categories.filter((k) => k.parent_id === c.id) as sub (sub.id)}
-                  <option value={sub.id}>{sub.name}</option>
+  <div class="create-wrap">
+    <form
+      method="POST"
+      use:enhance={() => {
+        pending = true;
+        return async ({ result, update }) => {
+          pending = false;
+          if (shouldClearDraft(result.type)) {
+            clearDraft(window.localStorage, 'forum:draft:nuevo');
+          }
+          await update();
+        };
+      }}
+    >
+      <section class="form-card">
+        <div class="form-card-head">
+          <h2>Dónde y qué</h2>
+          <span class="meta">Sección + título</span>
+        </div>
+        <div class="form-card-body">
+          <Field label="Sección" required>
+            {#snippet ctrl()}
+              <select id="category_id" name="category_id" class="select" bind:value={categoryId} required>
+                <option value="" disabled>Elegí una sección</option>
+                {#each data.categories as c (c.id)}
+                  {#if c.parent_id === null}
+                    <optgroup label={c.name}>
+                      <option value={c.id}>{c.name}</option>
+                      {#each data.categories.filter((k) => k.parent_id === c.id) as sub (sub.id)}
+                        <option value={sub.id}>{sub.name}</option>
+                      {/each}
+                    </optgroup>
+                  {/if}
                 {/each}
-              </optgroup>
-            {/if}
-          {/each}
-        </select>
-      {/snippet}
-    </Field>
+              </select>
+            {/snippet}
+          </Field>
 
-    <Field label="Título" required>
-      {#snippet ctrl()}
-        <input
-          id="title"
-          name="title"
-          type="text"
-          class="input"
-          bind:value={title}
-          on:input={scheduleAutosave}
-          required
-        />
-      {/snippet}
-    </Field>
+          <Field label="Título" required>
+            {#snippet ctrl()}
+              <input
+                id="title"
+                name="title"
+                type="text"
+                class="input"
+                bind:value={title}
+                on:input={scheduleAutosave}
+                required
+              />
+            {/snippet}
+          </Field>
+        </div>
+      </section>
 
-    <input type="hidden" name="content" bind:value={content} />
-    <Field label="Contenido" required>
-      {#snippet ctrl()}
-        <TipTapEditor
-          {content}
-          onChange={(html) => {
-            content = html;
-            scheduleAutosave();
-          }}
-          validateImageUrl={isValidImageUrl}
-        />
-      {/snippet}
-    </Field>
+      <section class="form-card">
+        <div class="form-card-head">
+          <h2>Primer mensaje</h2>
+          <span class="meta">Editor</span>
+        </div>
+        <div class="form-card-body">
+          <input type="hidden" name="content" bind:value={content} />
+          <TipTapEditor
+            {content}
+            onChange={(html) => {
+              content = html;
+              scheduleAutosave();
+            }}
+            validateImageUrl={isValidImageUrl}
+          />
+          <span class="draft-status" data-testid="draft-indicator" role="status">
+            <span class="dot"></span>
+            {savedIndicator ? 'Borrador guardado' : ''}
+          </span>
+        </div>
+      </section>
 
-    <p class="text-xs text-azeroth-muted" data-testid="draft-indicator" role="status">
-      {savedIndicator ? 'Borrador guardado' : ''}
-    </p>
-
-    <div class="flex gap-3">
-      <SubmitButton class="font-cinzel" {pending}>Crear debate</SubmitButton>
-      <a href={resolve('/foro' as any)} class="btn btn-ghost">Cancelar</a>
-    </div>
-  </form>
+      <div class="row" style="gap:12px;align-items:center">
+        <SubmitButton class="font-cinzel" {pending}>Crear debate</SubmitButton>
+        <a href={resolve('/foro' as any)} class="btn btn-ghost">Cancelar</a>
+      </div>
+    </form>
+  </div>
 </section>

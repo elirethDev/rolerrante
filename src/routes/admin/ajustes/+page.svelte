@@ -1,6 +1,5 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import Field from '$lib/components/ui/Field.svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import type { ActionData, PageData } from './$types';
@@ -24,32 +23,28 @@
   <div class="alert alert-error mb-4">{form.message}</div>
 {/if}
 
-<div class="panel">
-  <div class="panel-head"><h2>Configuración</h2><span class="meta">claves guardadas</span></div>
-  <div class="panel-body py-4">
-    <div class="space-y-3">
-      {#each data.settings as setting (setting.key)}
-        <form
-          method="POST"
-          action="?/saveSetting"
-          use:enhance
-          class="flex gap-2 items-end"
-        >
-          <input type="hidden" name="key" value={setting.key} />
-          <Field label={setting.key} size="sm" class="flex-1">
-            {#snippet ctrl()}
-              <input
-                id="val_{setting.key}"
-                name="value"
-                type="text"
-                class="input input-sm"
-                value={stringify(setting.value)}
-              />
-            {/snippet}
-          </Field>
-          <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
-        </form>
-      {/each}
-    </div>
+<!-- design admin-ajustes.html: .set-card with .set-row per setting -->
+<div class="set-card">
+  <div class="set-head"><h2>Configuración</h2></div>
+  <div class="set-body">
+    {#each data.settings as setting, i (setting.key)}
+      <form method="POST" action="?/saveSetting" use:enhance class="set-row">
+        <input type="hidden" name="key" value={setting.key} />
+        <div class="field">
+          <label for="val_{setting.key}">{setting.key}</label>
+          <input
+            id="val_{setting.key}"
+            name="value"
+            type="text"
+            class="input"
+            value={stringify(setting.value)}
+          />
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+      </form>
+      {#if i < data.settings.length - 1}
+        <hr class="set-divider" />
+      {/if}
+    {/each}
   </div>
 </div>

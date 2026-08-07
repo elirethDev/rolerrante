@@ -35,50 +35,58 @@
 
 <PageHeader kicker="Panel admin" title="Auditoría del foro" />
 
-<div class="panel">
-  <div class="panel-body p-0">
-    <div class="flex flex-wrap items-center gap-3 p-4">
+<!-- design admin-auditoria.html: .audit-card with filters + .log-table -->
+<div class="audit-card">
+  <div class="filters">
+    <div class="search-wrap" style="flex:1;min-width:220px">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" />
+        <path d="M20 20l-3.2-3.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+      </svg>
       <input
         id="audit-filter"
-        type="text"
-        class="input input-sm w-64"
+        class="input"
+        type="search"
         placeholder="Filtrar por acción..."
         bind:value={filter}
       />
-      <button
-        class="btn {forumOnly ? 'btn-primary' : 'btn-ghost'} btn-sm"
-        onclick={() => (forumOnly = !forumOnly)}
-      >
-        {forumOnly ? '▼ Solo foro' : 'Solo foro'}
-      </button>
     </div>
+    <button class="btn btn-secondary btn-sm" onclick={() => (forumOnly = !forumOnly)}>
+      {forumOnly ? '▼ Solo foro' : 'Solo foro'}
+    </button>
+  </div>
 
-    <div class="overflow-x-auto">
-      <table class="table table-sm">
-        <thead>
+  <div class="log-body">
+    <table class="log-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Actor</th>
+          <th>Acción</th>
+          <th>Entidad</th>
+          <th>Detalles</th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each filtered as log (log.id ?? log.created_at)}
           <tr>
-            <th>Fecha</th>
-            <th>Actor</th>
-            <th>Acción</th>
-            <th>Entidad</th>
-            <th>Detalles</th>
+            <td class="date">{formatDate(log.created_at)}</td>
+            <td class="actor">
+              {#if log.actor?.display_name ?? log.actor?.username}
+                <b>{log.actor?.display_name ?? log.actor?.username}</b>
+              {:else}
+                <span class="muted">Sistema</span>
+              {/if}
+            </td>
+            <td><span class="tag-action">{log.action}</span></td>
+            <td class="ent">{log.entity_type}{#if log.entity_id} · {log.entity_id.slice(0, 8)}{/if}</td>
+            <td class="det">{JSON.stringify(log.details)}</td>
           </tr>
-        </thead>
-        <tbody>
-          {#each filtered as log (log.id ?? log.created_at)}
-            <tr>
-              <td>{formatDate(log.created_at)}</td>
-              <td>{log.actor?.display_name ?? log.actor?.username ?? 'Sistema'}</td>
-              <td>{log.action}</td>
-              <td>{log.entity_type}{#if log.entity_id} · {log.entity_id.slice(0, 8)}{/if}</td>
-              <td class="text-xs">{JSON.stringify(log.details)}</td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-      {#if filtered.length === 0}
-        <p class="text-azeroth-faint text-center py-4">No se encontraron registros.</p>
-      {/if}
-    </div>
+        {/each}
+      </tbody>
+    </table>
+    {#if filtered.length === 0}
+      <p class="muted" style="padding:var(--s-4);font-size:.9rem">No se encontraron registros.</p>
+    {/if}
   </div>
 </div>

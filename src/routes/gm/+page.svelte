@@ -3,7 +3,8 @@
   import { enhance } from '$app/forms';
   import { Shield } from '@lucide/svelte';
   import type { PageData } from './$types';
-  import type { WorklistItem } from '$lib/components/gm/types';
+  import { applyFilter } from '$lib/components/gm/filter';
+  import type { FilterKey, WorklistItem } from '$lib/components/gm/types';
   import GmAnalytics from '$lib/components/gm/GmAnalytics.svelte';
   import FilterChips from '$lib/components/gm/FilterChips.svelte';
   import WorklistCard from '$lib/components/gm/WorklistCard.svelte';
@@ -18,11 +19,13 @@
   const lastAction = $derived(data.lastAction);
 
   // Client-side filter state driven by FilterChips (spec gm-worklist R2).
-  let filtered: WorklistItem[] = $state([...queue]);
-  let selected: 'todas' | 'ficha' | 'evento' | 'cronica' = $state('todas');
+  // FilterChips owns the list and echoes its (list, selected) back here; the
+  // page keeps only the selected key and derives the filtered view of `queue`
+  // so no duplicate reactive source is introduced.
+  let selected: FilterKey = $state('todas');
+  const filtered = $derived(applyFilter(queue, selected));
 
-  function onFilter(list: WorklistItem[], sel: typeof selected) {
-    filtered = list;
+  function onFilter(_list: WorklistItem[], sel: FilterKey) {
     selected = sel;
   }
 
@@ -146,24 +149,18 @@
   {:else if filtered.length === 0}
     <EmptyState title="Sin pendientes" icon={Shield} />
   {:else}
-    <div class="panel">
-      <div class="panel-head">
-        <span class="text-azeroth-gold shrink-0"><Shield size={18} /></span>
-        <h2>Cola de revisión</h2>
-        <span class="meta">{filtered.length} pendientes</span>
-      </div>
-      <div class="panel-body py-4">
-        {#each filtered as item (item.id)}
-          <WorklistCard
-            {item}
-            done={approvedIds.has(item.entityId)}
-            busy={submitting}
-            onApprove={(it, n) => submitApprove(it, n)}
-            onReject={(it, n) => submitReject(it, n)}
-            onReview={() => review(item)}
-          />
-        {/each}
-      </div>
+    <!-- OD gm.html: pending cards render as a .stack of .wl-card, no extra panel. -->
+    <div class="stack">
+      {#each filtered as item (item.id)}
+        <WorklistCard
+          {item}
+          done={approvedIds.has(item.entityId)}
+          busy={submitting}
+          onApprove={(it, n) => submitApprove(it, n)}
+          onReject={(it, n) => submitReject(it, n)}
+          onReview={() => review(item)}
+        />
+      {/each}
     </div>
   {/if}
 </div>

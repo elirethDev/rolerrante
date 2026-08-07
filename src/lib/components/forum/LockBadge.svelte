@@ -2,7 +2,7 @@
   import { Lock } from '@lucide/svelte';
 </script>
 
-<span data-testid="lock-badge" class="badge badge-error badge-outline gap-1">
-  <Lock size={12} />
+<span data-testid="lock-badge" class="marker marker-lock" title="Bloqueado">
+  <Lock size={13} />
   Bloqueado
 </span>

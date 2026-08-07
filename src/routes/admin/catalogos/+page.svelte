@@ -1,6 +1,5 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import Field from '$lib/components/ui/Field.svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import Breadcrumbs from '$lib/components/ui/Breadcrumbs.svelte';
   import type { ActionData, PageData } from './$types';
@@ -67,111 +66,63 @@
 
 {#if form?.message}<div class="alert alert-error mb-4">{form.message}</div>{/if}
 
-<div class="grid lg:grid-cols-2 gap-6">
+<!-- design admin-catalogos.html: .cat-grid with a .cat-card per catalog -->
+<div class="cat-grid">
 
   <!-- Razas -->
-  <div class="panel">
-    <div class="panel-head">
+  <section class="cat-card">
+    <div class="cat-head">
       <h2>Razas</h2>
       {#if !showRaceForm}
-        <button class="btn btn-primary btn-sm ml-auto" onclick={openNewRace}>Nueva raza</button>
+        <button class="btn btn-primary btn-sm" onclick={openNewRace}>Nueva raza</button>
       {/if}
     </div>
-    <div class="panel-body">
+    <div class="cat-body">
 
       {#if showRaceForm}
         <form
           method="POST"
           action="?/{editingRace ? 'updateRace' : 'createRace'}"
           use:enhance={() => cancelRace()}
-          class="space-y-3 mt-2 p-3 bg-base-100 rounded border border-azeroth-border"
+          class="tint"
+          style="margin-bottom:12px"
         >
           {#if editingRace}
             <input type="hidden" name="id" value={editingRace.id} />
           {/if}
 
-          <div class="grid grid-cols-2 gap-2">
-            <Field label="Nombre" size="sm">
-              {#snippet ctrl()}
-                <input id="r_name" name="name" type="text" class="input input-sm" value={editingRace?.name ?? ''} required />
-              {/snippet}
-            </Field>
-            <Field label="Grupo" size="sm">
-              {#snippet ctrl()}
-                <input id="r_group" name="group_name" type="text" class="input input-sm" value={editingRace?.group_name ?? ''} required placeholder="Alianza / Horda" />
-              {/snippet}
-            </Field>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="field"><label for="r_name">Nombre</label><input id="r_name" name="name" type="text" class="input" value={editingRace?.name ?? ''} required /></div>
+            <div class="field"><label for="r_group">Grupo</label><input id="r_group" name="group_name" type="text" class="input" value={editingRace?.group_name ?? ''} required placeholder="Alianza / Horda" /></div>
           </div>
 
-          <Field label="Descripción" size="sm">
-            {#snippet ctrl()}
-              <textarea id="r_desc" name="description" class="textarea textarea-sm" rows="2">{editingRace?.description ?? ''}</textarea>
-            {/snippet}
-          </Field>
+          <div class="field"><label for="r_desc">Descripción</label><textarea id="r_desc" name="description" class="textarea" rows="2">{editingRace?.description ?? ''}</textarea></div>
 
-          <div class="grid grid-cols-2 gap-2">
-            <Field label="Tamaño" size="sm">
-              {#snippet ctrl()}
-                <input id="r_size" name="size" type="text" class="input input-sm" value={editingRace?.size ?? ''} required placeholder="Mediano, Grande..." />
-              {/snippet}
-            </Field>
-            <Field label="Magia (separado por comas)" size="sm">
-              {#snippet ctrl()}
-                <input id="r_magic" name="magic_access" type="text" class="input input-sm" value={editingRace?.magic_access?.join(', ') ?? ''} placeholder="Arcana, Luz Sagrada" />
-              {/snippet}
-            </Field>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="field"><label for="r_size">Tamaño</label><input id="r_size" name="size" type="text" class="input" value={editingRace?.size ?? ''} required placeholder="Mediano, Grande..." /></div>
+            <div class="field"><label for="r_magic">Magia (separado por comas)</label><input id="r_magic" name="magic_access" type="text" class="input" value={editingRace?.magic_access?.join(', ') ?? ''} placeholder="Arcana, Luz Sagrada" /></div>
           </div>
 
-          <Field label="Datos físicos" size="sm" class="border border-azeroth-border rounded p-2">
-            {#snippet ctrl()}
-              <div class="grid grid-cols-2 gap-2">
-                <Field label="Altura mín (cm)" size="sm">
-                  {#snippet ctrl()}
-                    <input id="r_hmin" name="altura_min" type="number" class="input input-sm" value={jval(editingRace?.physical_data, 'altura_min') ?? ''} />
-                  {/snippet}
-                </Field>
-                <Field label="Altura máx (cm)" size="sm">
-                  {#snippet ctrl()}
-                    <input id="r_hmax" name="altura_max" type="number" class="input input-sm" value={jval(editingRace?.physical_data, 'altura_max') ?? ''} />
-                  {/snippet}
-                </Field>
-                <Field label="Peso mín (kg)" size="sm">
-                  {#snippet ctrl()}
-                    <input id="r_pmin" name="peso_min" type="number" class="input input-sm" value={jval(editingRace?.physical_data, 'peso_min') ?? ''} />
-                  {/snippet}
-                </Field>
-                <Field label="Peso máx (kg)" size="sm">
-                  {#snippet ctrl()}
-                    <input id="r_pmax" name="peso_max" type="number" class="input input-sm" value={jval(editingRace?.physical_data, 'peso_max') ?? ''} />
-                  {/snippet}
-                </Field>
-              </div>
-            {/snippet}
-          </Field>
+          <div class="field" style="border:1px solid var(--border);border-radius:var(--r-md);padding:12px">
+            <span class="label">Datos físicos</span>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="field" style="margin:0"><label for="r_hmin">Altura mín (cm)</label><input id="r_hmin" name="altura_min" type="number" class="input" value={jval(editingRace?.physical_data, 'altura_min') ?? ''} /></div>
+              <div class="field" style="margin:0"><label for="r_hmax">Altura máx (cm)</label><input id="r_hmax" name="altura_max" type="number" class="input" value={jval(editingRace?.physical_data, 'altura_max') ?? ''} /></div>
+              <div class="field" style="margin:0"><label for="r_pmin">Peso mín (kg)</label><input id="r_pmin" name="peso_min" type="number" class="input" value={jval(editingRace?.physical_data, 'peso_min') ?? ''} /></div>
+              <div class="field" style="margin:0"><label for="r_pmax">Peso máx (kg)</label><input id="r_pmax" name="peso_max" type="number" class="input" value={jval(editingRace?.physical_data, 'peso_max') ?? ''} /></div>
+            </div>
+          </div>
 
-          <Field label="Edad" size="sm" class="border border-azeroth-border rounded p-2">
-            {#snippet ctrl()}
-              <div class="grid grid-cols-3 gap-2">
-                <Field label="Adultez" size="sm">
-                  {#snippet ctrl()}
-                    <input id="r_adu" name="adultez" type="number" class="input input-sm" value={jval(editingRace?.age_data, 'adultez') ?? ''} />
-                  {/snippet}
-                </Field>
-                <Field label="Mediana edad" size="sm">
-                  {#snippet ctrl()}
-                    <input id="r_med" name="mediana_edad" type="number" class="input input-sm" value={jval(editingRace?.age_data, 'mediana_edad') ?? ''} />
-                  {/snippet}
-                </Field>
-                <Field label="Vejez" size="sm">
-                  {#snippet ctrl()}
-                    <input id="r_vej" name="vejez" type="number" class="input input-sm" value={jval(editingRace?.age_data, 'vejez') ?? ''} />
-                  {/snippet}
-                </Field>
-              </div>
-            {/snippet}
-          </Field>
+          <div class="field" style="border:1px solid var(--border);border-radius:var(--r-md);padding:12px">
+            <span class="label">Edad</span>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+              <div class="field" style="margin:0"><label for="r_adu">Adultez</label><input id="r_adu" name="adultez" type="number" class="input" value={jval(editingRace?.age_data, 'adultez') ?? ''} /></div>
+              <div class="field" style="margin:0"><label for="r_med">Mediana edad</label><input id="r_med" name="mediana_edad" type="number" class="input" value={jval(editingRace?.age_data, 'mediana_edad') ?? ''} /></div>
+              <div class="field" style="margin:0"><label for="r_vej">Vejez</label><input id="r_vej" name="vejez" type="number" class="input" value={jval(editingRace?.age_data, 'vejez') ?? ''} /></div>
+            </div>
+          </div>
 
-          <div class="flex gap-2 justify-end">
+          <div class="row" style="gap:10px;justify-content:flex-end">
             <button type="button" class="btn btn-ghost btn-sm" onclick={cancelRace}>Cancelar</button>
             <button type="submit" class="btn btn-primary btn-sm">
               {editingRace ? 'Guardar cambios' : 'Crear raza'}
@@ -180,101 +131,72 @@
         </form>
       {/if}
 
-      <div class="overflow-x-auto mt-2">
-        <table class="table table-sm">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Grupo</th>
-              <th>Tamaño</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each data.races as race (race.id)}
-              <tr>
-                <td class="font-semibold">{race.name}</td>
-                <td>{race.group_name}</td>
-                <td>{race.size}</td>
-                <td>
-                  <div class="flex gap-1">
-                    <button class="btn btn-ghost btn-xs" onclick={() => openEditRace(race)}>Editar</button>
-                    <form method="POST" action="?/deleteRace" use:enhance>
-                      <input type="hidden" name="id" value={race.id} />
-                      <button type="submit" class="btn btn-error btn-xs" onclick={(e: MouseEvent) => { if (!confirm('¿Eliminar esta raza?')) e.preventDefault(); }}>
-                        Eliminar
-                      </button>
-                    </form>
-                  </div>
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-        {#if data.races.length === 0}
-          <p class="text-azeroth-faint text-center py-4">No hay razas registradas.</p>
-        {/if}
-      </div>
-    </div>
-  </div>
-
-  <!-- Habilidades -->
-  <div class="panel">
-    <div class="panel-head">
-      <h2>Habilidades</h2>
-      {#if !showSkillForm}
-        <button class="btn btn-primary btn-sm ml-auto" onclick={openNewSkill}>Nueva habilidad</button>
+      {#each data.races as race (race.id)}
+        <div class="cat-row">
+          <b>{race.name}</b>
+          <span class="sub">{race.group_name} · {race.size}</span>
+          <span class="acts">
+            <button type="button" onclick={() => openEditRace(race)}>Editar</button>
+            <form method="POST" action="?/deleteRace" use:enhance>
+              <input type="hidden" name="id" value={race.id} />
+              <button type="submit" class="danger" onclick={(e: MouseEvent) => { if (!confirm('¿Eliminar esta raza?')) e.preventDefault(); }}>
+                Eliminar
+              </button>
+            </form>
+          </span>
+        </div>
+      {/each}
+      {#if data.races.length === 0}
+        <p class="muted" style="font-size:.9rem;padding:8px 0">No hay razas registradas.</p>
       {/if}
     </div>
-    <div class="panel-body">
+  </section>
+
+  <!-- Habilidades -->
+  <section class="cat-card">
+    <div class="cat-head">
+      <h2>Habilidades</h2>
+      {#if !showSkillForm}
+        <button class="btn btn-primary btn-sm" onclick={openNewSkill}>Nueva habilidad</button>
+      {/if}
+    </div>
+    <div class="cat-body">
 
       {#if showSkillForm}
         <form
           method="POST"
           action="?/{editingSkill ? 'updateSkill' : 'createSkill'}"
           use:enhance={() => cancelSkill()}
-          class="space-y-3 mt-2 p-3 bg-base-100 rounded border border-azeroth-border"
+          class="tint"
+          style="margin-bottom:12px"
         >
           {#if editingSkill}
             <input type="hidden" name="id" value={editingSkill.id} />
           {/if}
 
-          <Field label="Nombre" size="sm">
-            {#snippet ctrl()}
-              <input id="s_name" name="name" type="text" class="input input-sm" value={editingSkill?.name ?? ''} required />
-            {/snippet}
-          </Field>
+          <div class="field"><label for="s_name">Nombre</label><input id="s_name" name="name" type="text" class="input" value={editingSkill?.name ?? ''} required /></div>
 
-          <div class="grid grid-cols-2 gap-2">
-            <Field label="Atributo" size="sm">
-              {#snippet ctrl()}
-                <select id="s_attr" name="attribute" class="select select-sm" required>
-                  {#each ['F', 'D', 'I', 'P', 'E'] as a (a)}
-                    <option value={a} selected={(editingSkill?.attribute ?? 'F') === a}>{a} — {attrLabel(a)}</option>
-                  {/each}
-                </select>
-              {/snippet}
-            </Field>
-            <Field label="Requiere especialización" size="sm">
-              {#snippet ctrl()}
-                <input type="checkbox" name="requires_specialization" class="checkbox checkbox-sm" checked={editingSkill?.requires_specialization ?? false} />
-              {/snippet}
-            </Field>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="field"><label for="s_attr">Atributo</label>
+              <select id="s_attr" name="attribute" class="select" required>
+                {#each ['F', 'D', 'I', 'P', 'E'] as a (a)}
+                  <option value={a} selected={(editingSkill?.attribute ?? 'F') === a}>{a} — {attrLabel(a)}</option>
+                {/each}
+              </select>
+            </div>
+            <div class="field"><span class="label">Requiere especialización</span>
+              <label class="check" style="margin-top:8px">
+                <input type="checkbox" name="requires_specialization" checked={editingSkill?.requires_specialization ?? false} />
+                Sí
+              </label>
+            </div>
           </div>
 
-          <Field label="Descripción" size="sm">
-            {#snippet ctrl()}
-              <textarea id="s_desc" name="description" class="textarea textarea-sm" rows="2">{editingSkill?.description ?? ''}</textarea>
-            {/snippet}
-          </Field>
+          <div class="field"><label for="s_desc">Descripción</label><textarea id="s_desc" name="description" class="textarea" rows="2">{editingSkill?.description ?? ''}</textarea></div>
 
-          <Field label="Especializaciones (separado por comas)" size="sm">
-            {#snippet ctrl()}
-              <input id="s_specs" name="specializations" type="text" class="input input-sm" value={editingSkill?.specializations?.join(', ') ?? ''} placeholder="Armas a una mano, Escudos" />
-            {/snippet}
-          </Field>
+          <div class="field"><label for="s_specs">Especializaciones (separado por comas)</label><input id="s_specs" name="specializations" type="text" class="input" value={editingSkill?.specializations?.join(', ') ?? ''} placeholder="Armas a una mano, Escudos" /></div>
 
-          <div class="flex gap-2 justify-end">
+          <div class="row" style="gap:10px;justify-content:flex-end">
             <button type="button" class="btn btn-ghost btn-sm" onclick={cancelSkill}>Cancelar</button>
             <button type="submit" class="btn btn-primary btn-sm">
               {editingSkill ? 'Guardar cambios' : 'Crear habilidad'}
@@ -283,48 +205,29 @@
         </form>
       {/if}
 
-      <div class="overflow-x-auto mt-2">
-        <table class="table table-sm">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Atributo</th>
-              <th>Especialización?</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each data.skills as skill (skill.id)}
-              <tr>
-                <td class="font-semibold">{skill.name}</td>
-                <td>{attrLabel(skill.attribute)}</td>
-                <td>
-                  {#if skill.requires_specialization}
-                    <span class="badge badge-sm">{skill.specializations?.length ?? 0} opciones</span>
-                  {:else}
-                    <span class="text-azeroth-faint text-xs">—</span>
-                  {/if}
-                </td>
-                <td>
-                  <div class="flex gap-1">
-                    <button class="btn btn-ghost btn-xs" onclick={() => openEditSkill(skill)}>Editar</button>
-                    <form method="POST" action="?/deleteSkill" use:enhance>
-                      <input type="hidden" name="id" value={skill.id} />
-                      <button type="submit" class="btn btn-error btn-xs" onclick={(e: MouseEvent) => { if (!confirm('¿Eliminar esta habilidad?')) e.preventDefault(); }}>
-                        Eliminar
-                      </button>
-                    </form>
-                  </div>
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-        {#if data.skills.length === 0}
-          <p class="text-azeroth-faint text-center py-4">No hay habilidades registradas.</p>
-        {/if}
-      </div>
+      {#each data.skills as skill (skill.id)}
+        {@const specCount = skill.specializations?.length ?? 0}
+        <div class="cat-row">
+          <b>{skill.name}</b>
+          <span class="sub">
+            {attrLabel(skill.attribute)}
+            {#if skill.requires_specialization}· con espec. ({specCount}){:else}· sin espec.{/if}
+          </span>
+          <span class="acts">
+            <button type="button" onclick={() => openEditSkill(skill)}>Editar</button>
+            <form method="POST" action="?/deleteSkill" use:enhance>
+              <input type="hidden" name="id" value={skill.id} />
+              <button type="submit" class="danger" onclick={(e: MouseEvent) => { if (!confirm('¿Eliminar esta habilidad?')) e.preventDefault(); }}>
+                Eliminar
+              </button>
+            </form>
+          </span>
+        </div>
+      {/each}
+      {#if data.skills.length === 0}
+        <p class="muted" style="font-size:.9rem;padding:8px 0">No hay habilidades registradas.</p>
+      {/if}
     </div>
-  </div>
+  </section>
 
 </div>

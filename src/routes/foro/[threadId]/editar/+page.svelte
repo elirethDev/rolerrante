@@ -27,33 +27,46 @@
     <div class="alert alert-error mb-4">{form.message}</div>
   {/if}
 
-  <form
-    method="POST"
-    use:enhance={() => {
-      pending = true;
-      return async ({ result, update }) => {
-        pending = false;
-        await update();
-      };
-    }}
-    class="space-y-4"
-  >
-    <Field label="Título" required>
-      {#snippet ctrl()}
-        <input id="title" name="title" type="text" class="input" bind:value={title} required />
-      {/snippet}
-    </Field>
+  <div class="create-wrap">
+    <form
+      method="POST"
+      use:enhance={() => {
+        pending = true;
+        return async ({ result, update }) => {
+          pending = false;
+          await update();
+        };
+      }}
+    >
+      <section class="form-card">
+        <div class="form-card-head">
+          <h2>Título</h2>
+          <span class="meta">Se mantiene la sección</span>
+        </div>
+        <div class="form-card-body">
+          <Field label="Título" required>
+            {#snippet ctrl()}
+              <input id="title" name="title" type="text" class="input" bind:value={title} required />
+            {/snippet}
+          </Field>
+        </div>
+      </section>
 
-    <input type="hidden" name="content" bind:value={content} />
-    <Field label="Contenido" required>
-      {#snippet ctrl()}
-        <TipTapEditor {content} onChange={(html) => (content = html)} />
-      {/snippet}
-    </Field>
+      <section class="form-card">
+        <div class="form-card-head">
+          <h2>Primer mensaje</h2>
+          <span class="meta">Editor</span>
+        </div>
+        <div class="form-card-body">
+          <input type="hidden" name="content" bind:value={content} />
+          <TipTapEditor {content} onChange={(html) => (content = html)} />
+        </div>
+      </section>
 
-    <div class="flex gap-3">
-      <SubmitButton class="font-cinzel" {pending}>Guardar cambios</SubmitButton>
-      <a href={resolve(`/foro/${data.thread.id}` as any)} class="btn btn-ghost">Cancelar</a>
-    </div>
-  </form>
+      <div class="row" style="gap:12px;align-items:center">
+        <SubmitButton class="font-cinzel" {pending}>Guardar cambios</SubmitButton>
+        <a href={resolve(`/foro/${data.thread.id}` as any)} class="btn btn-ghost">Cancelar</a>
+      </div>
+    </form>
+  </div>
 </section>

@@ -27,7 +27,7 @@
     </div>
   </div>
   <div class="char-tags">
-    <span class="badge {statusColor(char.status)} badge-sm">{statusLabel(char.status)}</span>
+    <span class="badge {statusColor(char.status)} badge-sm no-dot">{statusLabel(char.status)}</span>
   </div>
   <div class="char-owner">por {ownerName}</div>
 </a>

@@ -14,14 +14,14 @@
 <div class="empty" data-testid="empty-state">
   {#if icon}
     {@const Icon = icon}
-    <span class="sig" aria-hidden="true"><Icon size={64} strokeWidth={1.2} /></span>
+    <Icon class="sig" size={56} strokeWidth={1.2} />
   {/if}
   <h3>{title}</h3>
   {#if description}
     <p>{description}</p>
   {/if}
   {#if children}
-    <div class="empty-cta">
+    <div class="row" style="justify-content:center;margin-top:4px">
       {@render children()}
     </div>
   {/if}

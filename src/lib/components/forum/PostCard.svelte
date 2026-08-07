@@ -111,78 +111,74 @@
   }
 </script>
 
-<article class="card bg-base-100 border border-azeroth-border mb-4" id={postAnchorId}>
-  <div class="card-body p-0 flex">
-    <div class="post-rail flex w-24 shrink-0 flex-col items-center gap-1 border-r border-azeroth-border px-3 py-4 text-center">
-      <div class="w-10 h-10 rounded-full bg-base-300 flex items-center justify-center font-cinzel text-azeroth-gold">
-        {authorName.charAt(0).toUpperCase()}
+<article class="post" class:op={isOp} id={postAnchorId}>
+  <div class="post-rail">
+    <span class="avatar avatar-lg avatar-ring" aria-hidden="true">{authorName.charAt(0).toUpperCase()}</span>
+    <span class="post-name" aria-label={authorName}>{authorName}</span>
+    <span class="post-role">
+      #{post.post_number} · {formatDateTime(post.created_at)}
+    </span>
+    {#if isOp}
+      <span class="badge badge-gold no-dot">Autora</span>
+    {/if}
+  </div>
+
+  <div class="post-body">
+    {#if replyToAuthor}
+      <div class="reply-to">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 10c0 4-3 7-8 7v3l-6-5 6-5v3c3 0 5-1 5-3h3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /></svg>
+        Respondiendo a <b>{replyToAuthor}</b>
       </div>
-      <p class="font-cinzel text-sm leading-tight break-words" aria-label={authorName}>{authorName}</p>
-      <p class="text-xs text-azeroth-muted leading-tight break-words">
-        #{post.post_number} · {formatDateTime(post.created_at)}
-      </p>
-      {#if isOp}
-        <span class="badge badge-gold badge-xs mt-1">Autora</span>
-      {/if}
+    {/if}
+
+    <div class="post-text">
+      <TipTapViewer content={body} />
     </div>
 
-    <div class="post-body flex-1 min-w-0 px-4 py-4">
-        {#if replyToAuthor}
-          <div class="reply-to flex items-center gap-1 text-xs text-azeroth-gold-dim mb-2">
-            <span aria-hidden="true">↩</span>
-            Respondiendo a <span class="font-medium">{replyToAuthor}</span>
-          </div>
-        {/if}
-
-        <div class="prose prose-invert max-w-none min-h-[6rem]">
-          <TipTapViewer content={body} />
-        </div>
-
+    <div class="post-footer">
+      <span class="edit-history" data-testid="edit-marker">
         {#if editMarker}
-          <p class="text-xs text-azeroth-faint mt-3" data-testid="edit-marker">{editMarker}</p>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 20h4L18 10l-4-4L4 16v4zM13.5 6.5l4 4" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /></svg>
+          {editMarker}
+        {/if}
+      </span>
+
+      <div class="post-actions">
+        <span class="badge badge-neutral no-dot" data-testid="like-chip">
+          <span aria-hidden="true">❤️</span>
+          {likeCount} Gracias
+        </span>
+
+        {#if !isGuest}
+          <form method="POST" action="?/like" use:enhance={toggleLike} class="inline">
+            <input type="hidden" name="post_id" value={post.id} />
+            <button
+              type="submit"
+              data-testid="like-toggle"
+              aria-pressed={viewerLiked}
+              aria-label={viewerLiked ? 'Quitar Gracias' : 'Dar Gracias'}
+            >
+              <span aria-hidden="true">❤️</span>
+              Gracias
+            </button>
+          </form>
         {/if}
 
-        <div class="post-footer mt-3 flex justify-end gap-3">
-          <ReportModal postId={post.id} />
-          <button type="button" class="btn btn-xs btn-ghost" onclick={handleCitar}>Citar</button>
-        </div>
-
-        <div class="flex items-center gap-3 mt-3">
-          <span class="badge badge-neutral badge-outline gap-1" data-testid="like-chip">
-            <span aria-hidden="true">❤️</span>
-            {likeCount} Gracias
-          </span>
-
-          {#if !isGuest}
-            <form method="POST" action="?/like" use:enhance={toggleLike} class="inline">
-              <input type="hidden" name="post_id" value={post.id} />
-              <button
-                type="submit"
-                class="btn btn-xs btn-ghost gap-1"
-                data-testid="like-toggle"
-                aria-pressed={viewerLiked}
-                aria-label={viewerLiked ? 'Quitar Gracias' : 'Dar Gracias'}
-              >
-                <span aria-hidden="true">❤️</span>
-                {viewerLiked ? 'Gracias' : 'Gracias'}
-              </button>
-            </form>
-          {/if}
-        </div>
-
-        {#if likeError}
-          <p class="text-xs text-error mt-2" data-testid="like-error" role="alert">{likeError}</p>
-        {/if}
-
-        <div class="flex items-center gap-3 mt-3">
-          <button type="button" class="btn btn-ghost btn-xs gap-1" onclick={copyShareLink}>
-            <Share2 size={16} />
-            Compartir
-          </button>
-          {#if copied}
-            <span class="text-xs text-success font-medium" role="status" data-testid="share-feedback">¡Enlace copiado!</span>
-          {/if}
-        </div>
+        <button type="button" onclick={handleCitar}>Citar</button>
+        <button type="button" onclick={copyShareLink}>
+          <Share2 size={16} />
+          Compartir
+        </button>
+        <ReportModal postId={post.id} />
+      </div>
     </div>
+
+    {#if likeError}
+      <p class="text-xs text-error mt-2" data-testid="like-error" role="alert">{likeError}</p>
+    {/if}
+
+    {#if copied}
+      <span class="text-xs text-success font-medium" role="status" data-testid="share-feedback">¡Enlace copiado!</span>
+    {/if}
   </div>
 </article>

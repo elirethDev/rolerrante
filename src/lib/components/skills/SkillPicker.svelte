@@ -36,8 +36,7 @@
     onSpecChange,
   }: Props = $props();
 
-  const sizeClass = $derived(size === 'sm' ? 'fieldset-sm' : '');
-  const legendClass = $derived(size === 'sm' ? 'text-[13px]' : '');
+  const sizeClass = $derived(size === 'sm' ? 'field-sm' : '');
 
   let grouped = $derived.by(() => {
     const groups: Record<string, SkillShape[]> = {};
@@ -88,79 +87,96 @@
 
 {#if mode === 'create'}
   {#each grouped as group (group.attr)}
-    <div class="mb-4">
-      <h3 class="font-cinzel text-azeroth-gold mb-2">{group.label}</h3>
-      <div class="space-y-3">
+    <div class="skill-group">
+      <div class="skill-group-head">
+        <h3>{group.label}</h3>
+        <span class="skill-count">{group.list.length}</span>
+      </div>
+      <div class="skill-group-body">
         {#each group.list as s (s.id ?? s.skill_id ?? s.skill?.id ?? '')}
-          <div class="flex flex-col md:flex-row md:items-center gap-2 p-2 bg-base-100 rounded border border-azeroth-border">
-            <div class="flex-1">
-              <p class="font-semibold">{skillName(s)}</p>
+          <div class="skill-row">
+            <div class="s-name">
+              <b>{skillName(s)}</b>
               {#if (s.description ?? s.skill?.description) != null}
-                <p class="text-xs text-azeroth-muted">{s.description ?? s.skill?.description}</p>
+                <span>{s.description ?? s.skill?.description}</span>
               {/if}
             </div>
-            <fieldset class="fieldset {sizeClass}">
-              <legend class="fieldset-legend {legendClass}">Nivel</legend>
-              <div class="flex items-center gap-2">
+            <div class="field s-up {sizeClass}">
+              <label for="skill_level_{skillId(s)}">Nivel</label>
+              <input
+                id="skill_level_{skillId(s)}"
+                name="{namePrefix}skill_level_{skillId(s)}"
+                type="number"
+                class="input"
+                min="0"
+                max="10"
+                value={levels[skillId(s)] ?? 0}
+                oninput={(e) => handleLevel(s, e)}
+              />
+            </div>
+            {#if hasSpecInput(s)}
+              <div class="field s-spec {sizeClass}">
+                <label for="skill_spec_{skillId(s)}">Especialización</label>
                 <input
-                  id="skill_level_{skillId(s)}"
-                  name="{namePrefix}skill_level_{skillId(s)}"
-                  type="number"
-                  class="input w-20 input-sm"
-                  min="0"
-                  max="10"
-                  value={levels[skillId(s)] ?? 0}
-                  oninput={(e) => handleLevel(s, e)}
+                  id="skill_spec_{skillId(s)}"
+                  name="{namePrefix}skill_spec_{skillId(s)}"
+                  type="text"
+                  class="input"
+                  placeholder="Especialización"
+                  value={specs[skillId(s)] ?? ''}
+                  oninput={(e) => handleSpec(s, e)}
                 />
-                {#if hasSpecInput(s)}
-                  <input
-                    name="{namePrefix}skill_spec_{skillId(s)}"
-                    type="text"
-                    class="input input-sm"
-                    placeholder="Especialización"
-                    value={specs[skillId(s)] ?? ''}
-                    oninput={(e) => handleSpec(s, e)}
-                  />
-                {/if}
               </div>
-            </fieldset>
+            {/if}
           </div>
         {/each}
       </div>
     </div>
   {/each}
 {:else}
-  {#each skills as s (s.id ?? s.skill_id ?? s.skill?.id ?? '')}
-    <div class="flex flex-col md:flex-row md:items-center gap-2 p-2 bg-base-100 rounded border border-azeroth-border">
-      <div class="flex-1">
-        <p class="font-semibold">{skillName(s)}</p>
-        <p class="text-xs text-azeroth-muted">Actual: {currentLevel(s)} · {s.attribute ?? s.skill?.attribute ?? ''}</p>
+  {#each grouped as group (group.attr)}
+    <div class="skill-group">
+      <div class="skill-group-head">
+        <h3>{group.label}</h3>
+        <span class="skill-count">{group.list.length}</span>
       </div>
-      <fieldset class="fieldset {sizeClass}">
-        <legend class="fieldset-legend {legendClass}">Subir a</legend>
-        <div class="flex items-center gap-2">
-          <input
-            id="skill_level_{skillId(s)}"
-            name="{namePrefix}skill_level_{skillId(s)}"
-            type="number"
-            class="input w-20 input-sm"
-            min={currentLevel(s)}
-            max="10"
-            value={levels[skillId(s)] ?? currentLevel(s)}
-            oninput={(e) => handleLevel(s, e)}
-          />
-          {#if hasSpecInput(s)}
-            <input
-              name="{namePrefix}skill_spec_{skillId(s)}"
-              type="text"
-              class="input input-sm"
-              placeholder="Especialización"
-              value={specs[skillId(s)] ?? s.specialization ?? ''}
-              oninput={(e) => handleSpec(s, e)}
-            />
-          {/if}
-        </div>
-      </fieldset>
+      <div class="skill-group-body">
+        {#each group.list as s (s.id ?? s.skill_id ?? s.skill?.id ?? '')}
+          <div class="skill-row">
+            <div class="s-name">
+              <b>{skillName(s)}</b>
+              <span>Actual: {currentLevel(s)} · {group.label}</span>
+            </div>
+            <div class="field s-up {sizeClass}">
+              <label for="skill_level_{skillId(s)}">Subir a</label>
+              <input
+                id="skill_level_{skillId(s)}"
+                name="{namePrefix}skill_level_{skillId(s)}"
+                type="number"
+                class="input"
+                min={currentLevel(s)}
+                max="10"
+                value={levels[skillId(s)] ?? currentLevel(s)}
+                oninput={(e) => handleLevel(s, e)}
+              />
+            </div>
+            {#if hasSpecInput(s)}
+              <div class="field s-spec {sizeClass}">
+                <label for="skill_spec_{skillId(s)}">Especialización</label>
+                <input
+                  id="skill_spec_{skillId(s)}"
+                  name="{namePrefix}skill_spec_{skillId(s)}"
+                  type="text"
+                  class="input"
+                  placeholder="Especialización"
+                  value={specs[skillId(s)] ?? s.specialization ?? ''}
+                  oninput={(e) => handleSpec(s, e)}
+                />
+              </div>
+            {/if}
+          </div>
+        {/each}
+      </div>
     </div>
   {/each}
 {/if}

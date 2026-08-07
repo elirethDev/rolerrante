@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import Page from "../../../src/routes/admin/catalogos/+page.svelte";
 
 describe("admin/catalogos (REQ-AF-01, FS-01/04)", () => {
-  it("renders all form fields as Field size=sm with legible 13px legends", async () => {
+  it("renders all form fields as OD labeled fields with legible group labels", async () => {
     render(Page, {
       data: { races: [], skills: [] } as never,
       form: null as never,
@@ -15,39 +15,30 @@ describe("admin/catalogos (REQ-AF-01, FS-01/04)", () => {
       screen.getByRole("button", { name: "Nueva habilidad" }),
     );
 
-    const fieldsets = document.querySelectorAll("fieldset");
-    expect(fieldsets.length).toBeGreaterThan(0);
+    // OD .field markup: each control has an associated label
+    const fieldLabels = Array.from(
+      document.querySelectorAll(".field > label"),
+    ).map((l) => l.textContent?.trim());
+    expect(fieldLabels).toContain("Nombre");
+    expect(fieldLabels).toContain("Grupo");
+    expect(fieldLabels).toContain("Atributo");
 
-    // every fieldset is a Field with sm density
-    for (const fs of fieldsets) {
-      expect(fs.className).toContain("fieldset-sm");
-    }
+    // nested group headers use the OD .label utility (Datos físicos / Edad)
+    const groupLabels = Array.from(
+      document.querySelectorAll(".field .label"),
+    ).map((l) => l.textContent?.trim());
+    expect(groupLabels).toContain("Datos físicos");
+    expect(groupLabels).toContain("Edad");
+    expect(groupLabels).toContain("Requiere especialización");
 
-    // every legend is legible 13px, no micro 11px text-xs remains
-    const legends = document.querySelectorAll("legend");
-    expect(legends.length).toBeGreaterThan(0);
-    for (const legend of legends) {
-      expect(legend.className).toContain("text-[13px]");
-      expect(legend.className).not.toContain("text-xs");
-    }
-
-    // nested group legends (Datos físicos / Edad) are also sm
-    const groupLegends = [...legends].filter((l) =>
-      ["Datos físicos", "Edad"].includes(l.textContent?.trim() ?? ""),
-    );
-    expect(groupLegends.length).toBe(2);
-    for (const gl of groupLegends) {
-      expect(gl.className).toContain("text-[13px]");
-      expect((gl.closest("fieldset") as HTMLElement).className).toContain(
-        "fieldset-sm",
-      );
-    }
+    // no fieldset wrapping (OD fields, not daisyUI Fieldset)
+    expect(document.querySelectorAll("fieldset")).toHaveLength(0);
 
     // no max-w constraint on admin container (REQ-FS-04 admin full-width)
     expect(document.querySelector('[class*="max-w"]')).toBeNull();
   });
 
-  it("removes the horizontal label-row checkbox pattern (REQ-FS-02)", async () => {
+  it("wraps the requires-specialization checkbox in a label.check (REQ-FS-02)", async () => {
     render(Page, {
       data: { races: [], skills: [] } as never,
       form: null as never,
@@ -60,10 +51,12 @@ describe("admin/catalogos (REQ-AF-01, FS-01/04)", () => {
       'input[name="requires_specialization"]',
     ) as HTMLInputElement;
     expect(checkbox).toBeInTheDocument();
-    // the checkbox control sits inside a Field: no sibling <label> row
-    const wrapper = checkbox.closest("fieldset") as HTMLElement;
-    expect(wrapper).toBeInTheDocument();
-    expect(wrapper.querySelector("legend")?.textContent).toContain(
+    // the checkbox control sits inside a .check label within an OD .field:
+    // no separate label-row pattern.
+    expect(checkbox.closest("label.check")).toBeTruthy();
+    const field = checkbox.closest(".field") as HTMLElement;
+    expect(field).toBeTruthy();
+    expect(field.querySelector(".label")?.textContent).toContain(
       "Requiere especialización",
     );
     expect(document.querySelector("fieldset > label")).toBeNull();

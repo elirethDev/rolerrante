@@ -1,6 +1,5 @@
 <script lang="ts">
   /* eslint-disable @typescript-eslint/no-explicit-any -- resolve() is typed for literal routes; forum hrefs are runtime strings */
-  import { MessagesSquare, FileText } from '@lucide/svelte';
   import { resolve } from '$app/paths';
   import type { ThreadListItem } from '$lib/forum';
   import { formatDate } from '$lib/utils';
@@ -17,40 +16,36 @@
   };
 </script>
 
-<ul class="divide-y divide-azeroth-border">
+<ul class="stack">
   {#each threads as t (t.id)}
-    <li class="py-3">
-      <a href={resolve(`/foro/${t.id}` as any)} class="block hover:bg-base-100 rounded-lg px-2 -mx-2 py-1">
-        <div class="flex items-center gap-2">
-          {#if t.content_type === 'debate'}
-            <MessagesSquare size={16} class="text-azeroth-gold shrink-0" />
-          {:else}
-            <FileText size={16} class="text-azeroth-gold shrink-0" />
+    <li class="thread-row">
+      <div class="thread-flags">
+        {#if t.is_sticky}
+          <PinBadge />
+        {/if}
+        {#if t.is_locked}
+          <LockBadge />
+        {/if}
+      </div>
+      <div class="thread-main">
+        <a class="thread-title" href={resolve(`/foro/${t.id}` as any)}>{t.title}</a>
+        <div class="thread-meta">
+          <span class="tag">{contentTypeLabel[t.content_type] ?? t.content_type}</span>
+          {#if t.status === 'pendiente'}
+            <span class="badge badge-warning no-dot">Pendiente</span>
           {/if}
-          <span class="font-medium line-clamp-1">{t.title}</span>
-          {#if t.is_sticky}
-            <PinBadge />
-          {/if}
-          {#if t.is_locked}
-            <LockBadge />
-          {/if}
-        </div>
-        <div class="text-xs text-azeroth-muted mt-1 pl-6 flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span>{contentTypeLabel[t.content_type] ?? t.content_type}</span>
-          {#if t.status === 'pendiente'}· <span class="badge badge-warning badge-xs">Pendiente</span>{/if}
-          <span>· {formatDate(t.created_at)}</span>
-          <span class="inline-flex items-center gap-1" aria-label={`${t.posts_count ?? 0} mensajes`}>
-            <MessagesSquare size={12} class="inline" />
-            {t.posts_count ?? 0} mensajes
-          </span>
+          <span>{formatDate(t.created_at)}</span>
           {#if t.lastPost?.author_display_name}
-            <span class="inline-flex items-center gap-1">
+            <span data-testid="last-post">
               <span>Último:</span>
-              <span class="text-azeroth-text-soft font-medium">{t.lastPost.author_display_name}</span>
+              <span class="font-medium" style="color:var(--text-soft)">{t.lastPost.author_display_name}</span>
             </span>
           {/if}
         </div>
-      </a>
+      </div>
+      <div class="thread-count">
+        <b>{`${t.posts_count ?? 0} mensajes`}</b>
+      </div>
     </li>
   {/each}
 </ul>
