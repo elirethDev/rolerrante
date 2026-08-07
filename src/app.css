@@ -826,12 +826,13 @@ h1, h2, h3, h4, h5, h6, .font-cinzel {
   font-family: var(--font-mono);
 }
 
-/* editor tip-tap visual (simulado) */
+/* editor tip-tap visual (simulado) — sin fondo: la clase `tiptap` era inyectada
+   por TipTap y pintaba una caja azul (azerioth-sunken) detrás de los posts. El
+   editor real usa `.composer-body` (od.css); este bloque queda neutralizado. */
 .tiptap {
-  border: 1px solid var(--color-azeroth-border);
   border-radius: var(--radius-md);
   overflow: hidden;
-  background: var(--color-azeroth-sunken);
+  background: transparent;
 }
 .tt-toolbar {
   display: flex;

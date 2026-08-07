@@ -113,19 +113,49 @@ describe('CategoryTree (OD forum-index rows)', () => {
     expect(header).toHaveTextContent('12mensajes');
   });
 
-  it('a root without children links its title and shows its name in the row', () => {
+  it('a root without children shows its direct threads as rows (no duplicate section row)', () => {
     render(CategoryTree, {
-      categories: [cat({ id: 'r1', name: 'General', description: 'Charlas libres', threads_count: 2, posts_count: 4 })],
+      categories: [
+        cat({
+          id: 'r1',
+          name: 'General',
+          description: 'Charlas libres',
+          threads: [
+            {
+              id: 't1',
+              title: 'Bienvenida al reino',
+              content_type: 'debate',
+              status: 'abierto',
+              is_locked: false,
+              is_sticky: false,
+              created_at: new Date().toISOString(),
+              edited_at: null,
+              category_id: 'r1',
+              posts_count: 3,
+              author: { id: 'a1', display_name: 'Kareth', username: 'kareth' },
+            },
+          ],
+          threads_count: 1,
+          posts_count: 4,
+        }),
+      ],
     });
+    // The section title is a heading (not a link), no duplicated section row.
     const title = screen.getByRole('heading', { level: 2, name: 'General' });
-    const titleLink = title.querySelector('a');
-    expect(titleLink).not.toBeNull();
-    expect(titleLink?.getAttribute('href')).toBe('/foro/categoria/r1');
-    // The leaf row shows the category's own name (not a hardcoded label) so the
-    // admin-defined section name is what the users see.
-    const row = screen.getByTestId('forum-row');
-    expect(row).toHaveTextContent('General');
-    expect(row.querySelector('a')?.getAttribute('href')).toBe('/foro/categoria/r1');
+    expect(title.querySelector('a')).toBeNull();
+    expect(screen.queryByTestId('forum-row')).not.toBeInTheDocument();
+    // Direct threads render as their own rows linking to /foro/[id].
+    const direct = screen.getByTestId('direct-thread-row');
+    expect(direct).toHaveTextContent('Bienvenida al reino');
+    expect(direct.getAttribute('href')).toBe('/foro/t1');
+  });
+
+  it('a root without children and without threads is not rendered (nothing to show)', () => {
+    render(CategoryTree, {
+      categories: [cat({ id: 'r1', name: 'General', description: 'Charlas libres' })],
+    });
+    expect(screen.queryByRole('heading', { level: 2, name: 'General' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Esta sección aún no tiene categorías.')).not.toBeInTheDocument();
   });
 
   it('does not link a root title when it has children (navigation lives in the rows)', () => {

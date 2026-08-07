@@ -67,16 +67,10 @@
 
 {#each categories as cat (cat.id)}
   {@const rows = visibleChildren(cat)}
-  {@const leafReachable = cat.children.length === 0 && cat.flags.can_view}
-  {#if rows.length > 0 || leafReachable}
+  {@const hasThreads = (cat.threads?.length ?? 0) > 0}
+  {#if rows.length > 0 || hasThreads}
     <section class="forum-group" data-forum-group>
-      <h2 class="forum-group-title">
-        {#if leafReachable}
-          <a href={resolve(`/foro/categoria/${cat.id}` as any)}>{cat.name}</a>
-        {:else}
-          {cat.name}
-        {/if}
-      </h2>
+      <h2 class="forum-group-title">{cat.name}</h2>
       <div class="forum-panel">
         {#if rows.length > 0}
           <div class="forum-cat" data-testid="forum-cat">
@@ -91,9 +85,7 @@
               </span>
             </span>
           </div>
-        {/if}
 
-        {#if rows.length > 0}
           {#each rows as child (child.id)}
             {@const last = lastPostBlock(child.lastPost)}
             <article class="forum-row" data-testid="forum-row">
@@ -114,23 +106,26 @@
             </article>
           {/each}
         {:else}
-          {@const last = lastPostBlock(cat.lastPost)}
-          <article class="forum-row" data-testid="forum-row">
-            <a href={resolve(`/foro/categoria/${cat.id}` as any)} class="forum-main">
-              <span class="ico"><FolderOpen size={20} /></span>
-              <span class="forum-row-text">
-                <span class="forum-title">{cat.name}</span>
-                {#if cat.description}
-                  <span class="forum-desc">{cat.description}</span>
-                {/if}
+          {#each cat.threads as t (t.id)}
+            <a
+              href={resolve(`/foro/${t.id}` as any)}
+              class="forum-row"
+              data-testid="direct-thread-row"
+            >
+              <span class="forum-main">
+                <span class="ico"><FolderOpen size={20} /></span>
+                <span class="forum-row-text">
+                  <span class="forum-title">{t.title}</span>
+                  {#if t.author}
+                    <span class="forum-desc">por {t.author?.display_name ?? t.author?.username ?? 'desconocido'}</span>
+                  {/if}
+                </span>
+              </span>
+              <span class="forum-stats" data-testid="forum-stats">
+                <b>{compact(t.posts_count ?? 0)}</b><span>mensajes</span>
               </span>
             </a>
-            <div class="forum-stats" data-testid="forum-stats">
-              <b>{compact(cat.threads_count ?? 0)}</b><span>temas</span>
-              <b>{compact(cat.posts_count ?? 0)}</b><span>mensajes</span>
-            </div>
-            {@render lastpost(last)}
-          </article>
+          {/each}
         {/if}
       </div>
     </section>
