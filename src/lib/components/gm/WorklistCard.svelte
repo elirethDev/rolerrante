@@ -1,7 +1,6 @@
 <script lang="ts">
   import { formatRelativeTime } from '$lib/utils';
   import { CircleCheck } from '@lucide/svelte';
-  import Avatar from '$lib/components/ui/Avatar.svelte';
   import { TYPE_LABELS, type WorklistItem, type WorklistItemType } from './types';
 
   // Per-type approve CTA (design gm.html): the label matches what the RPC does.
@@ -30,6 +29,8 @@
 
   const age = $derived(formatRelativeTime(item.createdAt));
   const typeLabel = $derived(TYPE_LABELS[item.type]);
+  // Author avatar initial (design gm.html: avatar avatar-lg avatar-ring).
+  const initial = $derived((item.author || '?').trim().charAt(0).toUpperCase() || '?');
 
   // Inline review (design gm.html): the GM writes a comment and then approves
   // or rejects in the same view. The note is only forwarded to the callbacks
@@ -47,95 +48,95 @@
 <article
   data-testid="wl-card"
   data-done={done || undefined}
-  class="card bg-base-200 border border-azeroth-border mb-2 {done ? 'opacity-80' : ''}"
+  class="wl-card {done ? 'done' : ''}"
 >
-  <div class="card-body py-3">
-    <div class="flex flex-row items-center gap-3">
-      <Avatar name={item.author} alt={item.author || 'Autor'} size="lg" ring class="shrink-0" />
-      <div class="min-w-0 flex-1">
-        <a data-testid="wl-detail" href={item.detailHref} class="font-semibold hover:underline">
-          {item.name}
-        </a>
-        <div class="text-xs text-azeroth-muted flex flex-wrap items-center gap-1.5">
-          <span data-testid="wl-type" class="badge badge-sm badge-outline badge-ghost">{typeLabel}</span>
-          {item.author}
-          <span data-testid="wl-age" class="ml-1">· {age}</span>
-        </div>
-      </div>
-      {#if item.stale}
-        <span data-testid="wl-stale" class="badge badge-warning badge-outline">Sin respuesta &gt; 48 h</span>
-      {/if}
-      <div class="flex flex-row gap-1 shrink-0">
-        {#if done}
-          <span
-            data-testid="wl-done"
-            class="badge gap-1 border-azeroth-gold-dim bg-azeroth-sunken text-azeroth-gold-bright"
-          >
-            <CircleCheck size={14} aria-hidden="true" />
-            Aprobado
-          </span>
-        {:else}
-          {#if item.type !== 'evento'}
-            <button
-              type="button"
-              class="btn btn-xs btn-error"
-              data-testid="wl-reject"
-              disabled={busy}
-              onclick={() => emit(onReject)}
-            >
-              Rechazar
-            </button>
-          {/if}
-          <button
-            type="button"
-            class="btn btn-xs btn-ghost"
-            data-testid="wl-review"
-            onclick={() => onReview?.(item)}
-          >
-            Revisar
-          </button>
-          <a data-testid="wl-preview" href={item.detailHref} class="btn btn-xs btn-ghost">
-            Vista previa
-          </a>
-          {#if item.type !== 'evento'}
-            <button
-              type="button"
-              class="btn btn-xs btn-ghost"
-              data-testid="wl-comment"
-              aria-expanded={commentOpen}
-              disabled={busy}
-              onclick={() => (commentOpen = !commentOpen)}
-            >
-              {commentOpen ? 'Cerrar comentario' : 'Comentar'}
-            </button>
-          {/if}
-          <button
-            type="button"
-            class="btn btn-xs btn-success"
-            data-testid="wl-approve"
-            disabled={busy}
-            onclick={() => emit(onApprove)}
-          >
-            {APPROVE_LABELS[item.type] ?? 'Aprobar'}
-          </button>
-        {/if}
+  <div class="top">
+    <span class="avatar avatar-lg avatar-ring" aria-hidden="true">{initial}</span>
+    <div class="meta-box">
+      <a data-testid="wl-detail" href={item.detailHref} class="wl-title">{item.name}</a>
+      <div class="wl-meta">
+        <span data-testid="wl-type" class="tag {item.type === 'ficha' ? 'blue' : ''}">
+          {typeLabel}
+        </span>
+        <span>presentada por&nbsp;<b class="wl-author">{item.author}</b></span>
+        <span class="sep">·</span>
+        <span data-testid="wl-age">{age}</span>
       </div>
     </div>
+    {#if item.stale}
+      <span data-testid="wl-stale" class="stale-mark">Sin respuesta &gt; 48 h</span>
+    {/if}
+  </div>
 
-    {#if commentOpen}
-      <div class="mt-3 border-t border-azeroth-border pt-3" data-testid="wl-inline-edit">
-        <label for="wl-notes-{item.id}" class="text-xs text-azeroth-muted block mb-1">
-          Comentario para {item.author || 'la mesa'}
-        </label>
+  {#if done}
+    <div class="wl-actions">
+      <span data-testid="wl-done" class="badge badge-success no-dot">
+        <CircleCheck size={14} aria-hidden="true" />
+        Aprobado
+      </span>
+    </div>
+  {:else}
+    <div class="wl-actions">
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        data-testid="wl-approve"
+        disabled={busy}
+        onclick={() => emit(onApprove)}
+      >
+        {APPROVE_LABELS[item.type] ?? 'Aprobar'}
+      </button>
+      {#if item.type !== 'evento'}
+        <button
+          type="button"
+          class="btn btn-danger btn-sm"
+          data-testid="wl-reject"
+          disabled={busy}
+          onclick={() => emit(onReject)}
+        >
+          Rechazar
+        </button>
+      {/if}
+      <button
+        type="button"
+        class="btn btn-secondary btn-sm"
+        data-testid="wl-review"
+        onclick={() => onReview?.(item)}
+      >
+        Revisar
+      </button>
+      {#if item.type !== 'evento'}
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          data-testid="wl-comment"
+          aria-expanded={commentOpen}
+          disabled={busy}
+          onclick={() => (commentOpen = !commentOpen)}
+        >
+          {commentOpen ? 'Cerrar comentario' : 'Comentar'}
+        </button>
+      {/if}
+      <a data-testid="wl-preview" href={item.detailHref} class="btn btn-ghost btn-sm">
+        Vista previa
+      </a>
+    </div>
+  {/if}
+
+  {#if commentOpen}
+    <div class="inline-edit open" data-testid="wl-inline-edit">
+      <div class="field" style="margin:0">
+        <label for="wl-notes-{item.id}">Comentario para {item.author || 'la mesa'}</label>
         <textarea
           id="wl-notes-{item.id}"
           data-testid="wl-notes"
           bind:value={note}
           rows={3}
-          class="textarea textarea-bordered w-full text-sm"
+          class="textarea"
+          style="min-height:80px"
           placeholder="P. ej. Falta añadir el vínculo a la crónica de origen… (se adjunta al aprobar o rechazar)"
         ></textarea>
       </div>
-    {/if}
-  </div>
+    </div>
+  {/if}
 </article>

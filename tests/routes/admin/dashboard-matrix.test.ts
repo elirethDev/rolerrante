@@ -45,6 +45,8 @@ describe("admin role-matrix load (OD extras)", () => {
 });
 
 describe("admin role-matrix panel (OD extras)", () => {
+  const ROLES = ["pendiente", "rolero", "gm", "admin"];
+
   const makeData = (over: Record<string, unknown> = {}) => ({
     users: 10,
     nonAdmin: 8,
@@ -56,40 +58,47 @@ describe("admin role-matrix panel (OD extras)", () => {
     ...over,
   });
 
-  it("renders role columns and the minimum-read column", () => {
+  it("renders role columns and the minimum-read info", () => {
     render(Page, { data: makeData() as any });
     const matrix = screen.getByTestId("perm-matrix");
     expect(matrix).toBeInTheDocument();
-    for (const label of ["Pendiente", "Rolero", "Administrador"]) {
+    // OD .perm-grid head cells carry the role columns.
+    expect(matrix.querySelector(".perm-grid .head")).toBeInTheDocument();
+    for (const label of ["Pendiente", "Rolero", "Administrador", "Game Master"]) {
       expect(screen.getAllByText(label).length).toBeGreaterThan(0);
     }
-    expect(screen.getAllByText("Game Master").length).toBeGreaterThan(0);
-    expect(screen.getByText("Lectura mínima")).toBeInTheDocument();
+    // Minimum-read is rendered as a per-section chip (Público when unset).
+    expect(screen.getByText("Público")).toBeInTheDocument();
   });
 
-  it("shows the category minimum-read badge (Público / rol)", () => {
+  it("shows the category minimum-read chip (Público / rol)", () => {
     render(Page, { data: makeData() as any });
     expect(screen.getByText("General")).toBeInTheDocument();
     expect(screen.getByText("Zona GM")).toBeInTheDocument();
+    // Zona GM has min_read_role='gm' -> roleLabel 'Game Master' chip.
+    expect(screen.getByText("min Game Master")).toBeInTheDocument();
     expect(screen.getByText("Público")).toBeInTheDocument();
-    // Zona GM has min_read_role='gm' -> roleLabel 'Game Master' (already asserted
-    // as a column header too); assert via the row cell count of GM cells.
     const gmCells = Array.from(document.querySelectorAll('[data-testid="perm-cell"]'));
     expect(gmCells.length).toBeGreaterThan(0);
   });
 
   it("matches the effective permission per role for a category", () => {
     render(Page, { data: makeData() as any });
-    // c1/rolero -> Ver + Publicar; c2/gm -> Ver only; c1/pendiente -> —
+    // OD .perm-grid rows are flat divs: per category → [name, role cells...].
+    const grid = document.querySelector('[data-testid="perm-matrix"] .perm-grid') as HTMLElement;
+    const cells = Array.from(grid.querySelectorAll(":scope > div")) as HTMLElement[];
+    const firstData = cells.findIndex((c) => c.classList.contains("cell-title"));
     const cellFor = (catName: string, role: string) => {
-      const row = screen.getByText(catName).closest("tr") as HTMLTableRowElement;
-      return Array.from(row.querySelectorAll('[data-testid="perm-cell"]')).find(
-        (td) => td.getAttribute("data-role") === role,
-      ) as HTMLTableCellElement;
+      const idx = cells.findIndex(
+        (c) => c.classList.contains("cell-title") && c.textContent?.includes(catName),
+      );
+      return cells[idx + 1 + ROLES.indexOf(role)];
     };
-    expect(cellFor("General", "rolero").textContent).toContain("Ver + Publicar");
+    expect(firstData).toBeGreaterThanOrEqual(0);
+    // c1/rolero -> Ver + Publicar (VP); c2/gm -> Ver only (V); c1/pendiente -> —
+    expect(cellFor("General", "rolero").textContent).toContain("VP");
     expect(cellFor("General", "pendiente").textContent).toContain("—");
-    expect(cellFor("Zona GM", "gm").textContent).toContain("Ver");
-    expect(cellFor("Zona GM", "gm").textContent).not.toContain("Publicar");
+    expect(cellFor("Zona GM", "gm").textContent).toContain("V");
+    expect(cellFor("Zona GM", "gm").textContent).not.toContain("P");
   });
 });

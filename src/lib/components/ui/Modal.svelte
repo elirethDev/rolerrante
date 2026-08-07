@@ -71,7 +71,8 @@
 </script>
 
 {#if open}
-  <div class="modal open">
+  <!-- design rolerrante.css: .modal.open > .modal-backdrop + .modal-panel -->
+  <div class="modal open {className}">
     <div class="modal-backdrop" onclick={close} aria-hidden="true"></div>
     <div
       bind:this={panel}
