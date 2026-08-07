@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   resolveEffectivePermissions,
+  effectiveForCategory,
   validateForumImageUrls,
   type PermissionFlags,
   type PermissionInput,
@@ -13,13 +14,13 @@ type SectionRow = PermissionFlags;
 // RED test (REQ-FORUM-02.4 / 04.2): table-driven over role x section x thread combos.
 describe("resolveEffectivePermissions", () => {
   it.each<UserRole>(["pendiente", "rolero", "gm", "admin"])(
-    "returns read-only defaults for a guest (%s) with no section/thread grants",
+    "defaults: a guest can READ public sections; can_post requires a grant (%s)",
     (role) => {
       const input: PermissionInput = { section: null, thread: null, role };
       const result = resolveEffectivePermissions(input);
       if (role === "pendiente") {
         expect(result).toEqual({
-          can_view: false,
+          can_view: true,
           can_post: false,
           can_edit: false,
           can_lock: false,
@@ -114,6 +115,45 @@ describe("resolveEffectivePermissions", () => {
       can_edit: true,
       can_lock: true,
     });
+  });
+});
+
+// RED test: section permissions cascade to subcategories unless they carry their own rule.
+describe("effectiveForCategory", () => {
+  const base = (over: Partial<PermissionFlags> = {}): PermissionFlags => ({
+    can_view: false,
+    can_post: false,
+    can_edit: false,
+    can_lock: false,
+    ...over,
+  });
+
+  it("a subcategory with no own row inherits its parent SECTION row", () => {
+    const parent = base({ can_view: true, can_post: true });
+    const flags = effectiveForCategory(null, parent, "pendiente");
+    expect(flags.can_view).toBe(true);
+    expect(flags.can_post).toBe(true); // inherit, not default
+    expect(flags.can_edit).toBe(false);
+  });
+
+  it("a subcategory's own row wins over the inherited parent row", () => {
+    const parent = base({ can_view: true, can_post: true });
+    const own = base({ can_view: false }); // explicitly locked down
+    const flags = effectiveForCategory(own, parent, "rolero");
+    expect(flags.can_view).toBe(false); // own rule wins
+    expect(flags.can_post).toBe(false);
+  });
+
+  it("falls back to role defaults (guest reads public) when neither row exists", () => {
+    const flags = effectiveForCategory(null, null, "pendiente");
+    expect(flags.can_view).toBe(true);
+    expect(flags.can_post).toBe(false);
+  });
+
+  it("an explicit guest can_view=false row still blocks (overrides the default)", () => {
+    const own = base({ can_view: false });
+    const flags = effectiveForCategory(own, null, "pendiente");
+    expect(flags.can_view).toBe(false);
   });
 });
 

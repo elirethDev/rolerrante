@@ -41,8 +41,11 @@ export type PermissionInput = {
 };
 
 const ROLE_DEFAULTS: Record<UserRole, PermissionFlags> = {
-  // Guests (pendiente) are read-only by default; can_view only when granted by admin.
-  pendiente: { can_view: false, can_post: false, can_edit: false, can_lock: false },
+  // Guests (pendiente) can READ public sections by default ("la plaza es de
+  // lectura pública", REQ-FORUM-02.x). can_post stays false — only read. An
+  // admin can still lock a section down by creating an explicit pendiente row
+  // with can_view=false (an explicit row always overrides the default).
+  pendiente: { can_view: true, can_post: false, can_edit: false, can_lock: false },
   rolero: { can_view: true, can_post: true, can_edit: false, can_lock: false },
   gm: { can_view: true, can_post: true, can_edit: true, can_lock: true },
   admin: { can_view: true, can_post: true, can_edit: true, can_lock: true },
@@ -63,6 +66,20 @@ export function resolveEffectivePermissions({
   if (thread) flags = { ...flags, ...thread };
   flags.can_lock = flags.can_lock && isGMOrAdmin(role);
   return flags;
+}
+
+/**
+ * Resolve a category's effective permissions for a viewer. The own (sub)category
+ * row wins; otherwise the category inherits its parent SECTION's row; otherwise
+ * the role defaults apply. This makes a section-level "Ver" grant cascade to its
+ * subcategories unless they carry their own (stricter or looser) rule.
+ */
+export function effectiveForCategory(
+  own: PermissionFlags | null,
+  parent: PermissionFlags | null,
+  role: UserRole,
+): PermissionFlags {
+  return resolveEffectivePermissions({ section: own ?? parent, thread: null, role });
 }
 
 /**

@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import {
+  effectiveForCategory,
   resolveEffectivePermissions,
   forumAccessAllowed,
   requireAuth,
@@ -104,9 +105,14 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile }, url 
   const enriched = enrichThreadsWithPosts(threadList, posts);
 
   const withFlags = (c: CategoryRow): CategoryNode => {
-    const flags =
-      (permByCat.get(c.id) as PermissionFlags | undefined) ??
-      resolveEffectivePermissions({ section: null, thread: null, role });
+    // Own row wins; otherwise inherit this category's parent SECTION row; only
+    // then fall back to the role defaults (permisos de sección se extienden a sus
+    // subcategorías salvo regla propia).
+    const flags = effectiveForCategory(
+      permByCat.get(c.id) ?? null,
+      c.parent_id ? (permByCat.get(c.parent_id) ?? null) : null,
+      role,
+    );
     const own = enriched.filter((t) => t.category_id === c.id);
     const children = cats
       .filter((k) => k.parent_id === c.id)

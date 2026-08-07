@@ -1,5 +1,5 @@
 import { error, redirect } from '@sveltejs/kit';
-import { resolveEffectivePermissions, forumAccessAllowed, type PermissionFlags } from '$lib/auth';
+import { effectiveForCategory, forumAccessAllowed, type PermissionFlags } from '$lib/auth';
 import { enrichThreadsWithPosts, minReadRoleSatisfied, type PostActivityRow, type ThreadListItem, type ThreadStatus } from '$lib/forum';
 import type { UserRole } from '$lib/types';
 import type { Database } from '$lib/supabase/database.types';
@@ -51,9 +51,13 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile }, url,
     });
   }
 
-  const flags =
-    (permByCat.get(category.id) as PermissionFlags | undefined) ??
-    resolveEffectivePermissions({ section: null, thread: null, role });
+  // Own row wins; otherwise inherit this category's parent SECTION row; only then
+  // fall back to the role defaults (same cascade as the /foro index).
+  const flags = effectiveForCategory(
+    permByCat.get(category.id) ?? null,
+    category.parent_id ? (permByCat.get(category.parent_id) ?? null) : null,
+    role,
+  );
 
   // Sub-navigation: child sections the viewer may read, ordered like the index.
   const visibleCats = (catsRes.data ?? []).filter(

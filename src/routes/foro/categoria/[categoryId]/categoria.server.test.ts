@@ -138,8 +138,10 @@ describe('/foro/categoria/[categoryId] load()', () => {
     expect(result.children).toHaveLength(0);
     expect(result.totalThreads).toBe(0);
     expect(result.currentPage).toBe(1);
-    // No section_permissions row: guests fall back to role defaults (can_view false).
-    expect(result.flags.can_view).toBe(false);
+    // No section_permissions row: guests fall back to role defaults — now with
+    // READ access (plaza de lectura pública); can_post stays false.
+    expect(result.flags.can_view).toBe(true);
+    expect(result.flags.can_post).toBe(false);
   });
 
   it('404 when the section does not exist', async () => {
