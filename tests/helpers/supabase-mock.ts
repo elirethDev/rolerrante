@@ -192,6 +192,12 @@ export function makeSupabase(options: SupabaseMockOptions = {}): SupabaseMock {
         (options.inserted[table] ??= []).push(row);
         return builder;
       },
+      upsert: (row: Record<string, unknown>) => {
+        record(table, "upsert", row);
+        (options.inserted ??= {});
+        (options.inserted[table] ??= []).push(row);
+        return builder;
+      },
       update: (patch: Record<string, unknown>) => {
         record(table, "update", patch);
         return builder;

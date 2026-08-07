@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { enhance } from '$app/forms';
   import AuditBanner from '$lib/components/admin/AuditBanner.svelte';
   import AuditActionBadge from '$lib/components/admin/AuditActionBadge.svelte';
   import { formatDate, roleLabel } from '$lib/utils';
@@ -72,11 +73,11 @@
   <div class="kpi"><span class="kpi-num">{data.logs}</span><span class="kpi-label">Eventos de auditoría</span></div>
 </div>
 
-<!-- design admin.html section-permisos: read-only .perm-grid over the roles -->
+<!-- design admin.html section-permisos: editable .perm-grid (click para ciclar) -->
 <section data-testid="perm-matrix" class="perm-cat" id="permisos">
   <div class="perm-cat-head">
     <b>Permisos por sección</b>
-    <span class="meta faint" style="margin-left:auto;font-size:.76rem">solo lectura · se gestionan en /admin/foro</span>
+    <span class="meta faint" style="margin-left:auto;font-size:.76rem">click en una celda para alternar Ver / Ver+Publicar · detalle (editar/bloquear) en /admin/foro</span>
   </div>
   <div class="perm-grid">
     <div class="head">Sección</div>
@@ -94,8 +95,15 @@
       </div>
       {#each ROLES as role (role)}
         {@const perm = permFor(cat.id, role)}
-        <div data-testid="perm-cell" data-role={role} title={permTitle(perm)}>
-          {permMark(perm)}
+        {@const label = `${cat.name} — ${roleLabel(role)}: ${permTitle(perm)}`}
+        <div data-testid="perm-cell" data-role={role} title={label}>
+          <form method="POST" action="?/setSectionPerm" use:enhance class="perm-cell-form">
+            <input type="hidden" name="categoryId" value={cat.id} />
+            <input type="hidden" name="role" value={role} />
+            <button type="submit" class="perm-cell-btn" aria-label={label}>
+              {permMark(perm)}
+            </button>
+          </form>
         </div>
       {/each}
     {/each}
