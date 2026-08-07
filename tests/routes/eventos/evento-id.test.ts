@@ -34,8 +34,8 @@ const renderPage = () =>
     form: null as never,
   });
 
-describe("eventos/[id] page (forms-visual-pass / S-2)", () => {
-  it("uses the Field primitive — no inline fieldset/legend markup remains", () => {
+describe("eventos/[id] page (OD detail anatomy)", () => {
+  it("uses OD .field markup — no inline fieldset/legend markup remains", () => {
     expectNoInlineFieldsetMarkup(
       readPageSource(
         "../../../src/routes/eventos/[id]/+page.svelte",
@@ -44,34 +44,35 @@ describe("eventos/[id] page (forms-visual-pass / S-2)", () => {
     );
   });
 
-  it("renders the join form XP field via Field with legend 'Inscribir personaje'", () => {
+  it("renders the join form with OD .field + select#character_id 'Inscribir personaje'", () => {
     renderPage();
-
-    const legend = [...document.querySelectorAll("legend")].find((l) =>
-      l.textContent?.includes("Inscribir personaje"),
-    );
-    expect(legend).toBeInTheDocument();
 
     const select = document.querySelector(
       'select#character_id[name="character_id"]',
     ) as HTMLSelectElement;
     expect(select).toBeInTheDocument();
     expect(select).toHaveClass("select");
+
+    const label = [...document.querySelectorAll("label")].find((l) =>
+      l.textContent?.includes("Inscribir personaje"),
+    );
+    expect(label).toBeInTheDocument();
+    expect(label?.htmlFor).toBe("character_id");
   });
 
-  it("renders the finalize form XP field via Field with legend 'XP por participante confirmado'", () => {
+  it("renders the finalize form XP field via OD .field + input#xp", () => {
     renderPage();
-
-    const legend = [...document.querySelectorAll("legend")].find((l) =>
-      l.textContent?.includes("XP por participante confirmado"),
-    );
-    expect(legend).toBeInTheDocument();
 
     const input = document.querySelector(
       'input#xp[name="xp"]',
     ) as HTMLInputElement;
     expect(input).toBeInTheDocument();
     expect(input).toHaveClass("input");
-    expect(input).toHaveClass("w-32");
+
+    const label = [...document.querySelectorAll("label")].find((l) =>
+      l.textContent?.includes("XP por participante confirmado"),
+    );
+    expect(label).toBeInTheDocument();
+    expect(label?.htmlFor).toBe("xp");
   });
 });

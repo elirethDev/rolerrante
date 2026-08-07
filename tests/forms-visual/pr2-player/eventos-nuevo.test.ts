@@ -1,16 +1,14 @@
 import { render } from "@testing-library/svelte";
-import { describe, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { ActionData } from "../../../src/routes/eventos/nuevo/$types";
 import Page from "../../../src/routes/eventos/nuevo/+page.svelte";
 import {
   readPageSource,
   expectNoInlineFieldsetMarkup,
-  expectPlayerPageTokens,
-  expectRenderedPlayerForm,
 } from "../../../src/test/page-vision";
 
-describe("eventos/nuevo page (forms-visual-pass / PR 2)", () => {
-  it("uses the Field primitive — no inline fieldset/legend markup (REQ-PF-01/FS-02)", () => {
+describe("eventos/nuevo page (OD form-card anatomy)", () => {
+  it("uses OD .field markup — no inline fieldset/legend markup (REQ-PF-01/FS-02)", () => {
     expectNoInlineFieldsetMarkup(
       readPageSource(
         "../../../src/routes/eventos/nuevo/+page.svelte",
@@ -19,18 +17,28 @@ describe("eventos/nuevo page (forms-visual-pass / PR 2)", () => {
     );
   });
 
-  it("keeps max-w-3xl container with md density (REQ-FS-01/FS-04)", () => {
-    expectPlayerPageTokens(
-      readPageSource(
-        "../../../src/routes/eventos/nuevo/+page.svelte",
-        import.meta.url,
-      ),
-      "max-w-3xl",
+  it("keeps the OD .create-wrap container (evento-nuevo.html)", () => {
+    const source = readPageSource(
+      "../../../src/routes/eventos/nuevo/+page.svelte",
+      import.meta.url,
     );
+    expect(source).toContain("create-wrap");
+    expect(source).toContain('form-card');
   });
 
-  it("renders 7 fieldset-legend Field groups at md density inside max-w-3xl", () => {
+  it("renders the 6 event form fields as OD .field groups + editor section inside .create-wrap", () => {
     const { container } = render(Page, { form: {} as unknown as ActionData });
-    expectRenderedPlayerForm(container, "max-w-3xl", 7);
+
+    const wrapper = [...container.querySelectorAll<HTMLElement>("div")].find(
+      (el) => el.classList.contains("create-wrap"),
+    );
+    expect(wrapper).toBeTruthy();
+
+    // Detalles del evento card: Título/Tipo/Máximo/Inicio/Fin/Ubicación (6).
+    // The Descripción editor lives in its own form-card, not a .field group.
+    expect(
+      wrapper!.querySelectorAll(".form-card .field"),
+    ).toHaveLength(6);
+    expect(wrapper!.textContent).toContain("Descripción");
   });
 });
