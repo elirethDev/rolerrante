@@ -232,13 +232,17 @@ describe("admin/foro category CRUD actions (REQ-FORUM-04.1)", () => {
     ).toBe(false);
   });
 
-  it("deleteCategory removes a category", async () => {
+  it("deleteCategory calls the cascade RPC (safe delete of a section with threads)", async () => {
     const supabase = makeSupabase();
     await expectRedirect(
       () => act("deleteCategory")(makeEvent(makeLocals(supabase), "id=c1")),
       "/admin/foro",
     );
-    expect(supabase.calls.delete).toContain("categories");
+    // El borrado usa el RPC delete_category_cascade (evita la FK threads FKEY).
+    const rpcCall = (supabase.calls.rpc as { name: string }[]).some(
+      (r) => r.name === "delete_category_cascade",
+    );
+    expect(rpcCall).toBe(true);
   });
 
   it("createCategory persists min_read_role and requires_approval (FORO-CAT-MINROLE/APPR)", async () => {

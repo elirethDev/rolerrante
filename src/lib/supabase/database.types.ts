@@ -1233,6 +1233,10 @@ export type Database = {
         Args: { p_event_id: string; p_notes?: string }
         Returns: undefined
       }
+      delete_category_cascade: {
+        Args: { p_category_id: string }
+        Returns: undefined
+      }
       finalize_event: {
         Args: {
           p_event_id: string

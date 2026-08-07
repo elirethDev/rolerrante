@@ -177,8 +177,19 @@ export const actions: Actions = {
     const id = String(form.get('id') ?? '');
     if (!id) return fail(400, { message: 'ID obligatorio' });
 
-    const { error: dbError } = await locals.supabase.from('categories').delete().eq('id', id);
-    if (dbError) return fail(400, { message: dbError.message });
+    // Borra la sección/categoría con todo su contenido (hilos + hijas) en una
+    // transacción. El DELETE directo falla por la FK threads.category_id sin
+    // ON DELETE CASCADE — ver 20260805060000_delete_category_cascade.sql.
+    const { error: rpcError } = await locals.supabase.rpc('delete_category_cascade', {
+      p_category_id: id,
+    });
+    if (rpcError) {
+      return fail(400, {
+        message: rpcError.message.includes('No autorizado')
+          ? 'Acceso denegado'
+          : `No se pudo eliminar: ${rpcError.message}`,
+      });
+    }
     throw redirect(303, '/admin/foro');
   },
 
