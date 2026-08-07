@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 @plugin "daisyui";
+/* OD design-system foundation (feat/od-css): tokens + componentes del design
+   system de Open Design. Se importa SIN capa para que gane a daisyUI (que vive
+   en @layer) — así las vistas re-renderizadas con clases OD quedan iguales a
+   las screens del design system. */
+@import "./lib/styles/od.css";
 @plugin "daisyui/theme" {
   name: "azeroth";
   default: true;
