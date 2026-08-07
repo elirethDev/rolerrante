@@ -23,3 +23,6 @@ docs/design-system-migration.md
 
 # Supabase local CLI state (project ref, versions, linked-project) - never commit
 supabase/.temp/
+
+# Cloudflare Pages/Wrangler local state and D1 bindings
+.wrangler/
