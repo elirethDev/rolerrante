@@ -107,12 +107,14 @@
     <h2>Secciones y categorías</h2>
     <div class="acts" style="display:flex;gap:8px">
       <button
+        type="button"
         class="btn btn-secondary btn-sm"
         onclick={() => openCreate('seccion')}
       >
         + Nueva sección
       </button>
       <button
+        type="button"
         class="btn btn-primary btn-sm"
         onclick={() => openCreate("categoria")}
       >
