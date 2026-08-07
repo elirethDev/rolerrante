@@ -20,6 +20,7 @@ const feed: LandingFeedItem[] = [
     authorName: "Kareth",
     categoryName: "Crónicas",
     updatedAt: new Date(Date.now() - 2 * 60000).toISOString(),
+    createdAt: new Date(Date.now() - 2 * 60000).toISOString(),
   },
 ];
 

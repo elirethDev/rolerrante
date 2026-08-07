@@ -27,7 +27,16 @@
 </svelte:head>
 
 <section class="max-w-[1180px] mx-auto">
-  <Breadcrumbs items={[{ label: 'Foro', href: '/foro' }, { label: data.category.name }]} />
+  <Breadcrumbs
+    items={[
+      { label: 'Foro', href: '/foro' },
+      ...data.trail.slice(0, -1).map((t) => ({
+        label: t.name,
+        href: `/foro/categoria/${t.id}`,
+      })),
+      { label: data.trail[data.trail.length - 1]?.name ?? data.category.name },
+    ]}
+  />
 
   <PageHeader
     kicker="Foro"

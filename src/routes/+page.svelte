@@ -159,9 +159,16 @@
                   <Avatar name={row.authorName} size="sm" alt={row.authorName} />
                   <b>{row.authorName}</b>
                 </span>
-                <span>{formatRelativeTime(row.updatedAt)}</span>
+                {#if row.categoryName}
+                  <span class="thread-cat">{row.categoryName}</span>
+                {/if}
+                <span class="thread-created">Publicado {formatRelativeTime(row.createdAt)}</span>
                 <span class="tag-wrap"><Tag>{row.contentTypeLabel}</Tag></span>
               </div>
+            </div>
+            <div class="thread-count" aria-label="Última actividad">
+              <b>{formatRelativeTime(row.updatedAt)}</b>
+              <span>última act.</span>
             </div>
           </div>
         {/each}

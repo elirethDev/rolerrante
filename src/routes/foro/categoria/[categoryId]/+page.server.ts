@@ -64,11 +64,37 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile }, url,
     .sort((a: CategoryRow, b: CategoryRow) => a.sort_order - b.sort_order)
     .map((k: CategoryRow) => ({ id: k.id, name: k.name, description: k.description }));
 
+  // Breadcrumb trail (Sección → … → Categoría): resolve the ancestor chain by
+  // walking parent_id up to the root so deep categories show their full path.
+  const allCats = catsRes.data ?? [];
+  const catById = new Map<string, CategoryRow>(allCats.map((c: CategoryRow) => [c.id, c]));
+  const trail: { id: string; name: string }[] = [];
+  let cursor: CategoryRow | undefined = category as CategoryRow;
+  while (cursor) {
+    trail.unshift({ id: cursor.id, name: cursor.name });
+    cursor = cursor.parent_id ? catById.get(cursor.parent_id) : undefined;
+  }
+
+  // Determine the descendant leaf category ids (category → its sub-categories
+  // → … → hoja). Threads of this category AND of any descendant leaf are shown
+  // together, so deep categories group all their nested threads (sorted by date).
+  const descendants = new Set<string>();
+  const collect = (parentId: string) => {
+    for (const c of allCats as CategoryRow[]) {
+      if (c.parent_id === parentId && !descendants.has(c.id)) {
+        descendants.add(c.id);
+        collect(c.id);
+      }
+    }
+  };
+  collect(category.id);
+  const threadCategoryIds = [category.id, ...descendants];
+
   // Thread count for pagination (REQ-FORUM-02.3), then the current page of threads.
   const { count } = await supabase
     .from('threads')
     .select('*', { count: 'exact', head: true })
-    .eq('category_id', category.id)
+    .in('category_id', threadCategoryIds)
     .in('status', VISIBLE_STATUSES);
   const totalThreads = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalThreads / PAGE_SIZE));
@@ -84,7 +110,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile }, url,
   const { data: threads } = await supabase
     .from('threads')
     .select('*, author:author_id(id, display_name, username)')
-    .eq('category_id', category.id)
+    .in('category_id', threadCategoryIds)
     .in('status', VISIBLE_STATUSES)
     .order('is_sticky', { ascending: false })
     .order('updated_at', { ascending: false })
@@ -105,11 +131,13 @@ export const load: PageServerLoad = async ({ locals: { supabase, profile }, url,
   }
 
   return {
+    trail,
     category: {
       id: category.id,
       name: category.name,
       description: category.description,
       requires_approval: category.requires_approval,
+      parent_id: category.parent_id,
     },
     children,
     threads: enrichThreadsWithPosts(pageThreads, posts),

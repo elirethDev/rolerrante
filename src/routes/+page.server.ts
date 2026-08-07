@@ -21,6 +21,7 @@ export interface LandingFeedItem {
   authorName: string;
   categoryName: string | null;
   updatedAt: string;
+  createdAt: string;
 }
 
 export interface LandingCronica {
@@ -259,6 +260,7 @@ export const load: PageServerLoad = async ({ locals: { supabase } }) => {
     authorName: displayName(t.author),
     categoryName: t.category?.name ?? null,
     updatedAt: t.updated_at,
+    createdAt: t.created_at,
   }));
 
   const cronicas: LandingCronica[] = cronicaRows.map((t) => ({

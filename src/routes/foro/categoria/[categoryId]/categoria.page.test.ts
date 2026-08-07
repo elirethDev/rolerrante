@@ -28,7 +28,8 @@ const thread = (p: Partial<Record<string, unknown>> = {}) => ({
 
 const makeData = (overrides: Record<string, unknown> = {}) =>
   ({
-    category: { id: 'c1', name: 'Debates', description: 'Discusión general', requires_approval: false },
+    category: { id: 'c1', name: 'Debates', description: 'Discusión general', requires_approval: false, parent_id: null },
+    trail: [{ id: 'c1', name: 'Debates' }],
     children: [],
     threads: [],
     totalThreads: 0,
