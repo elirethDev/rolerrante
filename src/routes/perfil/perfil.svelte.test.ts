@@ -43,9 +43,9 @@ describe('perfil page — rich profile (KPIs + activity + avatar affordance)', (
       form: {} as unknown as ActionData,
     });
 
-    const stats = container.querySelectorAll('.stat');
-    expect(stats.length).toBe(4);
-    const values = Array.from(stats).map((s) => s.querySelector('.stat-value')?.textContent);
+    const kpis = container.querySelectorAll('.kpi');
+    expect(kpis.length).toBe(4);
+    const values = Array.from(kpis).map((k) => k.querySelector('.kpi-num')?.textContent);
     expect(values).toEqual(['3', '2', '1', '7']);
     expect(container.textContent).toContain('Resumen del reino');
     expect(container.textContent).toContain('Reputación');
@@ -73,8 +73,8 @@ describe('perfil page — rich profile (KPIs + activity + avatar affordance)', (
     const fileInput = container.querySelector('input[type="file"]');
     expect(fileInput).not.toBeNull();
     expect(fileInput!.getAttribute('accept')).toBe('image/*');
-    // identity Fields + the three change-password Fields (KPIs/feed add none)
-    expect(container.querySelectorAll('fieldset')).toHaveLength(5);
+    // identity Fields (2) + the three change-password Fields via OD .field markers
+    expect(container.querySelectorAll('.field')).toHaveLength(5);
   });
 
   it('renders an empty state when there is no activity', () => {
