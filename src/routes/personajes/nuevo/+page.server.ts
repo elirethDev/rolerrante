@@ -29,6 +29,7 @@ export const actions: Actions = {
     const raceId = String(form.get('race_id') ?? '');
     const age = Number(form.get('age') ?? 0);
     const sex = String(form.get('sex') ?? '');
+    const origin = String(form.get('origin') ?? '').trim();
     const physicalDescription = String(form.get('physical_description') ?? '');
     const manaSource = String(form.get('mana_source') ?? 'I') as 'I' | 'E';
     const avatarUrl = String(form.get('avatar_url') ?? '').trim();
@@ -90,6 +91,7 @@ export const actions: Actions = {
         race_id: raceId,
         age,
         sex,
+        origin: origin || null,
         physical_description: physicalDescription,
         mana_source: manaSource,
         ...attrs,

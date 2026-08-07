@@ -22,6 +22,7 @@
   let raceId = character.race_id;
   let age = character.age ?? 0;
   let sex = character.sex ?? '';
+  let origin = character.origin ?? '';
   let physicalDescription = character.physical_description ?? '';
   let manaSource = character.mana_source ?? 'I';
   let avatarUrl = character.avatar_url ?? '';
@@ -144,6 +145,11 @@
           <Field label="Sexo">
             {#snippet ctrl()}
               <input id="sex" name="sex" type="text" class="input" bind:value={sex} />
+            {/snippet}
+          </Field>
+          <Field label="Origen">
+            {#snippet ctrl()}
+              <input id="origin" name="origin" type="text" class="input" bind:value={origin} placeholder="Ej. Lordaeron, Quel'Thalas..." />
             {/snippet}
           </Field>
           <Field label="Descripción física" class="md:col-span-2">

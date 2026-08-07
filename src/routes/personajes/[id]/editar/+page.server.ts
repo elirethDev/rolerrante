@@ -10,6 +10,7 @@ type EditableFields = {
   raceId: string;
   age: number;
   sex: string;
+  origin: string;
   physicalDescription: string;
   manaSource: 'I' | 'E';
   avatarUrl: string;
@@ -23,6 +24,7 @@ function parseCharacterFields(form: FormData): EditableFields {
     raceId: String(form.get('race_id') ?? ''),
     age: Number(form.get('age') ?? 0),
     sex: String(form.get('sex') ?? ''),
+    origin: String(form.get('origin') ?? '').trim(),
     physicalDescription: String(form.get('physical_description') ?? ''),
     manaSource: String(form.get('mana_source') ?? 'I') as 'I' | 'E',
     avatarUrl: String(form.get('avatar_url') ?? '').trim(),
@@ -143,6 +145,7 @@ export const actions: Actions = {
         race_id: fields.raceId,
         age: fields.age,
         sex: fields.sex,
+        origin: fields.origin || null,
         physical_description: fields.physicalDescription,
         mana_source: fields.manaSource,
         ...fields.attrs,
@@ -191,6 +194,7 @@ export const actions: Actions = {
         race_id: fields.raceId,
         age: fields.age,
         sex: fields.sex,
+        origin: fields.origin || null,
         physical_description: fields.physicalDescription,
         mana_source: fields.manaSource,
         ...fields.attrs,

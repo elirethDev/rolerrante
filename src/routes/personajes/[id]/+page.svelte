@@ -34,8 +34,14 @@
       ? character.race
       : (character.race?.name ?? 'Desconocida'),
   );
+  // El Origen del jugador (campo editable al crear/editar la ficha) manda;
+  // si está vacío (fichas viejas) cae al grupo de la raza como antes.
   let originName = $derived(
-    typeof character.race === 'string' ? '—' : (character.race?.group_name ?? '—'),
+    character.origin?.trim()
+      ? character.origin
+      : typeof character.race === 'string'
+        ? '—'
+        : (character.race?.group_name ?? '—'),
   );
   let avatarFailed = $state(false);
   let avatarUrl = $derived(character.avatar_url ?? '');

@@ -182,6 +182,7 @@ export type Database = {
           id: string
           mana_source: string
           name: string
+          origin: string | null
           physical_description: string | null
           player_id: string
           race_id: string
@@ -205,6 +206,7 @@ export type Database = {
           id?: string
           mana_source?: string
           name: string
+          origin?: string | null
           physical_description?: string | null
           player_id: string
           race_id: string
@@ -228,6 +230,7 @@ export type Database = {
           id?: string
           mana_source?: string
           name?: string
+          origin?: string | null
           physical_description?: string | null
           player_id?: string
           race_id?: string

@@ -43,6 +43,7 @@ export interface Character {
   age: number | null;
   sex: string | null;
   physical_description: string | null;
+  origin?: string | null;
   mana_source: 'I' | 'E';
   attr_fis: number;
   attr_des: number;

@@ -60,6 +60,13 @@ describe('personajes/[id] ficha layout (OD side-layout redesign)', () => {
     expect(screen.getByTestId('character-canon-badge')).toHaveTextContent('Canon');
   });
 
+  it('shows the player-set Origen when present (fallback to race group otherwise)', () => {
+    renderPage(makeData({ character: { ...character, origin: "Quel'Thalas" } }));
+    expect(screen.getByText("Quel'Thalas")).toBeInTheDocument();
+    // El Origen del jugador reemplaza al grupo de la raza en esa celda.
+    expect(screen.queryByText('Reinos Aliados')).not.toBeInTheDocument();
+  });
+
   it('renders the narrative blocks (Pasado/Presente/Objetivos) from the backstory', () => {
     renderPage(makeData());
 

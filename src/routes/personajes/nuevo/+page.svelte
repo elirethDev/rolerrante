@@ -140,6 +140,11 @@
               <input id="sex" name="sex" type="text" class="input" />
             {/snippet}
           </Field>
+          <Field label="Origen">
+            {#snippet ctrl()}
+              <input id="origin" name="origin" type="text" class="input" placeholder="Ej. Lordaeron, Quel'Thalas..." />
+            {/snippet}
+          </Field>
           <Field label="Descripción física" class="md:col-span-2">
             {#snippet ctrl()}
               <textarea id="physical_description" name="physical_description" class="textarea" rows="3"></textarea>

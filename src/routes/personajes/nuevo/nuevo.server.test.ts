@@ -86,6 +86,19 @@ const baseBody = (avatarUrl: string) =>
     avatar_url: avatarUrl,
   });
 
+// Body sin avatar con los mínimos válidos (name + race + attrs dentro de rango).
+const minimalBody = (extra: Record<string, string>) =>
+  formBody({
+    name: 'Aragorn',
+    race_id: 'r1',
+    attr_fis: '5',
+    attr_des: '5',
+    attr_int: '5',
+    attr_per: '5',
+    attr_esp: '5',
+    ...extra,
+  });
+
 describe('personajes/nuevo default action — avatar_url validation (REQ-CAV-01.2/REQ-CFD-03.2)', () => {
   it('saves a valid https avatar_url on the new ficha', async () => {
     const f: Fixture = {};
@@ -98,6 +111,30 @@ describe('personajes/nuevo default action — avatar_url validation (REQ-CAV-01.
     );
     expect(err.status).toBe(303);
     expect(f.inserted?.[0].avatar_url).toBe('https://img.example.com/a.png');
+  });
+
+  it('saves the player-set Origen (OD gap) on the new ficha', async () => {
+    const f: Fixture = {};
+    const supabase = makeSupabase(f);
+    await defaultFn(makeEvent(makeLocals(supabase), minimalBody({ origin: "Quel'Thalas" }))).then(
+      () => {
+        throw new Error('expected a redirect to be thrown');
+      },
+      (e: { status?: number }) => e,
+    );
+    expect(f.inserted?.[0].origin).toBe("Quel'Thalas");
+  });
+
+  it('stores null Origen when the field is empty', async () => {
+    const f: Fixture = {};
+    const supabase = makeSupabase(f);
+    await defaultFn(makeEvent(makeLocals(supabase), minimalBody({}))).then(
+      () => {
+        throw new Error('expected a redirect to be thrown');
+      },
+      (e: { status?: number }) => e,
+    );
+    expect(f.inserted?.[0].origin).toBeNull();
   });
 
   it('rejects a javascript: avatar_url with 400 and does not insert', async () => {
